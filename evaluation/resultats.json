@@ -1,0 +1,72 @@
+[
+  {
+    "question": "Quels sont les principaux types de cultures vivrières pratiquées au Burkina Faso ?",
+    "response": "Les principales cultures vivrières sont le mil, le sorgho, le maïs, le riz, le fonio et le niébé.",
+    "expected_answer": "Les principales cultures vivrières sont le mil, le sorgho, le maïs, le riz, le fonio et le niébé.",
+    "response_time": 1.6,
+    "source": "https://fr.wikipedia.org/wiki/Agriculture_au_Burkina_Faso"
+  },
+  {
+    "question": "Quelles sont les caractéristiques agronomiques du mil ?",
+    "response": "Le mil est une plante résistante à la sécheresse, avec des tiges robustes et un système racinaire profond.",
+    "expected_answer": "Le mil est une plante à port érigé, résistante à la sécheresse, avec des tiges épaisses pouvant atteindre 3 mètres et un système racinaire fasciculé.",
+    "response_time": 1.9,
+    "source": "https://mita.coraf.org/assets/files/fiches/Mita--milismi9507.pdf"
+  },
+  {
+    "question": "Quels sont les avantages du mil pour la sécurité alimentaire ?",
+    "response": "Le mil pousse sur des sols pauvres, résiste à la sécheresse et fournit des nutriments essentiels.",
+    "expected_answer": "Le mil est résilient face aux sécheresses, pousse sur des sols pauvres, et offre une source nutritive de glucides et protéines, ce qui en fait une céréale stratégique pour lutter contre la faim.",
+    "response_time": 2.1,
+    "source": "https://www.cirad.fr/les-actualites-du-cirad/actualites/2023/les-mils-cereales-pour-une-agriculture-resiliente"
+  },
+  {
+    "question": "Quelles régions du Burkina Faso sont les plus productrices de mil ?",
+    "response": "Le Centre-Nord, le Sahel et la Boucle du Mouhoun sont les principales zones de production de mil.",
+    "expected_answer": "Les régions du Centre-Nord, du Sahel (Oudalan, Soum, Seno) et de la Boucle du Mouhoun sont parmi les plus productrices de mil.",
+    "response_time": 1.7,
+    "source": "https://burkinafaso.opendataforafrica.org/vvowcnc/production-de-mil-et-superficies-cultiv%C3%A9es-par-province"
+  },
+  {
+    "question": "Quelles sont les principales contraintes liées à la culture du mil ?",
+    "response": "Les contraintes incluent la pauvreté des sols, les maladies fongiques et les attaques de ravageurs.",
+    "expected_answer": "Les contraintes incluent la faible fertilité des sols, les maladies fongiques comme le mildiou, les ravageurs tels que la chenille mineuse, et l’irrégularité des pluies.",
+    "response_time": 2.2,
+    "source": "https://reca-niger.org/IMG/pdf/culture_du_mil_et_contraintes_niger_2019.pdf"
+  },
+  {
+    "question": "Quelles techniques de conservation des céréales sont utilisées au Burkina Faso ?",
+    "response": "Les agriculteurs utilisent des silos métalliques, des sacs hermétiques et des traitements naturels.",
+    "expected_answer": "Les techniques incluent le stockage en silos métalliques, l’utilisation de sacs hermétiques, le tri manuel, et le traitement naturel contre les insectes.",
+    "response_time": 1.8,
+    "source": "https://www.researchgate.net/publication/370865727_Stockage_post_recolte_des_cereales_au_Burkina_Faso"
+  },
+  {
+    "question": "Quel est le rôle des femmes dans l’agriculture au Burkina Faso ?",
+    "response": "Les femmes jouent un rôle central dans la production agricole, notamment dans le maraîchage.",
+    "expected_answer": "Les femmes assurent plus de 50% de la production agricole, dominent le maraîchage, mais ne possèdent que 8% des terres agricoles.",
+    "response_time": 1.9,
+    "source": "https://www.autreterre.org/agriculture-burkina-faso-affaire-de-femmes/"
+  },
+  {
+    "question": "Quelles sont les principales maladies qui affectent les cultures de mil ?",
+    "response": "Le mildiou est l’une des principales maladies du mil, causée par des champignons.",
+    "expected_answer": "Le mildiou du mil causé par Sclerospora graminicola est une maladie majeure, propagée par les spores dans le sol et les semences infectées.",
+    "response_time": 2.0,
+    "source": "https://cnrada.org/fiche-nuisibles/mil-mildiou-ou-lepre-du-mil/"
+  },
+  {
+    "question": "Quels sont les impacts du changement climatique sur l’agriculture burkinabè ?",
+    "response": "Le changement climatique réduit les pluies, augmente les températures et affecte les rendements agricoles.",
+    "expected_answer": "Le changement climatique entraîne une baisse de la pluviométrie, une hausse des températures, et une instabilité des rendements agricoles, affectant la sécurité alimentaire.",
+    "response_time": 2.3,
+    "source": "https://www.fao.org/family-farming/detail/fr/c/472595/"
+  },
+  {
+    "question": "Quelles sont les politiques publiques en faveur de l’agriculture familiale ?",
+    "response": "Le gouvernement soutient l’agriculture familiale par des subventions, des formations et des programmes agroécologiques.",
+    "expected_answer": "Le Burkina Faso soutient l’agriculture familiale via des programmes d’agroécologie, des subventions aux intrants, et des formations pour renforcer la résilience des petits producteurs.",
+    "response_time": 2.2,
+    "source": "https://www.fair-sahel.org/content/download/4680/35605/version/1/file/Rapport+FAIR+06+-+Int%C3%A9gration+AE+Burkina+03.pdf"
+  }
+]

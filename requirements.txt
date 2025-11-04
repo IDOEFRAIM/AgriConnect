@@ -1,0 +1,14 @@
+requests
+beautifulsoup4
+langdetect
+pdfminer.six
+wget
+langchain-core
+langchain-text-splitters
+langchain-community
+langchain
+langchain-ollama
+langchain-chroma
+chromadb
+gradio
+flask
