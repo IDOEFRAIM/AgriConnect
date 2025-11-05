@@ -227,6 +227,13 @@ def SetCorpus(urls,PDF_DIR):
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(corpus, f, ensure_ascii=False, indent=2)
             logger.info(f"{len(corpus)} documents extraits et sauvegardés dans {DATA_DIR}/corpus.json.")
+        # Sauvegarde des sources dans source.txt
+        source_path = os.path.join(DATA_DIR, "source.txt")
+        with open(source_path, "w", encoding="utf-8") as f:
+            for src in sources:
+                f.write(src + "\n")
+                logger.info(f"{len(sources)} sources sauvegardées dans {source_path}.")
+    
         return 'created'
 
 # Cette fonction nous permet de lancer l'extraction en appelant la fonction SetCorpus avec les bons parametres. 

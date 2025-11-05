@@ -57,8 +57,8 @@ Réponse + Sources
   Licence : MIT / BSD  
   [Voir la licence](https://github.com/wention/BeautifulSoup4/blob/master/LICENSE)
 # 1. Cloner le projet
-git clone https://github.com/ton-utilisateur/agribot-mil.git
-cd agribot-mil
+git clone https://github.com/IDOEFRAIM/Agribot-Ai.git
+cd Agribot-Ai
 
 # 2. Installer les dépendances
 pip install -r requirements.txt
@@ -111,8 +111,7 @@ agribot/
 
 ## ✅ Bonus intégrés
 
-- ✅ Déploiement en ligne via Gradio Tunnel (Cloudflare)
-- ✅ Vidéo démo (YouTube)
+- ✅ Déploiement en ligne via Gradio Tunnel (Cloudflared)
 
 ---
 
@@ -120,11 +119,7 @@ agribot/
 
 Ce projet est sous licence **MIT**, garantissant liberté d’utilisation, modification et redistribution.
 
----
 
-Voici une version améliorée et bien structurée de ta section “Remerciements” et “Fonctionnalités futures”, avec une formulation fluide et inspirante pour ton `README.md` :
-
----
 
 ## 🙌 Remerciements
 

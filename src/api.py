@@ -18,7 +18,7 @@ CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", "./chroma_db")
 Nous pouvons ainsi le reutiliser"""
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "Tu es un assistant IA spécialisé en agriculture. Réponds en utilisant les documents fournis. S'il n'y a aucun document, réponds avec tes propres connaissances. Ne fais pas de suppositions inutiles. Sois concis."),
+    ("system", "Tu es un assistant IA spécialisé en agriculture. Réponds en utilisant les documents fournis et mentionnes a l'utilisateur les documents ou source que tu as utilise pour repondre. S'il n'y a aucun document, réponds avec tes propres connaissances. Ne fais pas de suppositions inutiles. Sois concis."),
     MessagesPlaceholder(variable_name="chat_history"),
     ("human", "{query_str}")
 ])
