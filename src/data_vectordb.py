@@ -19,7 +19,7 @@ Nous utilisons Ollama Embeddings pour creer une base de donnees vectorielle Chro
 """
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "https://made-tanks-tissue-accuracy.trycloudflare.com")
-EMBEDDING_MODEL_ID = os.getenv("EMBEDDING_MODEL_ID", "gemma:2b")
+EMBEDDING_MODEL_ID = os.getenv("EMBEDDING_MODEL_ID", "mistral:7b-instruct-q4_K_M")
 CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", "./chroma_db")
 TOP_K = os.getenv("TOP_K", 5)
 

@@ -67,7 +67,7 @@ def chat_with_profile(user_query, chat_history):
 
     try:
         payload = {"query": user_query, "history": chat_history or []}
-        response = requests.post(os.getenv("API_URL","http://localhost:7860/chat"), json=payload)
+        response = requests.post(os.getenv("API_URL","http://localhost:8000/chat"), json=payload)
         updated_history = response.json()
         return updated_history
     except Exception as e:
@@ -109,4 +109,4 @@ if __name__ == "__main__":
         logging.warning(f"Ollama tunnel unreachable at {OLLAMA_BASE_URL}. You may need to restart it.")
 
     demo = create_gradio_interface()
-    demo.launch(server_name="0.0.0.0", server_port=8000, share=True)
+    demo.launch(server_name="localhost", server_port=8000, share=True)

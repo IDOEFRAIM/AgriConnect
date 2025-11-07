@@ -9,9 +9,9 @@ import os
 app = Flask(__name__)
 
 # Config
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-LLM_MODEL_ID = os.getenv("LLM_MODEL_ID", "llama3")
-EMBEDDING_MODEL_ID = os.getenv("EMBEDDING_MODEL_ID", "gemma:2b")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "https://made-tanks-tissue-accuracy.trycloudflare.com")
+LLM_MODEL_ID = os.getenv("LLM_MODEL_ID", "mistral:7b-instruct-q4_K_M")
+EMBEDDING_MODEL_ID = os.getenv("EMBEDDING_MODEL_ID", "mistral:7b-instruct-q4_K_M")
 CHROMA_DB_PATH = os.getenv("CHROMA_DB_PATH", "./chroma_db")
 
 """ Prompt template: c'est comme un moule,il nous permet de modeler la forme de notre prompt. 
@@ -34,7 +34,7 @@ model_kwargs = {
 
 
 
-@app.route("/generate", methods=["POST"])
+@app.route("/chat", methods=["POST"])
 def generate_response():
 
     if not OLLAMA_BASE_URL or not EMBEDDING_MODEL_ID or not CHROMA_DB_PATH:
@@ -103,3 +103,6 @@ def generate_response():
     chat_history.append({"role": "assistant", "content": reply})
 
     return jsonify({ "history": chat_history})
+
+if __name__ == "__main__":
+    app.run(host="localhost", port=5050, debug=True)
