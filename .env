@@ -1,0 +1,1 @@
+export OLLAMA_HOST=http://localhost:11434

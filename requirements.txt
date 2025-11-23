@@ -1,0 +1,13 @@
+requests
+PyPDF2
+playwright
+PyMuPDF
+chromadb 
+sentence-transformers 
+tqdm
+pydantic
+chromadb[duckdb]
+httpx 
+shapely
+pillow
+loguru

@@ -1,0 +1,1575 @@
+[
+  {
+    "url": "https://fanfar.eu/fr/piv/",
+    "method": "GET",
+    "headers": {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "upgrade-insecure-requests": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514712.8847356
+  },
+  {
+    "url": "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,regular,italic,600,600italic,700,700italic,800,800italic",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.7590091
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/premium-addons-for-elementor/assets/frontend/min-css/premium-addons.min.css?ver=4.10.62",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.7646601
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/cookie-law-info/legacy/public/css/cookie-law-info-public.css?ver=3.2.7",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.7695587
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/cookie-law-info/legacy/public/css/cookie-law-info-gdpr.css?ver=3.2.7",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.7737045
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/simple-embed-code/css/video-container.min.css?ver=2.5.1",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.7777324
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-accessibility/css/wpa-style.css?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.7822354
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/sp-news-and-widget/assets/css/wpnw-public.css?ver=5.0.2",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.7863941
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/translatepress-multilingual/assets/css/trp-floater-language-switcher.css?ver=2.8.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.791281
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/translatepress-multilingual/assets/css/trp-language-switcher.css?ver=2.8.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.7948189
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/css/eae.min.css?ver=1.13.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.8005896
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/lib/peel/peel.css?ver=1.13.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.8049102
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/font-awesome/css/v4-shims.min.css?ver=1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.8090222
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/font-awesome/css/all.min.css?ver=4.10.62",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.81345
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/lib/vegas/vegas.min.css?ver=2.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.81943
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/css/dashicons.min.css?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.8240342
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/themes/generatepress/assets/css/all.min.css?ver=3.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.8289318
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/themes/generatepress/assets/css/components/font-icons.min.css?ver=3.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.834906
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/tablepress/css/build/default.css?ver=2.4.4",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.8418329
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/eicons/css/elementor-icons.min.css?ver=5.31.0",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.846656
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/css/frontend.min.css?ver=3.25.5",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.863904
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/swiper/v8/css/swiper.min.css?ver=8.4.5",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.870618
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/css/conditionals/e-swiper.min.css?ver=3.25.5",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.8770661
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/elementor/css/post-1279.css?ver=1669975894",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.8839211
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/elementor/css/post-1420.css?ver=1711027515",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.8918464
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/essential-addons-for-elementor-lite/assets/front-end/css/view/general.min.css?ver=6.0.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.898196
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-gdpr-compliance/Assets/css/front.css?ver=1686212332",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.9039328
+  },
+  {
+    "url": "https://fonts.googleapis.com/css?family=Open+Sans%3A100%2C100italic%2C200%2C200italic%2C300%2C300italic%2C400%2C400italic%2C500%2C500italic%2C600%2C600italic%2C700%2C700italic%2C800%2C800italic%2C900%2C900italic&display=auto&ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.9162579
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/font-awesome/css/fontawesome.min.css?ver=5.15.3",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.921266
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/font-awesome/css/solid.min.css?ver=5.15.3",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.9271495
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/font-awesome/css/regular.min.css?ver=5.15.3",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.9342437
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/js/jquery/jquery.min.js?ver=3.7.1",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.939699
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.9512298
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/cookie-law-info/legacy/public/js/cookie-law-info-public.js?ver=3.2.7",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.9591506
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/js/iconHelper.js?ver=1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.966603
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-accessibility/js/fingerprint.min.js?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.975512
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-gdpr-compliance/Assets/js/front.min.js?ver=1686212332",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.9824438
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2019/04/cropped-LogoTitleHeader.jpg",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.9911234
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/css/widget-heading.min.css?ver=3.25.5",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514713.9998314
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/css/widget-icon-list.min.css?ver=3.25.5",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.0162704
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/css/widget-divider.min.css?ver=3.25.5",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.026402
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/js/eae.min.js?ver=1.13.9",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.0334089
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/build/index.min.js?ver=1.13.9",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.0527914
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/font-awesome/js/v4-shims.min.js?ver=1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.071174
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/js/animated-main.min.js?ver=1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.0834038
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/js/particles.min.js?ver=2.0.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.102955
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/lib/magnific.min.js?ver=1.1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.114144
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/lib/vegas/vegas.min.js?ver=2.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.1274712
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/themes/generatepress/assets/js/menu.min.js?ver=3.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.1407778
+  },
+  {
+    "url": "https://hypewebapp.smhi.se/fanfar/early-warning-portal/index.fr.html",
+    "method": "GET",
+    "headers": {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "referer": "https://fanfar.eu/",
+      "upgrade-insecure-requests": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.1570237
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-accessibility/js/longdesc.min.js?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.1735246
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-accessibility/js/wp-accessibility.min.js?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.1856885
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/essential-addons-for-elementor-lite/assets/front-end/js/view/general.min.js?ver=6.0.9",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.1918006
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/js/hoverIntent.min.js?ver=1.10.2",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.2003007
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/megamenu/js/maxmegamenu.js?ver=3.3.1.2",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.207479
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/js/webpack.runtime.min.js?ver=3.25.5",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.2166717
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/js/frontend-modules.min.js?ver=3.25.5",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.222071
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/js/jquery/ui/core.min.js?ver=1.13.3",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.226925
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/js/frontend.min.js?ver=3.25.5",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.235058
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/translatepress-multilingual/assets/images/flags/en_US.png",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.2410803
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/js/wp-emoji-release.min.js?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.2669373
+  },
+  {
+    "url": "https://hypewebapp.smhi.se/fanfar/early-warning-portal/css/style.css",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://hypewebapp.smhi.se/fanfar/early-warning-portal/index.fr.html",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.6017241
+  },
+  {
+    "url": "https://hypewebapp.smhi.se/fanfar/early-warning-portal/css/fontawesome-5.0.6/css/all.css",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://hypewebapp.smhi.se/fanfar/early-warning-portal/index.fr.html",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.6054223
+  },
+  {
+    "url": "https://hypewebapp.smhi.se/fanfar/early-warning-portal/js/app-bundle-c93d271fecfbec07a68f.js",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "referer": "https://hypewebapp.smhi.se/fanfar/early-warning-portal/index.fr.html",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.6084175
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2018/01/cropped-logo180115b_small-1-32x32.png",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.6192071
+  },
+  {
+    "url": "https://fanfar.eu/fr/?s=Burkina+Faso",
+    "method": "GET",
+    "headers": {
+      "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "referer": "https://fanfar.eu/fr/piv/",
+      "upgrade-insecure-requests": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514714.9868853
+  },
+  {
+    "url": "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,regular,italic,600,600italic,700,700italic,800,800italic",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "referer": "https://fanfar.eu/",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0130904
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/premium-addons-for-elementor/assets/frontend/min-css/premium-addons.min.css?ver=4.10.62",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0193822
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/cookie-law-info/legacy/public/css/cookie-law-info-public.css?ver=3.2.7",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0242114
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/cookie-law-info/legacy/public/css/cookie-law-info-gdpr.css?ver=3.2.7",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0296826
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/simple-embed-code/css/video-container.min.css?ver=2.5.1",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0340018
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-accessibility/css/wpa-style.css?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0384977
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/sp-news-and-widget/assets/css/wpnw-public.css?ver=5.0.2",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0428324
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/translatepress-multilingual/assets/css/trp-floater-language-switcher.css?ver=2.8.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0488029
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/translatepress-multilingual/assets/css/trp-language-switcher.css?ver=2.8.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0540242
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/css/eae.min.css?ver=1.13.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0592046
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/lib/peel/peel.css?ver=1.13.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0646427
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/font-awesome/css/v4-shims.min.css?ver=1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0696115
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/font-awesome/css/all.min.css?ver=4.10.62",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0745373
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/lib/vegas/vegas.min.css?ver=2.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0827646
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/css/dashicons.min.css?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0897472
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/themes/generatepress/assets/css/all.min.css?ver=3.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.0948126
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/themes/generatepress/assets/css/components/font-icons.min.css?ver=3.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.100699
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/tablepress/css/build/default.css?ver=2.4.4",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.1088855
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/css/frontend.min.css?ver=3.25.5",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.1168022
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/essential-addons-for-elementor-lite/assets/front-end/css/view/general.min.css?ver=6.0.9",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.1240277
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-gdpr-compliance/Assets/css/front.css?ver=1686212332",
+    "method": "GET",
+    "headers": {
+      "accept": "text/css,*/*;q=0.1",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.129609
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/js/jquery/jquery.min.js?ver=3.7.1",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.1345506
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.1396716
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/cookie-law-info/legacy/public/js/cookie-law-info-public.js?ver=3.2.7",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.148082
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/js/iconHelper.js?ver=1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.154068
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-accessibility/js/fingerprint.min.js?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.1590092
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-gdpr-compliance/Assets/js/front.min.js?ver=1686212332",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.168082
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2019/04/cropped-LogoTitleHeader.jpg",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.175249
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/js/eae.min.js?ver=1.13.9",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.1906295
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/build/index.min.js?ver=1.13.9",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2071354
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/elementor/assets/lib/font-awesome/js/v4-shims.min.js?ver=1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2153099
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/js/animated-main.min.js?ver=1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2214859
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/js/particles.min.js?ver=2.0.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2258842
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/lib/magnific.min.js?ver=1.1.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.233866
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/addon-elements-for-elementor-page-builder/assets/lib/vegas/vegas.min.js?ver=2.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2405655
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/themes/generatepress/assets/js/menu.min.js?ver=3.4.0",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2477126
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-accessibility/js/longdesc.min.js?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2523365
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/wp-accessibility/js/wp-accessibility.min.js?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2563741
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/essential-addons-for-elementor-lite/assets/front-end/js/view/general.min.js?ver=6.0.9",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2618954
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/js/hoverIntent.min.js?ver=1.10.2",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2662673
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/megamenu/js/maxmegamenu.js?ver=3.3.1.2",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2715485
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/plugins/translatepress-multilingual/assets/images/flags/en_US.png",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2751772
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2018/01/EU.jpg",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2856896
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2018/09/AgrhymetLogo.jpg",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2895086
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2018/09/SMHI20logotype20svart20RGB203820mm-300x120.jpg",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.2964258
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2018/09/TerradueLogo-300x80.png",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.3005238
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2018/09/NIHSA_logo2-300x45.png",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.3056674
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2018/09/EawagLogoCorrect-e1550153203382.png",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.3117473
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2018/09/IsardSATLogo.png",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.3175094
+  },
+  {
+    "url": "https://fanfar.eu/wp-includes/js/wp-emoji-release.min.js?ver=6.8.3",
+    "method": "GET",
+    "headers": {
+      "accept": "*/*",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.3244376
+  },
+  {
+    "url": "https://fanfar.eu/wp-content/uploads/sites/4/2018/01/cropped-logo180115b_small-1-32x32.png",
+    "method": "GET",
+    "headers": {
+      "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "cookie": "pll_language=fr",
+      "referer": "https://fanfar.eu/fr/?s=Burkina+Faso",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"141\", \"Not?A_Brand\";v=\"8\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "timestamp": 1763514716.458363
+  }
+]
