@@ -7,13 +7,13 @@ import os
 import numpy as np
 from PIL import Image
 
-# 📁 Dossiers de sortie
+#  Dossiers de sortie
 os.makedirs("bulletins_pdf", exist_ok=True)
 os.makedirs("bulletins_json", exist_ok=True)
 os.makedirs("bulletins_csv", exist_ok=True)
 os.makedirs("images_agrodecadaire", exist_ok=True)
 
-# 🧠 Nettoyeur de texte
+#  Nettoyeur de texte
 def nettoyer_texte_brut(texte):
     fragments_inutiles = [
         "Nos services", "Nos produits", "Organisation", "DONNÉES ET OUTILS"
@@ -22,7 +22,7 @@ def nettoyer_texte_brut(texte):
         texte = texte.replace(frag, "")
     return texte.strip()
 
-# 🔁 Nettoyeur de doublons par texte
+# Nettoyeur de doublons par texte
 def nettoyer_doublons_par_texte(pages):
     vus = set()
     uniques = []
@@ -33,7 +33,7 @@ def nettoyer_doublons_par_texte(pages):
             uniques.append(page)
     return uniques
 
-# 🧠 Filtrage des images inutiles
+#  Filtrage des images inutiles
 def is_useless_image(pix):
     try:
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
@@ -64,7 +64,7 @@ with sync_playwright() as p:
         .map(a => a.href)
         .filter(href => href.includes("/bulletin-agrometeologique-decadaire/bulletin-agrom"))
     """)
-    print(f"🔗 {len(subpage_links)} pages de bulletin trouvées.")
+    print(f" {len(subpage_links)} pages de bulletin trouvées.")
 
     pdf_links = []
 
@@ -85,9 +85,9 @@ with sync_playwright() as p:
                 pdf_links.append(pdf_url)
                 print(f"📄 PDF trouvé : {pdf_url}")
             else:
-                print(f"⚠️ Aucun PDF trouvé sur : {sub_url}")
+                print(f" Aucun PDF trouvé sur : {sub_url}")
         except Exception as e:
-            print(f"❌ Erreur sur {sub_url} : {e}")
+            print(f" Erreur sur {sub_url} : {e}")
 
     # Étape 3 : Télécharger et extraire chaque PDF
     for url in pdf_links:
@@ -99,12 +99,12 @@ with sync_playwright() as p:
             r.raise_for_status()
             with open(pdf_path, "wb") as f:
                 f.write(r.content)
-            print(f"✅ Téléchargé : {filename}")
+            print(f" Téléchargé : {filename}")
         except Exception as e:
-            print(f"❌ Erreur de téléchargement : {e}")
+            print(f" Erreur de téléchargement : {e}")
             continue
 
-        # 📄 Extraction du contenu
+        #  Extraction du contenu
         doc = fitz.open(pdf_path)
         data = []
 
@@ -134,19 +134,19 @@ with sync_playwright() as p:
         # Nettoyage des doublons
         data = nettoyer_doublons_par_texte(data)
 
-        # 💾 Sauvegarde JSON
+        #  Sauvegarde JSON
         with open(f"bulletins_json/{filename.replace('.pdf', '.json')}", "w", encoding="utf-8") as f_json:
             json.dump(data, f_json, ensure_ascii=False, indent=2)
 
-        # 📊 Sauvegarde CSV
+        #  Sauvegarde CSV
         with open(f"bulletins_csv/{filename.replace('.pdf', '.csv')}", "w", encoding="utf-8", newline='') as f_csv:
             writer = csv.writer(f_csv)
             writer.writerow(["Page", "Texte"])
             for entry in data:
                 writer.writerow([entry["page"], entry["text"]])
 
-        print(f"📦 Extraction terminée pour : {filename}")
+        print(f" Extraction terminée pour : {filename}")
 
     browser.close()
 
-print("🎉 Tous les bulletins ont été récupérés, nettoyés, extraits et sauvegardés.")
+print(" Tous les bulletins ont été récupérés, nettoyés, extraits et sauvegardés.")
