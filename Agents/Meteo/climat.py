@@ -98,14 +98,14 @@ with open(csv_path, "w", newline="", encoding="utf-8") as f:
             writer.writerow(row)
             print("Écrit:", row)
 
-print(f"✅ Fichier CSV généré : {csv_path}")
+print(f" Fichier CSV généré : {csv_path}")
 
 # --- Export JSON ---
 json_path = "json/climat.json"
 with open(json_path, "w", encoding="utf-8") as f:
     json.dump(structured_data, f, indent=2, ensure_ascii=False)
 
-print(f"✅ Fichier JSON généré : {json_path}")
+print(f" Fichier JSON généré : {json_path}")
 
 #python Agents/Meteo/climat.py
 #python utils/metbd.py
