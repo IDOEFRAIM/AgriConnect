@@ -71,7 +71,7 @@ all_docs = [scrape_dynamic_content(link) for link in links]
 with open("json/bulletinAgro.json", "w", encoding="utf-8") as f:
     json.dump(all_docs, f, indent=2, ensure_ascii=False)
 
-print("✅ bulletinAgro.json créé avec", len(all_docs), "documents")
+print(" bulletinAgro.json créé avec", len(all_docs), "documents")
 
 # --- Sauvegarder en CSV ---
 with open("csv/bulletinAgro.csv", "w", newline="", encoding="utf-8") as f:
@@ -82,4 +82,4 @@ with open("csv/bulletinAgro.csv", "w", newline="", encoding="utf-8") as f:
         content = doc["content"].replace("\n", " ")[:500]
         writer.writerow([doc["url"], doc["type"], doc["title"], content])
 
-print("✅ bulletinAgro.csv créé avec", len(all_docs), "documents")
+print(" bulletinAgro.csv créé avec", len(all_docs), "documents")
