@@ -78,9 +78,9 @@ class MeteoAgent:
         return state.copy(update={"response": response})
 
     def log_state(self, state: MeteoState) -> MeteoState:
-        print("🧾 Requête :", state.query)
-        print("📚 Documents récupérés :", len(state.documents or []))
-        print("📝 Résumé :", state.response.summary if state.response else "Aucun")
+        print("Requête :", state.query)
+        print("Documents récupérés :", len(state.documents or []))
+        print(" Résumé :", state.response.summary if state.response else "Aucun")
         return state
 
     def build_graph(self):
