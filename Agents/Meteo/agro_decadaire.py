@@ -4,7 +4,7 @@ import json
 import csv
 import os
 
-# 📥 Étape 1 : Télécharger le PDF
+#  Étape 1 : Télécharger le PDF
 pdf_url = "https://meteoburkina.bf/documents/660/BADimport requests
 import fitz  # PyMuPDF
 import json
@@ -13,7 +13,7 @@ import os
 import numpy as np
 from PIL import Image
 
-# 📥 Étape 1 : Télécharger le PDF
+#  Étape 1 : Télécharger le PDF
 pdf_url = "https://meteoburkina.bf/documents/660/BAD25111.pdf"
 pdf_path = "agrodecadaire.pdf"
 
@@ -21,11 +21,11 @@ response = requests.get(pdf_url)
 with open(pdf_path, "wb") as f:
     f.write(response.content)
 
-# 📁 Créer un dossier pour les images extraites
+# Créer un dossier pour les images extraites
 image_dir = "images_agrodecadaire"
 os.makedirs(image_dir, exist_ok=True)
 
-# 🧠 Fonction de filtrage des images inutiles
+#  Fonction de filtrage des images inutiles
 def is_useless_image(pix):
     try:
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
@@ -49,7 +49,7 @@ def is_useless_image(pix):
     except Exception:
         return True  # Si erreur, on ignore l'image
 
-# 📄 Étape 2 : Extraire texte et images utiles
+#  Étape 2 : Extraire texte et images utiles
 doc = fitz.open(pdf_path)
 data = []
 
@@ -79,11 +79,11 @@ for page_num, page in enumerate(doc):
         "images": images
     })
 
-# 💾 Étape 3 : Sauvegarder en JSON
+#  Étape 3 : Sauvegarder en JSON
 with open("agrodecadaire.json", "w", encoding="utf-8") as f_json:
     json.dump(data, f_json, ensure_ascii=False, indent=2)
 
-# 📊 Étape 4 : Sauvegarder en CSV (texte uniquement)
+#  Étape 4 : Sauvegarder en CSV (texte uniquement)
 with open("agrodecadaire.csv", "w", encoding="utf-8", newline='') as f_csv:
     writer = csv.writer(f_csv)
     writer.writerow(["Page", "Texte"])
@@ -91,14 +91,14 @@ with open("agrodecadaire.csv", "w", encoding="utf-8", newline='') as f_csv:
     for entry in data:
         writer.writerow([entry["page"], entry["text"]])
 
-print("✅ Extraction terminée : agrodecadaire.json, agrodecadaire.csv et images utiles extraites.")25111.pdf"
+print(" Extraction terminée : agrodecadaire.json, agrodecadaire.csv et images utiles extraites.")25111.pdf"
 pdf_path = "agrodecadaire.pdf"
 
 response = requests.get(pdf_url)
 with open(pdf_path, "wb") as f:
     f.write(response.content)
 
-# 📄 Étape 2 : Extraire le texte et les images
+#  Étape 2 : Extraire le texte et les images
 doc = fitz.open(pdf_path)
 data = []
 
@@ -128,11 +128,11 @@ for page_num, page in enumerate(doc):
         "images": images
     })
 
-# 📦 Étape 3 : Sauvegarder en JSON
+# Étape 3 : Sauvegarder en JSON
 with open("json/agrodecadaire.json", "w", encoding="utf-8") as f_json:
     json.dump(data, f_json, ensure_ascii=False, indent=2)
 
-# 📊 Étape 4 : Sauvegarder en CSV (texte uniquement)
+#  Étape 4 : Sauvegarder en CSV (texte uniquement)
 with open("csv/agrodecadaire.csv", "w", encoding="utf-8", newline='') as f_csv:
     writer = csv.writer(f_csv)
     writer.writerow(["Page", "Texte"])
@@ -140,4 +140,4 @@ with open("csv/agrodecadaire.csv", "w", encoding="utf-8", newline='') as f_csv:
     for entry in data:
         writer.writerow([entry["page"], entry["text"]])
 
-print("✅ Extraction terminée : agrodecadaire.json et agrodecadaire.csv créés.")
+print(" Extraction terminée : agrodecadaire.json et agrodecadaire.csv créés.")
