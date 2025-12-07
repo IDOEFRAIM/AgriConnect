@@ -1,0 +1,76 @@
+[
+{
+"id": "C_001",
+"role": "CROP",
+"query": "Impact de la sécheresse sur les cultures de maïs et recommandations de semis.",
+"filters": {
+"location": "Ouest"
+},
+"expected_keywords": [
+"maïs",
+"sécheresse",
+"semis"
+],
+"expected_entities": [
+"maïs"
+]
+},
+{
+"id": "M_002",
+"role": "METEO",
+"query": "Quel est le niveau d'alerte des barrages dans la région Sud-Ouest ?",
+"filters": {
+"location": "Sud-Ouest"
+},
+"expected_keywords": [
+"barrages",
+"niveau",
+"alerte"
+],
+"expected_entities": [
+"barrage"
+]
+},
+{
+"id": "L_003",
+"role": "MARKET",
+"query": "Les ponts et routes principales sont-ils accessibles après les intempéries ?",
+"filters": null,
+"expected_keywords": [
+"routes",
+"ponts",
+"impraticable"
+],
+"expected_entities": [
+"pont"
+]
+},
+{
+"id": "S_004",
+"role": "SOIL",
+"query": "Quelles sont les meilleures pratiques de drainage pour nos terres après les fortes pluies ?",
+"filters": null,
+"expected_keywords": [
+"drainage",
+"sols",
+"compaction"
+],
+"expected_entities": [
+"drainage"
+]
+},
+{
+"id": "H_005",
+"role": "HEALTH",
+"query": "Y a-t-il un risque d'épidémie de choléra dans les zones sinistrées ?",
+"filters": null,
+"expected_keywords": [
+"choléra",
+"risques",
+"hygiène"
+],
+"expected_entities": [
+"choléra"
+]
+}
+]
