@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, Optional
+from datetime import datetime, timedelta
 
 # --- ITINÉRAIRES TECHNIQUES SAHEL (Burkina Faso, zone soudano-sahélienne) ---
 
@@ -69,39 +70,126 @@ class CropManagerTool:
     """
     
     def get_seeding_advice(self, crop_name: str) -> str:
-        """Instructions de semis adaptées au Sahel burkinabè."""
-        profile = SahelAgronomyDB.DATA.get(crop_name.lower())
+        """
+        Instructions de semis adaptées au Sahel burkinabè.
+        Version robuste, contextualisée et production-ready.
+        """
+
+        crop_key = (crop_name or "").lower().strip()
+        profile = SahelAgronomyDB.DATA.get(crop_key)
+
         if not profile:
-            return f"Pas de données techniques pour '{crop_name}'."
-            
-        return (f"Guide Semis {profile.name} :\n"
-                f"- Espacement : {profile.seeding_density}\n"
-                f"- Densité : {profile.seeds_per_hole}\n"
-                f"- Profondeur : {profile.sowing_depth_cm} cm (ne pas dépasser, sols tropicaux sensibles à la sécheresse)\n"
-                f"- Conseil : Semer après une pluie utile (>20 mm) pour assurer la levée.")
+            return f"Aucune donnée technique disponible pour la culture '{crop_name}'."
+
+        lines = [
+            f"Guide de Semis – {profile.name}",
+            f"- Espacement recommandé : {profile.seeding_density}",
+            f"- Densité : {profile.seeds_per_hole} graines par poquet",
+            f"- Profondeur : {profile.sowing_depth_cm} cm (ne pas dépasser en zone sahélienne)",
+            "",
+            "Conseils pratiques (Sahel Burkina) :",
+            "- Semer après une pluie utile d'au moins 20 mm pour garantir la levée.",
+            "- Éviter de semer dans un sol sec : risque de levée irrégulière.",
+            "- En sol sableux : privilégier des poquets légèrement enrichis en fumure organique.",
+            "- En sol limoneux : casser la croûte de battance après la pluie si nécessaire.",
+            "- En zone à poches de sécheresse : prévoir un ressemis rapide si la levée échoue.",
+        ]
+
+        return "\n".join(lines)
 
     def check_fertilizer_status(self, crop_name: str, days_after_sowing: int) -> str:
-        """Vérifie si un apport d'engrais est nécessaire aujourd'hui."""
-        profile = SahelAgronomyDB.DATA.get(crop_name.lower())
-        if not profile:
-            return "Culture inconnue."
+        """
+        Vérifie si un apport d'engrais est nécessaire aujourd'hui.
+        Version robuste et contextualisée pour le Sahel burkinabè.
+        """
 
+        # Normalisation robuste
+        crop_key = (crop_name or "").lower().strip()
+        profile = SahelAgronomyDB.DATA.get(crop_key)
+
+        if not profile:
+            return f"Culture inconnue : '{crop_name}'."
+
+        # Sécurité : jours négatifs
+        if days_after_sowing < 0:
+            return "Le nombre de jours après semis ne peut pas être négatif."
+
+        # Sécurité : semis trop récent
+        if days_after_sowing < 3:
+            return (
+                f"Jour {days_after_sowing} : Trop tôt pour un apport d'engrais.\n"
+                "Attendre la levée complète avant toute application."
+            )
+
+        # Recherche d'une fenêtre d'application
         for day_str, action in profile.fertilizer_schedule.items():
             target_day = int(day_str)
+
+            # Fenêtre flexible : J-3 à J+5
             if target_day - 3 <= days_after_sowing <= target_day + 5:
-                return (f"ACTION REQUISE (Jour {days_after_sowing}) :\n"
-                        f"{action}\n"
-                        f"Note : Appliquer uniquement sur sol humide pour éviter pertes par volatilisation ou ruissellement.")
-        
-        next_steps = [int(d) for d in profile.fertilizer_schedule.keys() if int(d) > days_after_sowing]
+                return (
+                    f"✅ ACTION REQUISE (Jour {days_after_sowing})\n"
+                    f"{action}\n\n"
+                    "Conseil Sahel :\n"
+                    "- Appliquer uniquement sur sol humide (après pluie ou arrosage).\n"
+                    "- Éviter les fortes chaleurs (risque de volatilisation).\n"
+                    "- Incorporer légèrement si possible pour limiter les pertes."
+                )
+
+        # Prochain apport
+        next_steps = [
+            int(d) for d in profile.fertilizer_schedule.keys()
+            if int(d) > days_after_sowing
+        ]
+
         if next_steps:
-            return f"Aucune action aujourd'hui. Prochain apport prévu dans {min(next_steps) - days_after_sowing} jours."
-        
-        return "Fertilisation terminée pour cette saison."
+            delta = min(next_steps) - days_after_sowing
+            return (
+                f"Aucune action aujourd'hui (Jour {days_after_sowing}).\n"
+                f"⏳ Prochain apport prévu dans {delta} jours."
+            )
+
+        # Tous les apports sont passés
+        return (
+            f"✅ Fertilisation terminée pour cette saison (Jour {days_after_sowing}).\n"
+            "Surveiller l'état du feuillage et prévoir un apport foliaire si signes de carence."
+        )
+
 
     def estimate_harvest(self, crop_name: str, sowing_date_str: str) -> str:
-        """Estime la date de récolte (simplifiée)."""
-        profile = SahelAgronomyDB.DATA.get(crop_name.lower())
-        if profile:
-            return f"Pour le {profile.name}, la récolte est prévue environ {profile.cycle_days} jours après le semis (selon pluies et sol)."
-        return "Durée de cycle inconnue."
+        """
+        Estime la date de récolte pour une culture donnée.
+        Version robuste, avec calcul réel et conseils sahéliens.
+        """
+
+        # Normalisation
+        crop_key = (crop_name or "").lower().strip()
+        profile = SahelAgronomyDB.DATA.get(crop_key)
+
+        if not profile:
+            return f"Culture inconnue : '{crop_name}'."
+
+        # Vérification de la date
+        try:
+            sowing_date = datetime.strptime(sowing_date_str, "%Y-%m-%d")
+        except ValueError:
+            return (
+                "Format de date invalide. Utilisez le format AAAA-MM-JJ.\n"
+                "Exemple : 2025-06-15"
+            )
+
+        # Calcul de la date estimée
+        harvest_date = sowing_date + timedelta(days=profile.cycle_days)
+
+        # Construction du message
+        return (
+            f"Estimation Récolte – {profile.name}\n"
+            f"- Cycle moyen : {profile.cycle_days} jours\n"
+            f"- Semis effectué le : {sowing_date.strftime('%d/%m/%Y')}\n"
+            f"- Récolte estimée : {harvest_date.strftime('%d/%m/%Y')}\n\n"
+            "Conseils Sahel :\n"
+            "- La date peut varier selon les pluies et la fertilité du sol.\n"
+            "- En cas de stress hydrique prolongé, ajouter 7 à 15 jours.\n"
+            "- Sur sols pauvres, la maturité peut être retardée.\n"
+            "- Sur sols bien fumés, la récolte peut être légèrement avancée."
+        )

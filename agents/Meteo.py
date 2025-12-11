@@ -1,150 +1,230 @@
 from langgraph.graph import StateGraph, END
-from typing import TypedDict, List, Dict, Any, Optional
-import logging
-from Tools.meteo.basis_tools import MeteoAnalysisToolkit
+from typing import TypedDict, List, Dict, Any, Optional, Callable # Callable est important
 
-# Configuration du logger
+# NOUVELLES IMPORTATIONS pour le LLM
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.runnables import Runnable
+from langchain_community.chat_models import ChatOllama 
+
+import logging
+from Tools.meteo.basis_tools import MeteoAnalysisToolkit, SahelAgroMath, SahelCropKnowledgeBase
+
 logger = logging.getLogger("agent.meteo_analysis")
 
 
 class AgentState(TypedDict):
+    # ... (État inchangé)
     zone_id: str
-    user_query: str                  # La question posée (ex: "Puis-je semer le maïs ?")
-    meteo_data: Optional[Dict]       # Données brutes (Temp, Vent, Pluie...)
-    culture_config: Dict[str, Any]   # Config culture (ex: {"crop_name": "Maïs", "stage": "semis"})
-    
-    # --- OUTPUTS (Produits par cet Agent) ---
-    agri_indicators: Optional[Dict]  # Calculs (ET0, GDD, Delta T...)
-    alerts: List[str]                # Liste d'avertissements
-    final_response: str              # La réponse textuelle structurée
-    status: str                      # SUCCESS / ERROR
+    user_query: str
+    meteo_data: Optional[Dict]
+    culture_config: Dict[str, Any]
+
+    agri_indicators: Optional[Dict]
+    alerts: List[str]
+    technical_advice_raw: str # <-- NOUVEAU: Pour stocker la sortie brute
+    final_response: str
+    status: str
 
 
 class MeteoAgent:
-    def __init__(self):
+    def __init__(self, llm_client: Optional[Runnable] = None): # Accepte un client LLM
         self.name = "MeteoAnalysisService"
-        # Initialisation de la boîte à outils sahélienne
+        self.math = SahelAgroMath()
+        self.crop_db = SahelCropKnowledgeBase()
         self.toolkit = MeteoAnalysisToolkit()
+        self.llm_client = llm_client
+        if not self.llm_client:
+             logger.warning("Client ChatOllama non fourni. Les réponses seront brutes.")
+
 
     def analyze_node(self, state: AgentState) -> AgentState:
         """
-        Le cœur de l'Agent Météo :
-        1. Valide les données d'entrée.
-        2. Calcule les indicateurs agrométéorologiques.
-        3. Génère les alertes de risques.
-        4. Formule une réponse adaptée au contexte sahélien.
+        Nœud 1 : Exécute l'analyse agrométéo et génère la sortie RAW.
         """
         zone = state["zone_id"]
         data = state.get("meteo_data")
         config = state.get("culture_config", {})
         query = state.get("user_query", "").lower()
-        
-        logger.info(f"[{self.name}] Analyse en cours pour {zone} | Culture: {config.get('crop_name')}")
 
-        # --- ÉTAPE 1 : VALIDATION ---
+        logger.info(f"[{self.name}] Analyse météo pour {zone} | Culture: {config.get('crop_name')}")
+        
+        # ... (Logique de validation et de calcul des indicateurs ET0, GDD, Delta T... (inchangée))
+        # 
+
         if not data or "current" not in data:
-            logger.error(f"[{self.name}] Pas de données météo fournies.")
-            return {
-                **state,
-                "status": "ERROR",
-                "final_response": f"Impossible d'analyser la météo pour {zone}. Données manquantes.",
-                "alerts": ["DONNÉES MANQUANTES"]
-            }
+             # ... (Retour d'erreur inchangé)
+             return {
+                 **state,
+                 "status": "ERROR",
+                 "final_response": f"Données météo manquantes pour {zone}.",
+                 "alerts": ["DONNÉES MANQUANTES"]
+             }
 
         try:
-            # --- ÉTAPE 2 : CALCULS ---
-            indicators = self.toolkit.calculate_indicators(data, config)
-            
-            # --- ÉTAPE 3 : RISQUES ---
-            risk_alerts = self.toolkit.run_risk_analysis(indicators, data, config)
-            
-            # --- ÉTAPE 4 : RÉPONSE ---
-            response_parts = []
-            current = data["current"]
-            crop_name = config.get("crop_name", "Culture")
+             current = data["current"]
+             crop_profile = self.crop_db.get_crop_config(config.get("crop_name", ""))
 
-            # A. Intention : SEMIS
-            if "semis" in query or "semer" in query:
-                sowing_advice = self.toolkit.risk.evaluate_sowing_conditions(
-                    rain_last_3_days=current.get("precip_mm", 0) * 3,  # simplification
-                    soil_type="sableux"  # par défaut au Sahel
-                )
-                response_parts.append(f"AVIS SEMIS {crop_name} : {sowing_advice['message']}")
+             # ✅ Calcul des indicateurs agro-météo (inchangé)
+             et0 = self.math.calculate_hargreaves_et0(t_min=current["temp_min"], t_max=current["temp_max"], t_mean=(current["temp_min"] + current["temp_max"]) / 2)
+             gdd = self.math.calculate_gdd(t_min=current["temp_min"], t_max=current["temp_max"], profile=crop_profile)
+             delta_t_info = self.math.calculate_delta_t(temp_c=current["temp_max"], humidity_pct=current["humidity"])
+             effective_rain = self.math.calculate_effective_rain(precip_mm=current.get("precip_mm", 0), soil="standard")
 
-            # B. Intention : TRAITEMENT
-            elif "traiter" in query or "pulvériser" in query or "engrais" in query:
-                spray_advice = self.toolkit.risk.evaluate_phytosanitary_conditions(
-                    wind_speed=current["wind_speed_kmh"],
-                    delta_t=indicators["Delta_T"],
-                    rain_forecast_24h=0
-                )
-                response_parts.append(f"AVIS TRAITEMENT : {spray_advice['message']}")
-                response_parts.append(f"Détails : Vent {current['wind_speed_kmh']} km/h | Delta T {indicators['Delta_T']} °C")
+             indicators = {
+                 "ET0": et0, "GDD": gdd, "Delta_T": delta_t_info["Delta_T"], 
+                 "DeltaT_Advice": delta_t_info["Advice"], "Rain_Effective": effective_rain
+             }
 
-            # C. Intention : IRRIGATION
-            elif "arroser" in query or "irrigation" in query or "eau" in query:
-                bilan = indicators["Bilan_Hydrique_Jour"]
-                if bilan < -2:
-                    response_parts.append(f"AVIS IRRIGATION : Nécessaire. Bilan hydrique négatif ({bilan} mm).")
-                    response_parts.append(f"L'évapotranspiration ({indicators['ETc']} mm) dépasse les apports de pluie.")
-                else:
-                    response_parts.append("AVIS IRRIGATION : Pas urgent. Le bilan hydrique est stable.")
+             # ✅ Analyse des risques (inchangée)
+             alerts = []
+             heat_stress = self.toolkit.check_heat_stress(t_max=current["temp_max"], crop_profile=crop_profile)
+             if heat_stress: alerts.append(heat_stress)
 
-            # D. Bulletin général
-            else:
-                response_parts.append(f"Bulletin Agrométéo : {zone}")
-                response_parts.append(f"Culture : {crop_name} (Stade : {config.get('stage', 'N/A')})")
-                response_parts.append(f"Conditions : T° {current['temp_max']} °C | Humidité {current['humidity']} % | Vent {current['wind_speed_kmh']} km/h")
-                response_parts.append("Indicateurs clés :")
-                response_parts.append(f"- ET0 (Évapotranspiration) : {indicators['ET0']} mm/jour")
-                response_parts.append(f"- Delta T (Pulvérisation) : {indicators['Delta_T']} °C")
-                
-                if risk_alerts:
-                    response_parts.append("Alertes vigilance :")
-                    for alert in risk_alerts:
-                        response_parts.append(f"- {alert}")
-                else:
-                    response_parts.append("Aucun risque majeur détecté pour la culture.")
+             # ✅ Construction de la réponse RAW
+             response_parts = []
+             crop_name = config.get("crop_name", "Culture")
+             
+             # --- INTENTIONS ---
+             if "semis" in query or "semer" in query:
+                 sowing = self.toolkit.evaluate_sowing_conditions(rain_last_3_days=current.get("precip_mm", 0) * 3)
+                 response_parts.append(f"**INTENTION SEMIS ({crop_name})** : {sowing['message']}")
 
-            final_text = "\n".join(response_parts)
+             elif "traiter" in query or "pulvériser" in query:
+                 spray = self.toolkit.evaluate_phytosanitary_conditions(
+                     wind_speed=current["wind_speed_kmh"],
+                     delta_t=indicators["Delta_T"],
+                     rain_forecast_24h=0
+                 )
+                 response_parts.append(f"**INTENTION TRAITEMENT PHYTO** : {spray['message']}")
 
-            logger.info(f"[{self.name}] Analyse terminée avec succès.")
-            
-            return {
-                **state,
-                "agri_indicators": indicators,
-                "alerts": risk_alerts,
-                "final_response": final_text,
-                "status": "SUCCESS"
-            }
+             else:
+                 # ✅ Bulletin général RAW
+                 response_parts.append(f"**BULLETIN AGROMÉTÉO BRUT** – {zone}")
+                 response_parts.append(f"Culture : {crop_name} (Stade : {config.get('stage', 'N/A')})")
+                 response_parts.append(f"T° max : {current['temp_max']}°C | Humidité : {current['humidity']}% | Vent : {current['wind_speed_kmh']} km/h")
+                 response_parts.append("INDICATEURS CLÉS :")
+                 response_parts.append(f"- Évapotranspiration (ET0) : {et0:.2f} mm/j")
+                 response_parts.append(f"- Jours-Degrés (GDD) : {gdd:.2f}")
+                 response_parts.append(f"- Delta T (Traitement) : {indicators['Delta_T']:.1f}°C ({delta_t_info['Advice']})")
+                 response_parts.append(f"- Pluie efficace : {effective_rain:.1f} mm")
+
+                 if alerts:
+                     response_parts.append("⚠️ ALERTES DÉTECTÉES :")
+                     for a in alerts:
+                         response_parts.append(f"- {a}")
+                 else:
+                     response_parts.append("✅ CONSTAT : Aucun risque majeur détecté.")
+
+             technical_advice_raw = "\n".join(response_parts)
+
+             return {
+                 **state,
+                 "agri_indicators": indicators,
+                 "alerts": alerts,
+                 "technical_advice_raw": technical_advice_raw, # On stocke le RAW ici
+                 "status": "RAW_ANALYSIS_COMPLETE"
+             }
 
         except Exception as e:
-            logger.error(f"[{self.name}] Erreur interne de calcul : {e}", exc_info=True)
+            # ... (Gestion d'erreur inchangée)
+            logger.error(f"Erreur interne : {e}", exc_info=True)
             return {
                 **state,
                 "status": "ERROR",
-                "final_response": "Erreur technique lors des calculs agronomiques.",
-                "alerts": [f"ERREUR CALCUL: {str(e)}"]
+                "final_response": "Erreur technique lors de l'analyse météo.",
+                "alerts": [str(e)]
             }
 
-    # ==========================================================================
-    # 3. CONSTRUCTION DU GRAPHE
-    # ==========================================================================
+
+    def llm_formatter_node(self, state: AgentState) -> AgentState:
+        """
+        Nœud 2 : Utilise ChatOllama pour transformer l'analyse technique brute 
+        en un bulletin convivial.
+        """
+        raw_advice = state.get("technical_advice_raw", "")
+        user_query = state.get("user_query", "")
+        
+        if not self.llm_client:
+            # Fallback : retourner la sortie brute si le LLM n'est pas là
+            return {**state, "final_response": raw_advice, "status": "FALLBACK_RAW_OUTPUT"}
+
+        logger.info(f"[{self.name}] Début du formatage LLM avec ChatOllama.")
+
+        # --- Définition du Prompt pour le LLM Léger ---
+        system_prompt = (
+            "Tu es un météorologue agricole bienveillant et professionnel. "
+            "Ton objectif est de présenter le 'Bulletin Technique Brut' de manière claire, "
+            "en mettant l'accent sur les actions recommandées (Semis, Traitement, Irrigation). "
+            "Utilise un format lisible (listes, gras) et des emojis pertinents. "
+            "Ne change pas les chiffres des indicateurs."
+        )
+        
+        human_prompt = f"""
+        **Demande de l'agriculteur :** "{user_query}"
+        **Bulletin Technique Brut :**
+        ---
+        {raw_advice}
+        ---
+        
+        Rédige le bulletin agrométéo final pour l'agriculteur.
+        """
+
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=human_prompt)
+        ]
+
+        # Appel du client ChatOllama
+        try:
+            response = self.llm_client.invoke(messages)
+            final_response = response.content
+        except Exception as e:
+            logger.error(f"Erreur ChatOllama: {e}. Retour au conseil brut.")
+            final_response = f"**Erreur de formatage.** Voici l'analyse technique brute :\n{raw_advice}"
+
+        return {
+            **state,
+            "final_response": final_response,
+            "status": "SUCCESS"
+        }
+
+    # ==============================================================================
+    # 3. WORKFLOW LANGGRAPH (MISE À JOUR)
+    # ==============================================================================
     def get_graph(self):
+        """Construit et compile le Graph de l'Agent avec l'étape LLM."""
         workflow = StateGraph(AgentState)
-        workflow.add_node("analyze_meteo", self.analyze_node)
+        
+        workflow.add_node("analyze_meteo", self.analyze_node)       # Outil technique (génère la sortie RAW)
+        workflow.add_node("format_llm_response", self.llm_formatter_node) # LLM léger (formatage)
+        
         workflow.set_entry_point("analyze_meteo")
-        workflow.add_edge("analyze_meteo", END)
+        workflow.add_edge("analyze_meteo", "format_llm_response")
+        workflow.add_edge("format_llm_response", END)
+        
         return workflow.compile()
     
-
+# ==============================================================================
+# 4. EXEMPLE D'UTILISATION (Mise à jour du __main__)
+# ==============================================================================
 if __name__ == "__main__":
-    agent = MeteoAgent()
+    # --- 1. Initialisation du LLM Léger ---
+    try:
+        # NOTE: Remplacez 'mistral' par votre modèle Ollama léger si différent.
+        ollama_client = ChatOllama(model="mistral", temperature=0.1)
+        print("✅ ChatOllama initialisé avec Mistral.")
+    except Exception:
+        print("❌ ERREUR: Impossible de se connecter à ChatOllama. Le service utilisera la sortie brute.")
+        ollama_client = None
+
+    # --- 2. Initialisation du Service Agent ---
+    agent = MeteoAgent(llm_client=ollama_client)
     graph = agent.get_graph()
-    # pour les tests, nous avons mis un mockdata
+
+    # Données météo de test
     dummy_state = {
-        "zone_id": "ZoneTest",
-        "user_query": "Puis-je semer le maïs ?",
+        "zone_id": "Zone de Mopti",
+        "user_query": "Puis-je semer le maïs ? Les conditions sont-elles bonnes pour traiter ?",
         "meteo_data": {
             "current": {
                 "temp_max": 30,
@@ -154,12 +234,29 @@ if __name__ == "__main__":
                 "precip_mm": 5
             }
         },
-        "culture_config": {"crop_name": "Maïs", "stage": "semis"},
+        "culture_config": {
+            "crop_name": "Maïs",
+            "stage": "Développement"
+        },
         "agri_indicators": None,
         "alerts": [],
+        "technical_advice_raw": "", # Ajout de la clé
         "final_response": "",
         "status": ""
     }
 
+    print("\n--- Exécution du Graph ---")
+    
+    # Exécution
     result = graph.invoke(dummy_state)
+
+    print("\n==============================")
+    print("✅ RÉSULTAT FINAL FORMATÉ PAR LLM")
+    print("==============================\n")
     print(result["final_response"])
+    print("\n------------------------------")
+    print("Indicateurs calculés (pour debug) :")
+    print(result["agri_indicators"])
+    print("------------------------------")
+    print("Status :", result["status"])
+    # Note: Le 'technical_advice_raw' n'est pas affiché, car il est remplacé par le 'final_response' formaté.

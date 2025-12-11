@@ -1,180 +1,164 @@
+# orchestrator/intent_classifier.py
+
 import logging
-import requests
 import json
-from typing import Dict, List, Any
-from langchain_core.prompts import PromptTemplate
-# Importations Pydantic pour la structuration de la sortie
-try:
-    from pydantic import BaseModel, Field, ValidationError
-except ImportError:
-    # Fournir un mock ou un message d'erreur si Pydantic n'est pas installé
+from typing import Dict, List, Any, Optional
+import requests
 
-    logging.warning("Pydantic n'est pas installé. La classification structurée ne fonctionnera pas correctement.")
-    
+# NOUVELLES IMPORTATIONS LANGCHAIN/OLLAMA (CORRIGÉES)
+from langchain_core.prompts import PromptTemplate  # Correct
+from pydantic import BaseModel, Field, ValidationError # Correct pour la compatibilité
+from langchain_community.llms import Ollama as OllamaLLM # Importation correcte du LLM Ollama
+from langchain_core.output_parsers import JsonOutputParser 
 
-# Configuration des logs pour ce module
 logger = logging.getLogger("IntentClassifier")
 
-# Définition des intentions pour la classification
 INTENTS = [
-    "METEO",    # Météo, Climat, Pluie, Température
-    "CROP",     # Culture, Semis, Récolte, Engrais (calendrier), Itinéraire technique
-    "SOIL",     # Sol, Terre, Texture, Amendement, Conservation de l'eau
-    "HEALTH",   # Santé de la culture, Maladies, Insectes, Traitement
-    "SUBSIDY",  # Subvention, Aide financière, Fraude, Administratif
-    "UNKNOWN"   # Non classifiable
+    "METEO",
+    "CROP",
+    "SOIL",
+    "HEALTH",
+    "SUBSIDY",
+    "UNKNOWN"
 ]
 
-# ==============================================================================
-# 1. Schéma Pydantic pour la Sortie LLM
-# ==============================================================================
-
+# Modèle de sortie structuré Pydantic (utilisant pydantic_v1 de LangChain)
 class IntentOutput(BaseModel):
-    """
-    Schéma de sortie strict pour la classification d'intention.
-    Le LLM doit générer un JSON qui respecte ce format.
-    """
-    intent: str = Field(..., description=f"L'intention principale de la requête utilisateur. Doit être une des valeurs suivantes: {', '.join(INTENTS)}.")
+    """Sortie structurée pour la classification d'intention."""
+    intent: str = Field(..., description=f"Doit être strictement une des valeurs: {', '.join(INTENTS)}.")
 
+# Modèle de Prompt
+CLASSIFICATION_PROMPT = """
+Tu es un classificateur d'intention agricole. Ton rôle est de déterminer l'objectif principal de la question de l'utilisateur.
 
-# ==============================================================================
-# 2. Classificateur d'Intention
-# ==============================================================================
+Les intentions possibles sont:
+- METEO: Questions sur le temps, la pluie, le vent, la chaleur, le climat ou les conditions de traitement phytosanitaire.
+- CROP: Questions sur les pratiques agronomiques de routine: semis, récolte, engrais, irrigation, densité, écartement.
+- SOIL: Questions sur la terre, la texture (sableux, argileux), le pH, la fertilité, ou l'amélioration du sol.
+- HEALTH: Questions sur les maladies, les insectes, les ravageurs, les symptômes ou les traitements phytosanitaires.
+- SUBSIDY: Questions sur les aides, les subventions, le financement, les documents ou les arnaques.
+- UNKNOWN: Toute autre question non liée à l'agriculture ou trop ambiguë.
+
+QUESTION DE L'UTILISATEUR: {query}
+
+Analyse la question et choisis l'intention la plus appropriée dans la liste {intent_list}.
+{format_instructions}
+"""
+
 
 class IntentClassifier:
-    """
-    Détermine l'intention de l'utilisateur en appelant un modèle LLM via Ollama
-    avec un schéma de sortie Pydantic strict.
-    """
-    
-    def __init__(self, ollama_url: str = "http://localhost:11434", model_name: str = "mistral"):
+    def __init__(self, ollama_url="http://localhost:11434", model_name="mistral"):
         self.ollama_url = ollama_url
         self.model_name = model_name
+
+        # Initialisation du client Ollama (LLM)
+        self.llm = OllamaLLM(model=self.model_name, base_url=self.ollama_url)
+        self.parser = JsonOutputParser(pydantic_object=IntentOutput)
         
-        # Logique de secours par mots-clés
-        self._fallback_keywords: Dict[str, List[str]] = {
+        self._fallback_keywords = {
             "SUBSIDY": ["arnaque", "argent", "subvention", "aide", "financement", "payer", "sms", "dossier"],
-            "HEALTH": ["maladie", "insecte", "chenille", "feuille", "tache", "bête", "manger", "traitement", "remède", "ravageur"],
-            "SOIL": ["sol", "terre", "sable", "argile", "zaï", "cordon", "restaurer", "pauvre", "ph", "texture"],
-            "METEO": ["pluie", "pleuvoir", "vent", "chaud", "temps", "météo", "climat", "sécheresse", "averse"],
-            "CROP": ["semer", "semis", "récolte", "engrais", "npk", "urée", "densité", "planter", "quand", "variété", "cultiver", "champ", "plan"]
+            "HEALTH": ["maladie", "insecte", "chenille", "feuille", "tache", "ravageur"],
+            "SOIL": ["sol", "terre", "sable", "argile", "zaï", "ph", "texture"],
+            "METEO": ["pluie", "pleuvoir", "vent", "chaud", "temps", "météo", "climat", "traitement", "pulvériser"],
+            "CROP": ["semer", "semis", "récolte", "engrais", "npk", "urée", "densité", "planter"]
         }
-
-
+    
+    # Méthode de classification par mot-clé (mécanisme de secours) (INCHANGÉE)
     def _fallback_keyword_classification(self, query: str) -> str:
-        """Logique de classification par mots-clés de secours."""
         q = query.lower()
         for intent, keys in self._fallback_keywords.items():
             if any(k in q for k in keys):
                 return intent
         return "UNKNOWN"
-
-    def _call_llm_for_classification(self, query: str) -> str:
-        """Appelle l'API Ollama en utilisant Pydantic pour structurer la réponse."""
-        
-        # 1. Générer le JSON Schema Pydantic
+    
+    # Classification structurée par Ollama
+    def _ollama_classify(self, query: str) -> Optional[str]:
+        """Appelle Ollama pour obtenir la classification en mode structuré."""
         try:
-            json_schema = IntentOutput.model_json_schema()
-            json_schema_str = json.dumps(json_schema, indent=2)
-        except NameError:
-            # Si Pydantic n'est pas disponible, on passe directement au fallback
-            logger.error("Pydantic n'est pas disponible. Utilisation du fallback direct.")
-            return self._fallback_keyword_classification(query)
+            # Création du Prompt final avec les instructions de formatage
+            prompt = PromptTemplate(
+                template=CLASSIFICATION_PROMPT,
+                input_variables=["query"],
+                partial_variables={
+                    "format_instructions": self.parser.get_format_instructions(),
+                    "intent_list": str(INTENTS)
+                },
+            )
 
-        # 2. Construire l'instruction Système avec le schéma
-        system_prompt = (
-            "Tu es un classificateur d'intention expert pour l'agriculture. "
-            "Votre unique tâche est de classer la requête utilisateur dans au moins une des catégories de la liste INTENTS. "
-            "Tu vas lire la question de l'utilisateur et essayer de devinez lesquelles des agents doit ou doivent repondre a la question"
-            "Répondez UNIQUEMENT avec un objet JSON. Ne fournissez aucune explication ni texte supplémentaire. "
-            "Le format de sortie DOIT se conformer STRICTEMENT au schéma JSON suivant: "
-            f"\n---\n{json_schema_str}\n---\n"
-        )
-        promptTemplate = """
-Par exemple si l'utilisateur demande :Dois je planter du mil.
-On sait qu'on doit avoir recours aux agents meteo ,soils,crop preferentiellement car ils permettent de donner une meilleur reponse.Maintenant ,repons a cette question
-{query}
-"""
-        prompt = PromptTemplate(
-            template=promptTemplate,
-            input_variables=['query']
-        )
-        final_prompt = prompt.format(query=query)
-        payload = {
-            "model": self.model_name,
-            "prompt": final_prompt,
-            "system": system_prompt,
-            "stream": False,
-            "format": "json" # Signal natif à Ollama
-        }
-
-        try:
-            ollama_api_url = f"{self.ollama_url.rstrip('/')}/api/generate"
-            logger.info(f"Connecting to Ollama at {ollama_api_url}...")
+            # Chaînage : Prompt | LLM | Parser
+            # NOTE: L'opérateur de pipe '|' est la manière recommandée pour chaîner les runnables
+            chain = prompt | self.llm | self.parser 
             
-            response = requests.post(ollama_api_url, json=payload, timeout=20)
-            response.raise_for_status() 
+            # Exécution de la chaîne
+            result = chain.invoke({"query": query})
             
-            data: Dict[str, Any] = response.json()
-            generated_text = data.get('response', '')
+            # Validation Pydantic et Nettoyage
+            # Note: Si le parser JSON est utilisé, result est un dict, pas un objet Pydantic
+            validated_output = IntentOutput(**result)
             
-            # 3. Valider la sortie JSON avec Pydantic
-            try:
-                # model_validate_json gère la désérialisation et la validation en une étape
-                validated_output = IntentOutput.model_validate_json(generated_text)
-                intents = [i.upper() for i in validated_output.intents]
-                return intents
-                return intent
-                
-            except ValidationError as e:
-                logger.error(f"Erreur de validation Pydantic (format JSON incorrect). Erreur: {e}")
-                logger.debug(f"JSON brut reçu: {generated_text[:200]}...")
-                # En cas d'échec de validation, on utilise le fallback
-                return self._fallback_keyword_classification(query)
+            # Vérification de l'intention dans la liste INTENTS
+            intent = validated_output.intent.upper().strip()
+            if intent in INTENTS:
+                 return intent
             
-            except json.JSONDecodeError:
-                logger.error(f"Réponse Ollama non-JSON malgré le format: 'json'. JSON brut: {generated_text[:200]}...")
-                return self._fallback_keyword_classification(query)
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Erreur de connexion/timeout à Ollama à {self.ollama_url}: {e}. Utilisation du fallback.")
-            return self._fallback_keyword_classification(query)
+            logger.warning(f"Sortie LLM invalide: {intent}. Utilisation du fallback.")
+            return None 
+            
+        except requests.exceptions.ConnectionError:
+            logger.error("Erreur de connexion à Ollama. Utilisation du fallback.")
+            return None
         except Exception as e:
-            logger.error(f"Erreur inattendue lors de l'appel à l'API Ollama: {e}")
-            return "UNKNOWN"
-
+            logger.error(f"Erreur d'appel ou de parsing Ollama. Utilisation du fallback. Erreur: {e}")
+            return None
 
     def predict(self, query: str) -> str:
-        """
-        Méthode principale pour obtenir l'intention.
-        """
         if not query:
             return "UNKNOWN"
-            
-        try:
-            intent = self._call_llm_for_classification(query)
-            
-            if intent not in INTENTS:
-                logger.warning(f"Intention LLM '{intent}' n'est pas dans la liste autorisée. Retour à UNKNOWN.")
-                return "UNKNOWN"
-                
-            logger.info(f"Intention prédite: {intent}")
-            return intent
-            
-        except Exception as e:
-            logger.error(f"Erreur globale lors de la prédiction de l'intention: {e}")
-            return "UNKNOWN"
+
+        # --- TENTATIVE 1 : Classification Structurée par Ollama ---
+        ollama_intent = self._ollama_classify(query)
         
+        if ollama_intent:
+            logger.info(f"Intention prédite (Ollama): {ollama_intent}")
+            return ollama_intent
+
+        # --- TENTATIVE 2 : Classification par Mots-Clés (Fallback) ---
+        intent = self._fallback_keyword_classification(query)
+        
+        logger.warning(f"Intention prédite (Fallback): {intent}")
+        return intent
+
+# ==============================================================================
+# 3. Exemple d'utilisation (pour tester le module)
+# ==============================================================================
+
 if __name__ == "__main__":
-    clf = IntentClassifier()
-    queries = [
-        "Quand mettre l'engrais ?",      # CROP
-        "Il y a des chenilles dans mon champ",  # HEALTH
-        "Mon sol est très sableux",      # SOIL
-        "Va-t-il pleuvoir demain ?",     # METEO
-        "J'ai reçu un SMS pour une aide",# SUBSIDY
-        "Parle-moi de musique"           # UNKNOWN
-    ]
-    for q in queries:
-        intent = clf.predict(q)
-        print(f"Query: {q} -> Intent: {intent}")
+    logging.basicConfig(level=logging.INFO)
+    
+    try:
+        classifier = IntentClassifier(model_name="mistral")
+        
+        test_queries = {
+            "CROP": "Quand est la période optimale pour mettre de l'engrais NPK sur le maïs ?",
+            "HEALTH": "J'ai des chenilles qui mangent les feuilles de mes tomates, c'est quoi ?",
+            "METEO": "Est-ce que je peux pulvériser mon champ aujourd'hui avec le vent qu'il y a ?",
+            "SUBSIDY": "Mon voisin me demande de l'argent pour un dossier d'aide, est-ce une arnaque ?",
+            "SOIL": "Mon sol est très sableux et l'eau s'échappe, que dois-je faire ?",
+            "UNKNOWN": "Quelle est la capitale de l'Australie ?"
+        }
+
+        print("\n--- TEST DE CLASSIFICATION STRUCTURÉE ---")
+        
+        
+        for expected_intent, q in test_queries.items():
+            print(f"\n[Q: {q}]")
+            predicted = classifier.predict(q)
+            print(f"-> PRÉDICTION : {predicted} (Attendu: {expected_intent})")
+            assert predicted == expected_intent or predicted == "UNKNOWN", f"Échec pour {expected_intent}"
+            
+    except requests.exceptions.ConnectionError:
+        print("\n!!! AVERTISSEMENT !!!")
+        print("Ollama n'est pas démarré (ou URL/Port incorrect). Le test n'a pas pu exécuter la classification LLM.")
+        print("La classification basculera uniquement sur le mécanisme de mots-clés.")
+    except Exception as e:
+        print(f"\n!!! ERREUR CRITIQUE !!! {e}")

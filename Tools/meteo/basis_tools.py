@@ -118,7 +118,7 @@ class SahelAgroMath:
         return {"Delta_T": dT, "Advice": advice}
 
 
-class SahelRiskEvaluator:
+class MeteoAnalysisToolkit:
     """
     Transforme les chiffres en conseils pour le paysan burkinabé.
     """

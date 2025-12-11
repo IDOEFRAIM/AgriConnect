@@ -1,5 +1,5 @@
 from flask import Flask, request
-from Orchestrator.orchestrator import AgriculturalOrchestrator
+from Orchestrator.main_orchestrator import AgriculturalOrchestrator
 app = Flask(__name__)
 
 @app.route("/gen", methods=["POST"])
