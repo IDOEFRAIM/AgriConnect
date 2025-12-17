@@ -1,55 +1,85 @@
-from flask import Flask, request
-from Orchestrator.main_orchestrator import AgriculturalOrchestrator
-app = Flask(__name__)
+# api.py
+import os
+import sys
 
-@app.route("/gen", methods=["POST"])
-def generate():
-    payload = request.get_json()  
+# Ajoute le dossier parent (AgConnect) au sys.path
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.dirname(CURRENT_DIR)
+
+if PARENT_DIR not in sys.path:
+    sys.path.append(PARENT_DIR)
+
+if CURRENT_DIR not in sys.path:
+    sys.path.append(CURRENT_DIR)
     
-    print(payload)             
-    orchestrator = AgriculturalOrchestrator()
-    main_graph = orchestrator.get_graph()
-    
-    print("\n>>> 🤖 DÉMARRAGE DU SYSTÈME AGRI-COPILOTE (BURKINA) <<<\n")
-    result = main_graph.invoke({
-            "user_id": "U12345",
-            "zone_id": "Koudougou", 
-            "user_query": payload.get('message','donne un conseil agricole'),
-            "intent": "",
-            "context_data": {},
-            "final_response": "",
-            "execution_trace": []
-        })
+import logging
+from flask import Flask, request, jsonify
+
+# Import de ton orchestrateur
+from orchestrator import AgriculturalOrchestrator, OrchestratorState
+
+# Initialisation Flask
+app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+
+# Initialisation de l'orchestrateur + graphe
+orchestrator = AgriculturalOrchestrator()
+graph = orchestrator.get_graph()
+
+@app.route("/api/ask", methods=["POST"])
+def ask():
     """
-    # --- JEU DE TEST MULTI-AGENTS ---
-    test_queries = [
-        ("Meteo", "Est-ce qu'il va pleuvoir à Koudougou pour semer ?"),
-        ("Health", "J'ai des chenilles dans le cornet de mon maïs, aidez-moi !"),
-        ("Subsidy", "J'ai reçu un SMS pour payer 5000F pour le fonds ONU, c'est vrai ?"),
-        ("Crop", "Quand est-ce que je dois mettre l'engrais NPK ?"),
-        ("Soil", "Ma terre est sableuse et ne retient pas l'eau.")
-    ]
-    
-    for category, query in test_queries:
-        print(f"\n📢 USER ({category}): {query}")
-        print("-" * 50)
-        
-        result = main_graph.invoke({
-            "user_id": "U12345",
-            "zone_id": "Koudougou", 
+    Endpoint principal :
+    {
+        "user_id": "123",
+        "zone_id": "Mopti",
+        "query": "Mon sol est sableux, que faire ?"
+    }
+    """
+    try:
+        data = request.get_json()
+
+        if not data or "query" not in data:
+            return jsonify({"error": "Champ 'query' manquant"}), 400
+
+        user_id = data.get("user_id", "anonymous")
+        zone_id = data.get("zone_id", "ouaga")
+        query = data["query"]
+
+        # Construction de l'état initial
+        state: OrchestratorState = {
+            "user_id": user_id,
+            "zone_id": zone_id,
             "user_query": query,
             "intent": "",
             "context_data": {},
             "final_response": "",
-            "execution_trace": []
+            "execution_trace": [],
+            "meteo_data": None,
+            "culture_config": None,
+            "soil_config": None,
+            "user_profile": None
+        }
+
+        # Exécution du graphe LangGraph
+        result = graph.invoke(state)
+
+        print(result)
+        return jsonify({
+            "response": result["final_response"],
+            "intent": result["intent"],
+            "trace": result["execution_trace"]
         })
-        
-        print(f"🧠 ORCHESTRATOR TRACE: { ' -> '.join(result['execution_trace']) }")
-        print("\n🤖 RÉPONSE FINALE :")
-        print(result["final_response"])
-        print("=" * 60)   
-        """
-    return {"status": "received", "data": result}
+
+    except Exception as e:
+        logging.exception("Erreur API")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"status": "API Agricole opérationnelle ✅"})
+
 
 if __name__ == "__main__":
-    app.run(debug=True,host='localhost',port=5000)
+    app.run(host="0.0.0.0", port=5000, debug=True)

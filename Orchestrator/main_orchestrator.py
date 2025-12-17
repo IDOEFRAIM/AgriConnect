@@ -1,229 +1,287 @@
 # orchestrator/orchestrator.py
 import os
 import sys
+import logging
+from typing import TypedDict, List, Dict, Any, Optional
 
-# Ajoute le dossier parent (AgConnect) au sys.path
+# --- Configuration du chemin pour les imports locaux ---
+# Permet d'importer les modules depuis le dossier parent
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.dirname(CURRENT_DIR)
-
 if PARENT_DIR not in sys.path:
     sys.path.append(PARENT_DIR)
 
-# NOUVELLE IMPORTATION pour le LLM (remplace l'import de base)
+# --- Imports LangChain/LangGraph ---
 from langchain_community.chat_models import ChatOllama
+from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.graph import StateGraph, END
-from typing import TypedDict, List, Dict, Any, Optional
-import logging
 
-# Assurez-vous que ces modules sont accessibles
+# --- Imports Modules Locaux (Architecture Modulaire) ---
 from orchestrator.intention import IntentClassifier
-from orchestrator.central_data_manager import CentralDataManager, OrchestratorState as DataManagerState # Renommé pour éviter le conflit
+from orchestrator.central_data_manager import CentralDataManager
+# Assurez-vous que ces fichiers existent ou commentez les imports si test partiel
+try:
+    from agents.Meteo import MeteoAgent  # Suppose que MeteoAgent a une méthode get_graph()
+    from agents.Crop import BurkinaCropAgent
+    from agents.Soil import SoilManagementService
+    from agents.Health import HealthManagementService
+    from agents.subsidy import SubsidyManagementService
+except ImportError as e:
+    logging.warning(f"⚠️ Certains agents n'ont pas pu être importés : {e}")
 
-# Agents (NOTE: Assurez-vous que ces classes sont définies et importables)
-from agents.Crop import CropManagementService
-from agents.Health import HealthManagementService
-from agents.Meteo import MeteoAgent
-from agents.Soil import SoilManagementService
-from agents.subsidy import SubsidyManagementService
-
-
+# --- Configuration Logging ---
 logger = logging.getLogger("Orchestrator")
-
+logger.setLevel(logging.INFO)
 
 # ======================================================================
-# 1. ÉTAT DE L'ORCHESTRATEUR (RÉALIGNEMENT)
+# 1. DÉFINITION DE L'ÉTAT GLOBAL (Le "Bus" de données)
 # ======================================================================
 class OrchestratorState(TypedDict):
-    """État global du graphe."""
+    """
+    État partagé qui circule entre tous les nœuds du graphe.
+    Contient l'intention, les données contextuelles et la réponse finale.
+    """
     user_id: str
     zone_id: str
     user_query: str
     intent: str
-    context_data: Dict # Données récupérées par le Data Manager
-    final_response: str
-    execution_trace: List[str]
-
-    # Pour les agents: Les champs spécifiques aux agents ne sont pas nécessaires ici
-    # car ils sont passés via context_data, mais on peut les ajouter pour la lisibilité
+    
+    # Context Data (Injecté par CentralDataManager)
     meteo_data: Optional[Dict]
     culture_config: Optional[Dict]
     soil_config: Optional[Dict]
     user_profile: Optional[Dict]
 
+    # Sorties et Traçabilité
+    final_response: str
+    execution_trace: List[str] # Pour le debugging et l'explicabilité
+
 
 # ======================================================================
-# 2. ORCHESTRATEUR PRINCIPAL
+# 2. ORCHESTRATEUR PRINCIPAL ("The Boss")
 # ======================================================================
 class AgriculturalOrchestrator:
-    def __init__(self):
-        # Initialisation du client LLM pour les agents
-        self.ollama_client = ChatOllama(model="mistral", temperature=0.1) 
+    
+    OLLAMA_MODEL = "mistral"
+    
+    def __init__(self, ollama_url: str = "http://localhost:11434"):
+        self.ollama_url = ollama_url
         
-        # Initialisation des composants centraux
-        self.classifier = IntentClassifier()
+        # 1. Initialisation du Client LLM Central
+        # On partage ce client avec les agents pour économiser les ressources
+        self.ollama_client = self._init_llm_client()
+        
+        # 2. Initialisation des Services Core
+        self.classifier = IntentClassifier(model_name=self.OLLAMA_MODEL)
         self.data_manager = CentralDataManager()
 
-        # Initialisation des agents (on passe le LLM là où il est nécessaire)
-        self.agents = {
-            "METEO": MeteoAgent(llm_client=self.ollama_client),
-            "CROP": CropManagementService(llm_client=self.ollama_client),
-            "SOIL": SoilManagementService(llm_client=self.ollama_client),
-            "HEALTH": HealthManagementService(llm_client=self.ollama_client),
-            "SUBSIDY": SubsidyManagementService() # Agent Subsidy n'a pas besoin du LLM en init
-        }
-    
-    # Nœud LLM de Fallback (pour les questions UNKNOWN)
-    def llm_fallback_node(self, state: OrchestratorState) -> OrchestratorState:
-        """Utilise le LLM pour répondre directement si l'intention est inconnue."""
-        logger.warning(f"Intention inconnue. Utilisation du Fallback LLM.")
-        trace = state["execution_trace"] + ["Execution: LLM Fallback (UNKNOWN)"]
-        
-        try:
-             response = self.ollama_client.invoke(
-                 f"Répondez de manière amicale à la question suivante en expliquant que vous êtes un expert agricole mais que cette question ne concerne pas directement l'agriculture : {state['user_query']}"
-             )
-             final_response = response.content
-        except Exception as e:
-             final_response = f"Désolé, une erreur de connexion est survenue. (Erreur LLM: {e})"
-        
-        return {**state, "final_response": final_response, "execution_trace": trace}
+        # 3. Chargement des Agents Spécialisés
+        # Chaque agent est une "boîte noire" autonome
+        self.agents = {}
+        self._load_agents()
 
+    def _init_llm_client(self):
+        """Tente de connecter Ollama avec une gestion d'erreur robuste."""
+        try:
+            client = ChatOllama(
+                model=self.OLLAMA_MODEL, 
+                base_url=self.ollama_url,
+                temperature=0.1 # Basse température pour la précision technique
+            )
+            # Ping test
+            client.invoke("Hi")
+            logger.info(f"✅ Master Orchestrator connecté à Ollama ({self.OLLAMA_MODEL})")
+            return client
+        except Exception as e:
+            logger.error(f"❌ CRITIQUE : Ollama indisponible. Le mode dégradé sera activé. Erreur: {e}")
+            return None
+
+    def _load_agents(self):
+        """Charge dynamiquement les agents disponibles."""
+        # On passe le client LLM aux agents pour éviter qu'ils ne réinstancient chacun une connexion
+        try:
+            self.agents["METEO"] = MeteoAgent()
+            self.agents["CROP"] = BurkinaCropAgent()
+            self.agents["SOIL"] = SoilManagementService()
+            self.agents["HEALTH"] = HealthManagementService()
+            self.agents["SUBSIDY"] = SubsidyManagementService() # Subsidy gère son client différemment dans ton code précédent
+            logger.info(f"✅ {len(self.agents)} Agents chargés avec succès.")
+        except NameError:
+            logger.warning("⚠️ Certains agents ne sont pas définis (NameError). Vérifiez les imports.")
+
+    # ============================================================
+    # NODES (Les étapes du processus)
+    # ============================================================
 
     def classify_node(self, state: OrchestratorState) -> OrchestratorState:
-        """Classifie la requête utilisateur."""
-        intent = self.classifier.predict(state["user_query"])
-        logger.info(f"Intent detected: {intent}")
-        return {**state, "intent": intent, "execution_trace": state["execution_trace"] + [f"Intent: {intent}"]}
+        """Étape 1 : Comprendre ce que veut l'utilisateur."""
+        query = state.get("user_query", "")
+        
+        # Utilisation du Classifier Robuste (LLM + Fallback Regex)
+        intent = self.classifier.predict(query)
+        
+        trace = state.get("execution_trace", []) + [f"Intent Detected: {intent}"]
+        logger.info(f"🧠 Classification: {intent}")
+        
+        return {**state, "intent": intent, "execution_trace": trace}
 
     def retrieve_node(self, state: OrchestratorState) -> OrchestratorState:
-        """Récupère les données contextuelles nécessaires pour l'Agent ciblé."""
+        """Étape 2 : Récupérer les munitions (données) pour l'agent."""
         if state["intent"] == "UNKNOWN":
-             # Le Data Manager ne doit pas être appelé pour UNKNOWN
             return state
+
+        # Le DataManager sait quelles données aller chercher selon l'intention
+        context_data = self.data_manager.retrieve_context(state)
         
-        # Le Data Manager retourne un Dict qui est MERGÉ dans l'état
-        retrieved_data = self.data_manager.retrieve_context(state)
+        # On fusionne les nouvelles données dans l'état
+        new_state = {**state, **context_data}
         
-        # Fusionner les données récupérées dans l'état (nécessaire pour les agents)
-        merged_state = {**state, **retrieved_data}
+        keys_found = [k for k, v in context_data.items() if v is not None]
+        trace = state["execution_trace"] + [f"Context Loaded: {keys_found}"]
         
-        return {**merged_state, "execution_trace": state["execution_trace"] + ["Data retrieved"]}
+        return {**new_state, "execution_trace": trace}
 
     def dispatch_node(self, state: OrchestratorState) -> OrchestratorState:
-        """Distribue la requête et l'état à l'Agent spécialisé."""
+        """Étape 3 : Déléguer à l'Expert (Agent)."""
         intent = state["intent"]
         trace = state["execution_trace"]
-        response = ""
+        
+        agent_service = self.agents.get(intent)
+        
+        if not agent_service:
+            logger.error(f"Agent {intent} not found in registry.")
+            return {
+                **state, 
+                "final_response": "Désolé, le service demandé est momentanément indisponible.",
+                "execution_trace": trace + ["Error: Agent missing"]
+            }
+
+        logger.info(f"🚀 Dispatching to Agent: {intent}")
         
         try:
-            # L'agent est déjà dans self.agents
-            service = self.agents[intent]
-            logger.info(f"Calling Agent: {service.name}")
-
-            # L'état de l'orchestrateur contient déjà toutes les clés spécifiques
-            # (zone_id, user_query, meteo_data, culture_config, etc.) 
-            # grâce à retrieve_node (via fusion des données)
+            # Invocation du graphe de l'agent
+            # L'agent reçoit tout l'état, fait son travail, et retourne son état local
+            agent_result = agent_service.get_graph().invoke(state)
             
-            agent_graph = service.get_graph()
+            # Extraction de la réponse finale de l'agent
+            response = agent_result.get("final_response", "L'agent n'a pas retourné de réponse.")
+            status = agent_result.get("status", "UNKNOWN_STATUS")
             
-            # L'état passé à l'agent est le state de l'orchestrateur complet, 
-            # mais seuls les champs pertinents pour l'agent sont utilisés.
-            result = agent_graph.invoke(state)
-
-            response = result["final_response"]
-            trace.append(f"Execution: {intent} agent terminé (Status: {result.get('status', 'N/A')})")
+            return {
+                **state,
+                "final_response": response,
+                "execution_trace": trace + [f"Agent Execution: SUCCESS ({status})"]
+            }
 
         except Exception as e:
-            logger.error(f"Error during dispatch of {intent} agent: {e}", exc_info=True)
-            response = f"Une erreur technique est survenue lors de l'appel de l'agent {intent}."
-            trace.append(f"Error: {str(e)}")
+            logger.error(f"💥 Error inside Agent {intent}: {e}", exc_info=True)
+            return {
+                **state,
+                "final_response": f"Une erreur technique est survenue lors de l'analyse ({intent}). Veuillez réessayer.",
+                "execution_trace": trace + [f"Agent Crash: {str(e)}"]
+            }
 
-        return {**state, "final_response": response, "execution_trace": trace}
+    def fallback_node(self, state: OrchestratorState) -> OrchestratorState:
+        """Étape Secours : Si l'intention est inconnue."""
+        query = state["user_query"]
+        trace = state["execution_trace"] + ["Fallback: General LLM"]
+        
+        if not self.ollama_client:
+            return {**state, "final_response": "Je suis hors ligne. Veuillez vérifier ma connexion.", "execution_trace": trace}
 
-    # ======================================================================
-    # 3. WORKFLOW LANGGRAPH (ROUTAGE CONDITIONNEL)
-    # ======================================================================
+        # Prompt optimisé pour être utile même en cas d'incompréhension, avec gestion des DIAGRAMMES
+        system_prompt = (
+            "Tu es un assistant agricole intelligent. L'utilisateur a posé une question qui ne correspond "
+            "pas à nos catégories standards (Météo, Sol, Culture, Santé, Subventions). "
+            "1. Réponds poliment et essaie d'aider si le sujet reste agricole (ex: machinerie, élevage). "
+            "2. Si la question est hors-sujet, redirige-le vers l'agriculture. "
+            "3. Si l'explication bénéficie d'un schéma visuel (ex: anatomie d'une vache, pièce de tracteur), "
+            "utilise le tag. Sois économe avec les images, utilise-les seulement si instructif."
+        )
+
+        try:
+            response = self.ollama_client.invoke([
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=query)
+            ])
+            return {**state, "final_response": response.content, "execution_trace": trace}
+        except Exception as e:
+            return {**state, "final_response": "Je n'ai pas compris votre demande.", "execution_trace": trace + ["Fallback Error"]}
+
+    # ============================================================
+    # 3. CONSTRUCTION DU GRAPHE (ROUTAGE)
+    # ============================================================
+    
     def get_graph(self):
         workflow = StateGraph(OrchestratorState)
-        
-        # Nœuds
+
+        # Ajout des nœuds
         workflow.add_node("classify", self.classify_node)
         workflow.add_node("retrieve", self.retrieve_node)
         workflow.add_node("dispatch", self.dispatch_node)
-        workflow.add_node("llm_fallback", self.llm_fallback_node)
+        workflow.add_node("fallback", self.fallback_node)
 
-        # 1. Point d'entrée
+        # Point d'entrée
         workflow.set_entry_point("classify")
-        
-        # 2. Routage après classification
-        def route_by_intent(state: OrchestratorState) -> str:
-            """Fonction routeur qui décide du prochain nœud."""
-            intent = state.get("intent")
-            if intent == "UNKNOWN":
-                return "fallback"
-            else:
-                return "retrieve" # Aller chercher les données
+
+        # Logique de branchement conditionnel
+        def route_intent(state):
+            intent = state.get("intent", "UNKNOWN")
+            if intent in ["METEO", "CROP", "SOIL", "HEALTH", "SUBSIDY"]:
+                return "retrieve"
+            return "fallback"
 
         workflow.add_conditional_edges(
             "classify",
-            route_by_intent,
+            route_intent,
             {
-                "fallback": "llm_fallback",
                 "retrieve": "retrieve",
+                "fallback": "fallback"
             }
         )
-        
-        # 3. Flux principal
-        workflow.add_edge("retrieve", "dispatch")
-        
-        # 4. Points de sortie
-        workflow.add_edge("dispatch", END)
-        workflow.add_edge("llm_fallback", END)
 
-        # Voici une représentation visuelle du Graphe :
-        
+        # Flux linéaire pour les cas connus
+        workflow.add_edge("retrieve", "dispatch")
+        workflow.add_edge("dispatch", END)
+        workflow.add_edge("fallback", END)
 
         return workflow.compile()
 
-
 # ======================================================================
-# 4. BLOC D'EXÉCUTION DIRECTE (TESTS)
+# 4. EXÉCUTION DE TEST (SIMULATION)
 # ======================================================================
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-
+    # Setup pour le visuel console
+    logging.basicConfig(level=logging.INFO, format='%(name)s - %(message)s')
+    
+    print("\n🚜 INITIALISATION DE L'ORCHESTRATEUR AGRICOLE...")
     orchestrator = AgriculturalOrchestrator()
-    graph = orchestrator.get_graph()
+    app = orchestrator.get_graph()
 
-    def run_test(query: str, expected_intent: str):
-        print(f"\n==============================================")
-        print(f"TEST RUN: '{query}' (Attendu: {expected_intent})")
-        print("==============================================")
-        test_state: OrchestratorState = {
-            "user_id": "test_user",
-            "zone_id": "Mopti",
+    def run_simulation(query: str, zone: str = "Koudougou"):
+        print(f"\n{'='*60}")
+        print(f"👤 USER ({zone}): {query}")
+        print(f"{'='*60}")
+        
+        initial_state = {
+            "user_id": "sim_user_01",
+            "zone_id": zone,
             "user_query": query,
-            "intent": "",
-            "context_data": {},
-            "final_response": "",
-            "execution_trace": [],
+            # Le reste est initialisé à vide ou None
+            "intent": "", "final_response": "", "execution_trace": [],
             "meteo_data": None, "culture_config": None, "soil_config": None, "user_profile": None
         }
+        
+        result = app.invoke(initial_state)
+        
+        print(f"\n🤖 BOT RESPONSE:\n{result['final_response']}")
+        print(f"\n🔍 TRACE: {' -> '.join(result['execution_trace'])}")
 
-        result = graph.invoke(test_state)
-        print("\n=== RÉSULTAT FINAL ===")
-        print(result["final_response"])
-        print("\n=== TRACE D'EXÉCUTION ===")
-        for step in result["execution_trace"]:
-            print(f" - {step}")
-        print(f"--- Fin du test ---")
-        return result
+    # TEST 1 : Cas Complexe (Santé + Météo implicite via DataManager)
+    run_simulation("Les feuilles de mon maïs jaunissent et il y a des taches. Que faire ?")
 
-    # 1. Test : Intention connue (ex: SOIL)
-    run_test("Mon sol est très sableux et fatigué. Que puis-je faire ?", "SOIL")
-
-    # 2. Test : Intention UNKNOWN (doit passer par le fallback LLM)
-    run_test("Quel temps fera-t-il à Paris demain ?", "UNKNOWN")
+    # TEST 2 : Cas Subvention (Avec visuel attendu dans l'agent)
+    run_simulation("C'est quoi la procédure pour avoir l'engrais subventionné ?")
     
-    # 3. Test : Intention nécessitant des données Météo (ex: METEO)
-    run_test("Puis-je traiter mes cultures cet après-midi ? Il fait chaud.", "METEO")
+    # TEST 3 : Cas Fallback (Machinerie - doit déclencher le LLM généraliste + Image potentielle)
+    run_simulation("Comment fonctionne un moteur diesel de tracteur ?")

@@ -1,178 +1,167 @@
-from langgraph.graph import StateGraph, END
-from typing import TypedDict, List, Dict, Any, Optional, Callable
 import logging
+from typing import TypedDict, Dict, Any, Optional, List
 from datetime import datetime
 
-# Importations LangChain
+# --- Importations LangChain & LangGraph ---
+from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.runnables import Runnable
-from langchain_community.chat_models import ChatOllama # <-- NOUVEAU
+from langchain_community.chat_models import ChatOllama
 
-# Import du toolkit Agronomie
-from Tools.crop.base_crop import CropManagerTool
+from Tools.crop.base_crop import BurkinaCropTool
 
-logger = logging.getLogger("agent.crop_management")
+# --- Configuration du Logging ---
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("CropAgent.Burkina")
 
 # ==============================================================================
-# 1. DÉFINITION DE L'ÉTAT (INCHANGÉ)
+# 1. DÉFINITION DE L'ÉTAT (ROBUSTE)
 # ==============================================================================
 class AgentState(TypedDict):
-    """État du Graph pour l'Agent de Gestion des Cultures."""
-    zone_id: str
     user_query: str
-    culture_config: Dict[str, Any]
-    
-    technical_advice: Optional[str]
+    crop_name: str
+    location_zone: str  # Nord, Centre, Sud
+    surface_ha: float
+    technical_data: Optional[Dict[str, Any]]
     final_response: str
-    status: str
+    errors: List[str]
 
 # ==============================================================================
-# 2. SERVICE DE GESTION DES CULTURES (MISE À JOUR)
+# 2. L'AGENT CROP MANAGEMENT
 # ==============================================================================
-class CropManagementService:
-    """
-    Service gérant le workflow de conseil agronomique.
-    Utilise un outil technique et un LLM léger (ChatOllama) pour le formatage.
-    """
-    # Type de l'argument llm_client est maintenant Runnable (le type de ChatOllama)
-    def __init__(self, llm_client: Optional[Runnable] = None): 
-        self.name = "CropManagementService"
-        self.agronomist = CropManagerTool()
+class BurkinaCropAgent:
+    def __init__(self, model_name="llama3:8b", ollama_host="http://localhost:11434",llm_client=None):
+        # Initialisation de ton Tool
+        self.agro_tool = BurkinaCropTool()
+        self.model_name = model_name
         
-        # Le client Ollama doit être passé à l'initialisation
-        self.llm_client = llm_client
-        if not self.llm_client:
-            logger.error("Client ChatOllama non fourni. Le nœud LLM échouera.")
-
-    # ----------------------------------------------------------------------
-    # Fonctions Utilitaires (INCHANGÉES)
-    # ----------------------------------------------------------------------
-
-    def _calculate_days_after_sowing(self, sowing_date_str: str) -> int:
+        # Initialisation sécurisée d'Ollama
         try:
-            s_date = datetime.strptime(sowing_date_str, "%Y-%m-%d")
-            today = datetime.now()
-            delta = today - s_date
-            return max(0, delta.days)
-        except Exception:
-            return -1
+            self.llm = llm_client if llm_client else ChatOllama(model=self.model_name, base_url=ollama_host, temperature=0.1) # adapte la temperature
+        except Exception as e:
+            logger.error(f"Ollama inaccessible : {e}")
+            self.llm = None
 
-    def analyze_node(self, state: AgentState) -> AgentState:
-        """
-        Nœud 1 : Détermine la catégorie de la requête et appelle l'outil Agronome.
-        (Logique de routage inchangée)
-        """
-        # ... (La logique analyze_node reste la même que précédemment, elle produit technical_advice)
+    # --- NOEUD 1 : VALIDATION ET CALCULS ---
+    def process_technical_node(self, state: AgentState):
+        """Valide les entrées et extrait les données de BurkinaCropTool."""
+        logger.info("Analyse technique en cours...")
+        errors = []
         
-        query = (state.get("user_query") or "").lower()
-        config = state.get("culture_config", {})
+        crop = state.get("crop_name", "").lower()
+        zone = state.get("location_zone", "Centre")
+        surface = state.get("surface_ha", 1.0)
 
-        crop_name = config.get("crop_name", "la culture")
-        sowing_date = config.get("sowing_date")
-        response_parts = []
+        # Validation minimale
+        if not crop:
+            errors.append("Le nom de la culture est manquant.")
         
-        # Logique de routage (réutilisée pour la complétude)
-        if any(w in query for w in ["semis", "semer", "densité", "écartement"]):
-            advice = self.agronomist.get_seeding_advice(crop_name)
-            response_parts.append(advice)
-        elif any(w in query for w in ["engrais", "npk", "urée", "fertil"]):
-            # ... (logique engrais)
-            if not sowing_date:
-                response_parts.append(
-                    "Pour calculer la date d'engrais, j'ai besoin de votre date de semis (format : YYYY-MM-DD)."
-                )
-            else:
-                das = self._calculate_days_after_sowing(sowing_date)
-                if das >= 0:
-                    status = self.agronomist.check_fertilizer_status(crop_name, das)
-                    response_parts.append(f"📌 Stade de la culture : Jour {das}")
-                    response_parts.append(status)
-                else:
-                    response_parts.append("Date de semis invalide (Format attendu : YYYY-MM-DD).")
-        elif any(w in query for w in ["récolte", "couper", "fin", "maturité"]):
-            # ... (logique récolte)
-            if not sowing_date:
-                response_parts.append("Pour estimer la récolte, j'ai besoin de votre date de semis.")
-            else:
-                estimation = self.agronomist.estimate_harvest(crop_name, sowing_date)
-                response_parts.append(estimation)
-        else:
-            response_parts.append(f"📘 Fiche Technique – {crop_name}")
-            response_parts.append("Je peux vous conseiller sur : Les densités de semis, le calendrier d'engrais et les dates de récolte.")
-            response_parts.append("Posez-moi une question précise sur l'un de ces sujets.")
+        if errors:
+            return {"errors": errors}
 
-        technical_advice = "\n\n".join(response_parts)
+        try:
+            # Récupération des données du Tool
+            sheet = self.agro_tool.get_technical_sheet(crop, zone)
+            inputs = self.agro_tool.calculate_inputs(crop, surface)
+            
+            # Simulation d'un calcul de risque climatique (ex: 90 jours restants)
+            risk = self.agro_tool.check_climate_risk(crop, 90)
 
-        return {
-            **state,
-            "technical_advice": technical_advice,
-            "status": "ADVICE_GENERATED"
-        }
+            return {
+                "technical_data": {
+                    "sheet": sheet,
+                    "inputs": inputs,
+                    "risk": risk
+                },
+                "errors": []
+            }
+        except Exception as e:
+            logger.error(f"Erreur Tool : {e}")
+            return {"errors": [f"Erreur lors de l'accès aux fiches techniques : {str(e)}"]}
 
-
-    def llm_formatter_node(self, state: AgentState) -> AgentState:
-        """
-        Nœud 2 : Utilise ChatOllama pour transformer le conseil technique 
-        en une réponse conviviale pour l'utilisateur.
-        """
-        if not self.llm_client:
-            raise ValueError("Le client LLM (ChatOllama) n'a pas été initialisé.")
-
-        technical_advice = state.get("technical_advice", "Aucun conseil technique généré.")
-        user_query = state.get("user_query", "")
-        crop_name = state.get("culture_config", {}).get("crop_name", "votre culture")
+    # --- NOEUD 2 : GÉNÉRATION LLM (AVEC FALLBACK) ---
+    def expert_response_node(self, state: AgentState):
+        """Utilise Ollama pour rendre le conseil humain et chaleureux."""
         
-        logger.info(f"[{self.name}] Début du formatage LLM avec ChatOllama pour {crop_name}.")
+        # S'il y a des erreurs, on les affiche proprement sans appeler le LLM
+        if state.get("errors"):
+            return {"final_response": f"❌ Désolé, j'ai rencontré des problèmes : {', '.join(state['errors'])}"}
 
-        # --- Définition du Prompt pour le LLM Léger ---
+        data = state["technical_data"]
+        
+        # Si Ollama est mort, on renvoie une réponse formatée "brute" (Scalabilité/Robustesse)
+        if not self.llm:
+            return {"final_response": self._get_fallback_ui(data)}
+
+        # Prompt Expert
         system_prompt = (
-            "Tu es un agronome professionnel, amical et facile à comprendre. "
-            "Ta tâche est de transformer un conseil technique brut en une réponse naturelle "
-            "et utile pour l'agriculteur. Ne donne pas de chiffres qui n'ont pas été "
-            "fournis dans le conseil technique. Mets l'accent sur la clarté et l'action."
+            "Tu es un expert agronome burkinabè. Reformule les données techniques suivantes "
+            "pour un producteur. Sois très clair sur les doses de sacs d'engrais. "
+            "Encourage l'utilisation du Zaï ou des cordons pierreux si mentionné. "
+            "Garde un ton fraternel et utilise des emojis 🌾."
         )
         
         human_prompt = f"""
-        **Contexte Agricole (Culture) :** {crop_name}
-        **Question initiale de l'agriculteur :** "{user_query}"
-        **Conseil Technique Brut (généré par l'outil) :** ---
-        {technical_advice}
-        ---
-        
-        Reformule ce conseil technique brut pour l'agriculteur.
+        FICHE TECHNIQUE : {data['sheet']}
+        BESOINS CALCULÉS : {data['inputs']}
+        ALERTE RISQUE : {data['risk']}
+        QUESTION INITIALE : {state['user_query']}
         """
 
-        messages = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=human_prompt)
-        ]
-
-        # Appel du client ChatOllama
         try:
-            response = self.llm_client.invoke(messages)
-            final_response = response.content
+            response = self.llm.invoke([
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=human_prompt)
+            ])
+            return {"final_response": response.content}
         except Exception as e:
-            logger.error(f"Erreur lors de l'appel ChatOllama : {e}")
-            final_response = f"Désolé, une erreur est survenue lors du formatage du conseil. Conseil brut : {technical_advice}"
+            logger.error(f"Erreur LLM : {e}")
+            return {"final_response": self._get_fallback_ui(data)}
 
-        return {
-            **state,
-            "final_response": final_response,
-            "status": "SUCCESS"
-        }
+    def _get_fallback_ui(self, data: Dict) -> str:
+        """Interface de secours si le LLM crash."""
+        inputs = data['inputs']
+        return (
+            f"📢 **CONSEIL TECHNIQUE (Mode Secours)**\n\n"
+            f"{data['sheet']}\n\n"
+            f"📦 **BESOINS POUR VOTRE SURFACE :**\n"
+            f"- NPK : {inputs.get('NPK_sacs_50kg')} sacs\n"
+            f"- Urée : {inputs.get('Uree_sacs_50kg')} sacs\n"
+            f"- Fumure : {inputs.get('Fumure_organique_tonnes')} tonnes\n\n"
+            f"{data['risk']}"
+        )
 
-    # ----------------------------------------------------------------------
-    # 3. WORKFLOW LANGGRAPH (INCHANGÉ)
-    # ----------------------------------------------------------------------
-    def get_graph(self):
-        """Construit et compile le Graph de l'Agent."""
+    # --- CONSTRUCTION DU WORKFLOW ---
+    def build(self):
         workflow = StateGraph(AgentState)
         
-        workflow.add_node("manage_crop", self.analyze_node)       # Outil technique
-        workflow.add_node("format_llm_response", self.llm_formatter_node) # LLM léger (post-traitement)
+        workflow.add_node("logic", self.process_technical_node)
+        workflow.add_node("expert", self.expert_response_node)
         
-        workflow.set_entry_point("manage_crop")
-        workflow.add_edge("manage_crop", "format_llm_response")
-        workflow.add_edge("format_llm_response", END)
+        workflow.set_entry_point("logic")
+        workflow.add_edge("logic", "expert")
+        workflow.add_edge("expert", END)
         
         return workflow.compile()
+
+# ==============================================================================
+# 3. EXEMPLE D'UTILISATION
+# ==============================================================================
+if __name__ == "__main__":
+    # 1. Initialisation de l'agent
+    agent_app = BurkinaCropAgent().build()
+
+    # 2. Données d'entrée (Scalable : on peut ajouter des champs facilement)
+    inputs = {
+        "user_query": "Combien de sacs d'engrais faut-il pour 2 hectares de sorgho au Nord ?",
+        "crop_name": "sorgho",
+        "location_zone": "Nord",
+        "surface_ha": 2.0,
+        "errors": []
+    }
+
+    # 3. Execution
+    print("\n--- TRAITEMENT EN COURS ---\n")
+    result = agent_app.invoke(inputs)
+    
+    print("\n--- RÉPONSE FINALE ---")
+    print(result["final_response"])

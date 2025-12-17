@@ -1,109 +1,120 @@
+import logging
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Optional, Any
 
 @dataclass
 class DiseaseProfile:
+    """Profil expert d'une pathologie ou d'un ravageur sahélien."""
     name: str
-    symptoms: List[str]      # Mots clés pour le matching
-    bio_control: str         # Solution accessible (Neem, Cendre, Piment)
-    chemical_control: str    # Solution conventionnelle (Dernier recours)
-    risk_level: str          # CRITIQUE, ÉLEVÉ, MOYEN
+    local_names: List[str]
+    symptoms_keywords: List[str]
+    risk_level: str  # CRITIQUE, ÉLEVÉ, MOYEN
+    threshold_pct: int  # Seuil d'intervention économique (%)
+    bio_recipe: str     # Recette détaillée (Neem, Piment, etc.)
+    chemical_ref: str   # Molécule de référence (dernier recours)
+    prevention: str
 
 class SahelPathologyDB:
-    """Base de données des ennemis des cultures au Sahel (Burkina Faso)."""
+    """Base de connaissances spécialisée : Burkina Faso & Sahel."""
     
-    DB = {
+    _DATA = {
         "maïs": [
             DiseaseProfile(
                 name="Chenille Légionnaire d'Automne (CLA)",
-                symptoms=["larve verte", "tête noire", "y inversé", "feuilles déchiquetées", "crottes", "cornet détruit"],
-                bio_control="Pulvériser un mélange Piment + Ail + Savon, ou déposer de la poudre de graines de Neem dans le cornet.",
-                chemical_control="Emamectine Benzoate (si infestation > 20%).",
-                risk_level="CRITIQUE"
+                local_names=["Spodoptera", "Chenille du cornet"],
+                symptoms_keywords=["y inversé", "trous ronds", "crottes", "cornet mangé", "larve verte"],
+                risk_level="CRITIQUE",
+                threshold_pct=20,
+                bio_recipe="Mélanger 50g de piment pilé + 50g d'ail + 1 cuillère de savon dans 10L d'eau. Filtrer et pulvériser le soir.",
+                chemical_ref="Émamectine benzoate ou Chlorantraniliprole.",
+                prevention="Semis précoces et destruction des résidus de récolte."
             ),
             DiseaseProfile(
-                name="Striga (Herbe Sorcière)",
-                symptoms=["fleurs violettes", "plante parasite", "maïs jauni", "rabougri", "racines"],
-                bio_control="Arrachage manuel AVANT floraison. Rotation avec coton ou arachide.",
-                chemical_control="Herbicide spécifique en pré-levée (efficacité limitée).",
-                risk_level="CRITIQUE"
+                name="Striga",
+                local_names=["Herbe sorcière", "Wéogo"],
+                symptoms_keywords=["fleurs violettes", "jaunissement", "rabougrissement", "parasite"],
+                risk_level="CRITIQUE",
+                threshold_pct=1,
+                bio_recipe="Application de fumure organique massive ou culture de niébé 'faux-hôte' (variété Tiligré).",
+                chemical_ref="Peu efficace. Préférer 2,4-D en post-levée dirigée.",
+                prevention="Rotation stricte avec le coton et arrachage avant floraison."
             )
         ],
         "niébé": [
             DiseaseProfile(
-                name="Thrips",
-                symptoms=["fleurs tombent", "boutons noirs", "coulure", "petits insectes"],
-                bio_control="Pulvériser un extrait aqueux de feuilles de Neem en fin de journée.",
-                chemical_control="Deltaméthrine (Decis) au début de la floraison.",
-                risk_level="ÉLEVÉ"
-            ),
-            DiseaseProfile(
-                name="Pucerons (Aphis)",
-                symptoms=["feuilles collantes", "miellat", "fourmis", "feuilles enroulées", "noir"],
-                bio_control="Pulvériser une solution de savon noir ou saupoudrer de la cendre de bois.",
-                chemical_control="Acétamipride.",
-                risk_level="MOYEN"
-            )
-        ],
-        "coton": [
-            DiseaseProfile(
-                name="Jassides",
-                symptoms=["feuilles rouges", "bord jaune", "recroquevillé", "rougeur"],
-                bio_control="Peu de solutions bio efficaces en curatif. Surveiller précocement.",
-                chemical_control="Traitement systémique (Flonicamide).",
-                risk_level="MOYEN"
+                name="Thrips des fleurs",
+                local_names=["Pucerons noirs", "Coulure des fleurs"],
+                symptoms_keywords=["fleurs tombent", "boutons noirs", "insectes minuscules", "coulure"],
+                risk_level="ÉLEVÉ",
+                threshold_pct=10,
+                bio_recipe="Extrait aqueux de feuilles de Neem (5kg feuilles pilées dans 10L d'eau pendant 12h).",
+                chemical_ref="Deltaméthrine ou Lambda-cyhalothrine.",
+                prevention="Éviter les semis trop denses."
             )
         ]
     }
 
 class HealthDoctorTool:
     """
-    Outil utilisé par l'Agent HEALTH pour diagnostiquer et prescrire des conseils adaptés au contexte sahélien.
+    Outil de diagnostic et de prescription phytosanitaire.
+    Optimisé pour le conseil agricole de premier niveau au Burkina Faso.
     """
-    
-    def diagnose(self, crop_name: str, observation: str) -> Dict:
+
+    def __init__(self):
+        self.db = SahelPathologyDB()
+        self.logger = logging.getLogger("HealthDoctor")
+
+    def diagnose_and_prescribe(self, crop: str, user_obs: str, infestation_rate: Optional[float] = 0.0) -> Dict[str, Any]:
         """
-        Analyse une observation textuelle et identifie la maladie probable.
+        Analyse les observations, identifie la menace et propose des solutions graduées.
         """
-        candidates = SahelPathologyDB.DB.get(crop_name.lower(), [])
-        observation = observation.lower()
+        crop_key = crop.lower().strip()
+        observations = user_obs.lower()
+        candidates = self.db._DATA.get(crop_key, [])
         
         best_match = None
-        max_score = 0
-        
+        highest_score = 0
+
+        # Algorithme de matching par mots-clés
         for disease in candidates:
-            score = 0
-            for symptom in disease.symptoms:
-                if symptom in observation:
-                    score += 1
-            if score > 0 and score > max_score:
-                max_score = score
+            score = sum(1 for symp in disease.symptoms_keywords if symp in observations)
+            if score > highest_score:
+                highest_score = score
                 best_match = disease
-        
-        if best_match:
+
+        if not best_match:
             return {
-                "found": True,
-                "disease": best_match.name,
-                "confidence": "Élevée" if max_score >= 2 else "Faible",
-                "severity": best_match.risk_level,
-                "advice": {
-                    "bio": best_match.bio_control,
-                    "chimique": best_match.chemical_control
-                }
-            }
-        else:
-            return {
-                "found": False,
-                "message": "Symptômes non reconnus dans la base Sahel. Consultez un agent technique agricole local."
+                "status": "Inconnu",
+                "message": "Symptômes non identifiés. Inspectez l'envers des feuilles et les racines.",
+                "action": "Consultez l'agent de vulgarisation le plus proche."
             }
 
-    def get_prevention_plan(self, crop_name: str) -> str:
-        """Conseils préventifs généraux adaptés au Burkina Faso."""
-        crop_name = crop_name.lower()
-        if "maïs" in crop_name:
-            return "Prévention Maïs : Surveillez les cornets chaque semaine. Évitez de semer après la mi-juillet pour réduire les risques de chenilles."
-        if "niébé" in crop_name:
-            return "Prévention Niébé : Utilisez des variétés résistantes au Striga. Surveillez attentivement l'apparition des fleurs, période critique pour les Thrips."
-        if "coton" in crop_name:
-            return "Prévention Coton : Inspectez régulièrement les feuilles pour détecter les jassides. Maintenez un champ propre pour limiter les hôtes."
-        return "Conseil général : Gardez le champ propre par sarclage régulier afin de réduire les parasites et adventices."
+        # Détermination de l'urgence
+        needs_chemical = infestation_rate >= best_match.threshold_pct
+        
+        # Sélection du diagramme contextuel
+        diagram = ""
+        if "Chenille" in best_match.name:
+            diagram = ""
+        elif "Striga" in best_match.name:
+            diagram = ""
+
+        return {
+            "diagnostique": best_match.name,
+            "confiance": "Haute" if highest_score >= 2 else "Moyenne",
+            "niveau_alerte": best_match.risk_level,
+            "diagramme_aide": diagram,
+            "prescription_bio": best_match.bio_recipe,
+            "seuil_alerte": f"{best_match.threshold_pct}%",
+            "conseil_chimique": best_match.chemical_ref if needs_chemical else "Non nécessaire à ce stade.",
+            "prevention": best_match.prevention
+        }
+
+    def get_biopesticide_tutorial(self, recipe_type: str) -> str:
+        """Fournit les étapes de préparation des solutions locales (Neem, Cendre, Piment)."""
+        recipes = {
+            "neem": "1. Piler 1kg de graines ou 5kg de feuilles. 2. Mélanger dans 10L d'eau. 3. Laisser reposer 12h. 4. Filtrer et ajouter un peu de savon liquide.",
+            "cendre": "Saupoudrer la cendre de bois tamisée tôt le matin sur les feuilles humides pour lutter contre les pucerons.",
+            "savon": "Diluer 50g de savon de Marseille/Noir dans 5L d'eau contre les acariens."
+        }
+        return recipes.get(recipe_type.lower(), "Recette non trouvée.")

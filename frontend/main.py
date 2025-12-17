@@ -1,37 +1,51 @@
 import gradio as gr
 import requests
 
-# Function triggered by chatbot
-def chatbot(message, history):
-    url = "http://localhost:5000/gen"   # adjust port if needed
+API_URL = "http://127.0.0.1:5000/api/ask"  # ton backend Flask
+
+def query_backend(user_query, user_id, zone_id):
+    if not user_query or user_query.strip() == "":
+        return "Veuillez entrer une question.", ""
+
+    payload = {
+        "query": user_query,
+        "user_id": user_id or "anonymous",
+        "zone_id": zone_id or "Mopti"
+    }
+
     try:
-        response = requests.post(url, json={"msg": message})
+        print('on commence a envoyer la question')
+        response = requests.post(API_URL, json=payload)
         if response.status_code == 200:
             data = response.json()
-            
-            reply = data['data'].get('final_response','')
-            print(reply)
+            print('reponse:',data)
+            return data.get("response", ""), "\n".join(data.get("trace", []))
         else:
-            reply = f"Error: {response.status_code}"
+            return f"Erreur API ({response.status_code})", ""
     except Exception as e:
-        reply = f"Request failed: {e}"
+        return f"Erreur de connexion au backend : {e}", ""
 
-    # Append user + assistant messages to history
-    history = history + [
-        {"role": "user", "content": message},
-        {"role": "assistant", "content": reply}
-    ]
-    return history
 
-# Build Gradio chatbot interface
-with gr.Blocks() as demo:
-    gr.Markdown("### Chatbot with API Request")
-    chatbot_ui = gr.Chatbot()
-    msg = gr.Textbox(label="Type a message")
-    send_btn = gr.Button("Send")
+# Interface Gradio
+with gr.Blocks(title="Assistant Agricole – Frontend") as demo:
+    gr.Markdown("# 🌾 Assistant Agricole (Frontend Gradio)\nInterface qui appelle le backend Flask.")
 
-    send_btn.click(fn=chatbot, inputs=[msg, chatbot_ui], outputs=chatbot_ui)
-    msg.submit(fn=chatbot, inputs=[msg, chatbot_ui], outputs=chatbot_ui)
+    with gr.Row():
+        user_id = gr.Textbox(label="User ID", value="test_user")
+        zone_id = gr.Textbox(label="Zone ID", value="Mopti")
+
+    query = gr.Textbox(label="Votre question", placeholder="Ex: Mon sol est sableux, que faire ?")
+
+    submit_btn = gr.Button("Envoyer")
+
+    response_box = gr.Markdown(label="Réponse")
+    trace_box = gr.Markdown(label="Trace d'exécution")
+
+    submit_btn.click(
+        query_backend,
+        inputs=[query, user_id, zone_id],
+        outputs=[response_box, trace_box]
+    )
 
 if __name__ == "__main__":
-    demo.launch(share=True)
+    demo.launch(server_name="localhost", server_port=7861)

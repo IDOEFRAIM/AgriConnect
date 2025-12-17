@@ -5,9 +5,9 @@ from agents.Soil import *
 from agents.subsidy import *
 
 __all__ = [
-    CropManagementService,
+    BurkinaCropAgent,
     HealthDoctorTool,
-    MeteoAnalysisToolkit,
+    MeteoAgent,
     SoilDoctorTool,
     SubsidyManagementService
 ]

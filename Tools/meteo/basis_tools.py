@@ -1,169 +1,191 @@
+import logging
 import math
-from dataclasses import dataclass
-from typing import Dict, List, Optional
+from datetime import datetime
+from typing import TypedDict, List, Dict, Any, Optional, Tuple
+from dataclasses import dataclass, field
+from enum import Enum
 
+# --- Importations LangChain & LangGraph ---
+from langgraph.graph import StateGraph, END
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_community.chat_models import ChatOllama
 
-@dataclass
+# ==============================================================================
+# 1. TON TOOL (SahelAgriAdvisor & Math)
+# ==============================================================================
+class SoilType(Enum):
+    SABLEUX = "sableux"
+    ARGILEUX = "argileux"
+    LIMONNEUX = "limonneux"
+    FERRUGINEUX = "ferrugineux"
+    STANDARD = "standard"
+
+@dataclass(frozen=True)
 class CropProfile:
     name: str
-    t_base: float          # Température seuil de croissance
-    t_max_optimal: float   # Température seuil de stress
-    kc_ini: float          # Coefficient cultural début
-    kc_mid: float          # Coefficient cultural mi-saison
-    kc_end: float          # Coefficient cultural fin
-    cycle_days: int        # Durée moyenne du cycle
+    t_base: float
+    t_max_optimal: float
+    kc: Dict[str, float]
+    cycle_days: int
     drought_sensitive: bool
 
-
-# Base de connaissances cultures
-class SahelCropKnowledgeBase:
-    def __init__(self):
-        self._crops = {
-            "maïs": CropProfile("Maïs", 10, 35, 0.3, 1.2, 0.6, 90, True),
-            "sorgho": CropProfile("Sorgho", 10, 40, 0.3, 1.1, 0.55, 110, False),
-            "mil": CropProfile("Mil", 12, 42, 0.3, 1.0, 0.5, 100, False),
-            "coton": CropProfile("Coton", 15, 38, 0.35, 1.2, 0.7, 150, True),
-            "niébé": CropProfile("Niébé", 12, 36, 0.4, 1.0, 0.35, 70, False),
-        }
-
-    def get_crop_config(self, crop_name: str) -> CropProfile:
-        name = crop_name.lower()
-        for key, profile in self._crops.items():
-            if key in name:
-                return profile
-        return CropProfile("Standard", 10, 35, 0.5, 1.0, 0.5, 100, False)
-
-
 class SahelAgroMath:
-    """
-    Bibliothèque de calculs agrométéorologiques adaptés aux conditions tropicales sèches.
-    """
-
-    def __init__(self):
-        self.GSC = 0.0820  # constante solaire
-
-    def ra_extraterrestre(self, latitude_deg: float, doy: int = 180) -> float:
-        """
-        Calcule Ra (MJ/m^2/jour) pour une latitude donnée et un jour de l'année.
-        """
-        phi = math.radians(latitude_deg)
+    GSC = 0.0820
+    @staticmethod
+    def calculate_hargreaves_et0(t_min: float, t_max: float, lat: float, doy: int) -> float:
+        phi = math.radians(lat)
         dr = 1 + 0.033 * math.cos(2 * math.pi * doy / 365.0)
         delta = 0.409 * math.sin(2 * math.pi * doy / 365.0 - 1.39)
         x = -math.tan(phi) * math.tan(delta)
-        x = max(-1.0, min(1.0, x))
-        omega_s = math.acos(x)
-        ra = (24 * 60 / math.pi) * self.GSC * dr * (
+        omega_s = math.acos(max(-1.0, min(1.0, x)))
+        ra = (24 * 60 / math.pi) * 0.0820 * dr * (
             omega_s * math.sin(phi) * math.sin(delta) +
             math.cos(phi) * math.cos(delta) * math.sin(omega_s)
         )
-        return ra
-
-    def calculate_hargreaves_et0(self, t_min: float, t_max: float, t_mean: float, lat: float = 12.3) -> float:
-        """
-        Calcule ET0 selon Hargreaves-Samani.
-        """
-        ra = self.ra_extraterrestre(lat)
-        et0 = 0.0023 * 0.408 * ra * (t_mean + 17.8) * math.sqrt(max(0.1, t_max - t_min))
+        t_mean = (t_max + t_min) / 2
+        et0 = 0.0023 * 0.408 * ra * (t_mean + 17.8) * math.sqrt(max(0, t_max - t_min))
         return round(et0, 2)
 
     @staticmethod
-    def calculate_gdd(t_min: float, t_max: float, profile: CropProfile) -> float:
-        """
-        Degrés-Jours de Croissance (GDD).
-        """
-        effective_t_max = min(t_max, profile.t_max_optimal)
-        effective_t_min = max(t_min, profile.t_base)
-        gdd = ((effective_t_max + effective_t_min) / 2) - profile.t_base
-        return round(max(0, gdd), 2)
+    def calculate_delta_t(temp: float, rh: float) -> Tuple[float, str]:
+        tw = (temp * math.atan(0.151977 * math.sqrt(rh + 8.313659)) + 
+              math.atan(temp + rh) - math.atan(rh - 1.676331) + 
+              0.00391838 * (rh**1.5) * math.atan(0.023101 * rh) - 4.686035)
+        delta_t = round(temp - tw, 1)
+        if 2 <= delta_t <= 8: advice = "OPTIMAL"
+        elif delta_t > 10: advice = "DANGER_EVAPORATION"
+        else: advice = "RISQUE_LESSIVAGE"
+        return delta_t, advice
 
-    @staticmethod
-    def calculate_effective_rain(precip_mm: float, soil: str = "standard") -> float:
-        """
-        Pluie efficace selon type de sol.
-        """
-        coeffs = {
-            "sableux": 0.45,
-            "argileux": 0.65,
-            "amenage": 0.85,
-            "standard": 0.6
+class SahelAgriAdvisor:
+    def __init__(self):
+        self.math = SahelAgroMath()
+        self.crops = {
+            "maïs": CropProfile("Maïs", 10, 35, {'ini': 0.3, 'mid': 1.2, 'end': 0.6}, 90, True),
+            "mil": CropProfile("Mil", 12, 42, {'ini': 0.3, 'mid': 1.0, 'end': 0.5}, 100, False),
+            "niébé": CropProfile("Niébé", 12, 36, {'ini': 0.4, 'mid': 1.0, 'end': 0.35}, 75, False)
         }
-        c = coeffs.get(soil, 0.6)
-        if precip_mm < 5:
-            return 0.0
-        if precip_mm > 75:  # pertes par ruissellement
-            precip_mm *= 0.7
-        return round(c * precip_mm, 2)
 
-    def wet_bulb_stull(self, temp_c: float, rh_pct: float) -> float:
-        T = max(5.0, min(45.0, temp_c))
-        RH = max(5.0, min(95.0, rh_pct))
-        Tw = (
-            T * math.atan(0.151977 * math.sqrt(RH + 8.313659))
-            + math.atan(T + RH)
-            - math.atan(RH - 1.676331)
-            + 0.00391838 * (RH ** 1.5) * math.atan(0.023101 * RH)
-            - 4.686035
+    def get_daily_diagnosis(self, crop_key: str, soil: SoilType, 
+                            t_min: float, t_max: float, rh: float, 
+                            precip: float, doy: int, lat: float) -> dict:
+        crop = self.crops.get(crop_key.lower())
+        if not crop: return {"error": "Culture non reconnue"}
+        et0 = self.math.calculate_hargreaves_et0(t_min, t_max, lat, doy)
+        etc = et0 * crop.kc['mid']
+        pe = self._calculate_pe(precip, soil)
+        water_balance = round(pe - etc, 2)
+        heat_alert = t_max > crop.t_max_optimal
+        delta_t, spray_status = self.math.calculate_delta_t(t_max, rh)
+
+        return {
+            "culture": crop.name,
+            "besoin_eau_etc_mm": etc,
+            "bilan_hydrique_mm": water_balance,
+            "conseil_irrigation": "NECESSAIRE" if water_balance < -3 else "SURVEILLANCE",
+            "alerte_chaleur": heat_alert,
+            "pulverisation": spray_status,
+            "delta_t": delta_t
+        }
+
+    def _calculate_pe(self, rain: float, soil: SoilType) -> float:
+        coeffs = {SoilType.SABLEUX: 0.5, SoilType.ARGILEUX: 0.7, SoilType.STANDARD: 0.6}
+        return round(rain * coeffs.get(soil, 0.6), 2) if rain > 5 else 0.0
+
+# ==============================================================================
+# 2. CONFIGURATION DE L'AGENT LANGGRAPH
+# ==============================================================================
+
+class AgentState(TypedDict):
+    user_query: str
+    weather_data: Dict[str, Any]
+    culture_info: Dict[str, Any]
+    raw_diagnosis: Dict[str, Any]
+    final_response: str
+
+class SahelAgent:
+    def __init__(self, ollama_model="llama3:8b"):
+        self.advisor = SahelAgriAdvisor()
+        self.llm = ChatOllama(model=ollama_model, temperature=0.2)
+        logger = logging.getLogger("agent")
+
+    def call_agri_tool_node(self, state: AgentState):
+        """Utilise le moteur mathématique pour obtenir des données brutes."""
+        w = state["weather_data"]
+        c = state["culture_info"]
+        
+        # On exécute le diagnostic technique
+        diagnosis = self.advisor.get_daily_diagnosis(
+            crop_key=c["crop_name"],
+            soil=c["soil_type"],
+            t_min=w["t_min"],
+            t_max=w["t_max"],
+            rh=w["rh"],
+            precip=w["precip"],
+            doy=datetime.now().timetuple().tm_yday,
+            lat=c["lat"]
         )
-        return Tw
+        return {"raw_diagnosis": diagnosis}
 
-    def calculate_delta_t(self, temp_c: float, humidity_pct: float) -> dict:
-        Tw = self.wet_bulb_stull(temp_c, humidity_pct)
-        dT = round(temp_c - Tw, 1)
-        if 2 <= dT <= 10:
-            advice = "Conditions favorables à la pulvérisation."
-        elif dT < 2:
-            advice = "Trop humide, risque de ruissellement."
-        else:
-            advice = "Trop sec, risque d'évaporation."
-        return {"Delta_T": dT, "Advice": advice}
+    def ollama_expert_node(self, state: AgentState):
+        """Ollama traduit les chiffres en conseils humains et bienveillants."""
+        diag = state["raw_diagnosis"]
+        
+        system_prompt = (
+            "Tu es un expert agronome sahélien. Ton but est d'expliquer les résultats "
+            "scientifiques (ETc, Bilan hydrique, Delta T) de manière simple à un paysan. "
+            "Sois fraternel, utilise des emojis et donne des conseils pratiques basés sur les chiffres."
+        )
+        
+        human_content = f"""
+        Voici le diagnostic technique :
+        - Culture : {diag['culture']}
+        - Besoin en eau (ETc) : {diag['besoin_eau_etc_mm']} mm
+        - Bilan hydrique : {diag['bilan_hydrique_mm']} mm
+        - Conseil Irrigation : {diag['conseil_irrigation']}
+        - Alerte Chaleur : {'OUI' if diag['alerte_chaleur'] else 'NON'}
+        - Condition Pulvérisation (Delta T) : {diag['pulverisation']} (Valeur: {diag['delta_t']})
 
+        Réponds à la question de l'utilisateur : "{state['user_query']}"
+        """
+        
+        response = self.llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=human_content)
+        ])
+        return {"final_response": response.content}
 
-class MeteoAnalysisToolkit:
-    """
-    Transforme les chiffres en conseils pour le paysan burkinabé.
-    """
+    def build_graph(self):
+        workflow = StateGraph(AgentState)
+        workflow.add_node("calculate", self.call_agri_tool_node)
+        workflow.add_node("explain", self.ollama_expert_node)
+        
+        workflow.set_entry_point("calculate")
+        workflow.add_edge("calculate", "explain")
+        workflow.add_edge("explain", END)
+        
+        return workflow.compile()
 
-    @staticmethod
-    def evaluate_sowing_conditions(rain_last_3_days: float, soil_type: str = "standard") -> dict:
-        thresholds = {
-            "sableux": 15.0,
-            "argileux": 20.0,
-            "limoneux": 18.0,
-            "ferrugineux": 17.0,
-            "amenage": 12.0,
-            "standard": 18.0
+# ==============================================================================
+# 3. TEST DE L'AGENT
+# ==============================================================================
+if __name__ == "__main__":
+    agent_instance = SahelAgent()
+    app = agent_instance.build_graph()
+
+    # Simulation de données reçues (ex: via une API météo ou un capteur)
+    inputs = {
+        "user_query": "Est-ce que c'est le bon moment pour traiter mon champ de maïs et comment va l'irrigation ?",
+        "weather_data": {
+            "t_min": 22.0, "t_max": 38.0, "rh": 40.0, "precip": 0.0
+        },
+        "culture_info": {
+            "crop_name": "maïs",
+            "soil_type": SoilType.SABLEUX,
+            "lat": 14.5  # Latitude typique (ex: Sénégal/Mali)
         }
-        threshold = thresholds.get(soil_type, thresholds["standard"])
-        if rain_last_3_days >= threshold:
-            return {"code": "SEMIS_FAVORABLE", "message": f"Humidité du sol favorable ({rain_last_3_days} mm). Semis recommandé.", "level": "INFO"}
-        elif rain_last_3_days >= 5:
-            return {"code": "SEMIS_RISQUE", "message": f"Humidité insuffisante ({rain_last_3_days} mm). Attendre > {threshold} mm.", "level": "WARNING"}
-        else:
-            return {"code": "SEMIS_IMPOSSIBLE", "message": "Sol trop sec pour semer.", "level": "CRITICAL"}
+    }
 
-    def evaluate_phytosanitary_conditions(self, wind_speed: float, delta_t: float, rain_forecast_24h: float) -> dict:
-        reasons = []
-        is_safe = True
-        level = "INFO"
-        if wind_speed > 18:
-            is_safe = False; level = "CRITICAL"; reasons.append(f"Vent trop fort ({wind_speed} km/h)")
-        elif wind_speed > 12:
-            level = "WARNING"; reasons.append(f"Vent modéré ({wind_speed} km/h)")
-        if rain_forecast_24h > 3:
-            is_safe = False; level = "CRITICAL"; reasons.append(f"Pluie prévue ({rain_forecast_24h} mm)")
-        if delta_t < 2:
-            is_safe = False; level = "WARNING"; reasons.append(f"Delta T trop bas ({delta_t}°C)")
-        elif delta_t > 8:
-            is_safe = False; level = "WARNING"; reasons.append(f"Delta T trop élevé ({delta_t}°C)")
-        return {"can_spray": is_safe, "level": level, "message": "Conditions favorables." if is_safe else f"Ne pas traiter : {', '.join(reasons)}."}
-
-    @staticmethod
-    def check_heat_stress(t_max: float, crop_profile: CropProfile) -> Optional[str]:
-        margin = t_max - crop_profile.t_max_optimal
-        if margin > 3:
-            return f"ALERTE CRITIQUE : T_max ({t_max}°C) dépasse de {margin:.1f}°C le seuil du {crop_profile.name}."
-        elif margin > 1:
-            msg = f"Alerte chaleur : T_max ({t_max}°C) dépasse légèrement le seuil du {crop_profile.name}."
-            if crop_profile.drought_sensitive:
-                msg += " Culture sensible à la sécheresse : impact aggravé."
-            return msg
+    result = app.invoke(inputs)
+    print("\n=== RÉPONSE DE L'AGENT EXPERT ===\n")
+    print(result["final_response"])

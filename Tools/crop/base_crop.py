@@ -1,195 +1,136 @@
+import logging
 from dataclasses import dataclass
-from typing import Dict, Optional
-from datetime import datetime, timedelta
-
-# --- ITINÉRAIRES TECHNIQUES SAHEL (Burkina Faso, zone soudano-sahélienne) ---
+from typing import Dict, List, Optional, Any
+from datetime import date, timedelta
 
 @dataclass
-class CropTechProfile:
+class SahelianCropProfile:
     name: str
+    varieties: Dict[str, List[str]]  # Zone (Sahel, Centre, Sud) -> Liste de noms
     cycle_days: int
-    seeding_density: str     # Espacement adapté aux sols tropicaux
-    seeds_per_hole: str      # Nombre de graines par poquet
-    sowing_depth_cm: int
-    fertilizer_schedule: Dict[str, str] # Jour après semis -> Action
+    seeding_density: str
+    depth_cm: int
+    organic_matter_min_tha: float # Tonnes/ha de fumure organique
+    mineral_fertilizer: Dict[str, str] # JAS -> Instruction
+    water_strategy: str # Zaï, Cordons pierreux, etc.
 
-class SahelAgronomyDB:
-    """Base de données des itinéraires techniques adaptés au Burkina Faso (Sahel tropical)."""
-    
-    DATA = {
-        "maïs": CropTechProfile(
-            name="Maïs (Variétés composites locales)",
-            cycle_days=95,
-            seeding_density="80cm x 40cm (sols ferrugineux tropicaux)",
-            seeds_per_hole="2 graines par poquet",
-            sowing_depth_cm=5,
-            fertilizer_schedule={
-                "15": "NPK (14-23-14 ou 15-15-15) : 200 kg/ha. Appliquer après un bon orage (>20 mm).",
-                "45": "Urée 46% : 100 kg/ha au début de la montaison. Enfouir et refermer pour éviter volatilisation."
-            }
-        ),
-        "sorgho": CropTechProfile(
-            name="Sorgho (Blanc/Rouge, variétés locales)",
+class BurkinaCropTool:
+    """
+    Expert agronomique dédié au Burkina Faso. 
+    Gère les itinéraires techniques adaptés aux sols ferrugineux et aux 
+    variations de pluviométrie sahélienne.
+    """
+
+    _CROPS = {
+        "sorgho": SahelianCropProfile(
+            name="Sorgho (Blanc/Rouge)",
+            varieties={
+                "Nord": ["Sariaso 14", "Soubatimi"],
+                "Centre": ["Kapèlga", "Sariaso 11"],
+                "Sud": ["Sariaso 18", "Framida"]
+            },
             cycle_days=110,
-            seeding_density="80cm x 40cm (cordons pierreux conseillés)",
-            seeds_per_hole="Démarier à 3 plants maximum",
-            sowing_depth_cm=3,
-            fertilizer_schedule={
-                "21": "NPK 15-15-15 : 100 kg/ha au premier sarclage (sol humide).",
-                "45": "Urée 46% : 50 kg/ha si sol pauvre ou après pluie efficace."
-            }
+            seeding_density="80cm x 40cm (31 250 poquets/ha)",
+            depth_cm=3,
+            organic_matter_min_tha=5.0,
+            mineral_fertilizer={
+                "15": "NPK (15-15-15) : 100 kg/ha après démariage.",
+                "45": "Urée (46%) : 50 kg/ha si l'humidité du sol est suffisante."
+            },
+            water_strategy="Cordons pierreux ou Zaï sur sols dégradés (Zipellé)."
         ),
-        "coton": CropTechProfile(
-            name="Coton (zones SOFITEX)",
-            cycle_days=150,
-            seeding_density="80cm x 30cm en ligne continue ou 40cm en poquets",
-            seeds_per_hole="Démarier à 2 plants vigoureux",
-            sowing_depth_cm=3,
-            fertilizer_schedule={
-                "15": "NPK-SB (Spécial Coton) : 150 kg/ha après démariage.",
-                "40": "Urée 46% : 50 kg/ha au début de la floraison.",
-                "60": "Urée 46% : 50 kg/ha en pleine floraison."
-            }
+        "mil": SahelianCropProfile(
+            name="Petit Mil",
+            varieties={
+                "Nord": ["IKP", "HKP"],
+                "Centre": ["MISARI"],
+                "Sud": ["SOSAT C88"]
+            },
+            cycle_days=85,
+            seeding_density="1m x 1m (10 000 poquets/ha)",
+            depth_cm=3,
+            organic_matter_min_tha=3.0,
+            mineral_fertilizer={"20": "NPK : 50 kg/ha (optionnel si fumure organique forte)."},
+            water_strategy="Demi-lunes pour la récupération des eaux de ruissellement."
         ),
-        "niébé": CropTechProfile(
-            name="Niébé (variétés locales résistantes)",
+        "niébé": SahelianCropProfile(
+            name="Niébé (Haricot)",
+            varieties={
+                "Nord": ["Kom-callé", "KVX 61-1"],
+                "Centre": ["Tiligré", "KVX 396-4-5-2D"],
+                "Sud": ["KVX 442-3-25"]
+            },
             cycle_days=70,
-            seeding_density="60cm x 30cm (sols sableux ou ferrugineux)",
-            seeds_per_hole="2 graines par poquet",
-            sowing_depth_cm=3,
-            fertilizer_schedule={
-                "0": "NPK 15-15-15 : 100 kg/ha au semis (fond).",
-                "30": "Pas d'Urée (le niébé fixe l'azote naturellement)."
-            }
+            seeding_density="50cm x 20cm (Sableux) ou 60cm x 30cm",
+            depth_cm=4,
+            organic_matter_min_tha=2.5,
+            mineral_fertilizer={"0": "NPK : 50 kg/ha au semis. Pas d'Urée (fixe l'azote)."},
+            water_strategy="Culture en pur ou associé (Mil/Niébé) pour couvrir le sol."
         )
     }
 
-class CropManagerTool:
-    """
-    Outil utilisé par l'Agent CROP pour gérer l'itinéraire technique sahélien.
-    """
-    
-    def get_seeding_advice(self, crop_name: str) -> str:
+    def __init__(self):
+        self.logger = logging.getLogger("BurkinaAgro")
+
+    def get_technical_sheet(self, crop: str, zone: str) -> str:
         """
-        Instructions de semis adaptées au Sahel burkinabè.
-        Version robuste, contextualisée et production-ready.
+        Génère une fiche technique complète adaptée à la zone climatique.
+        Zones valides : 'Nord' (Sahel), 'Centre', 'Sud'.
         """
-
-        crop_key = (crop_name or "").lower().strip()
-        profile = SahelAgronomyDB.DATA.get(crop_key)
-
-        if not profile:
-            return f"Aucune donnée technique disponible pour la culture '{crop_name}'."
-
-        lines = [
-            f"Guide de Semis – {profile.name}",
-            f"- Espacement recommandé : {profile.seeding_density}",
-            f"- Densité : {profile.seeds_per_hole} graines par poquet",
-            f"- Profondeur : {profile.sowing_depth_cm} cm (ne pas dépasser en zone sahélienne)",
-            "",
-            "Conseils pratiques (Sahel Burkina) :",
-            "- Semer après une pluie utile d'au moins 20 mm pour garantir la levée.",
-            "- Éviter de semer dans un sol sec : risque de levée irrégulière.",
-            "- En sol sableux : privilégier des poquets légèrement enrichis en fumure organique.",
-            "- En sol limoneux : casser la croûte de battance après la pluie si nécessaire.",
-            "- En zone à poches de sécheresse : prévoir un ressemis rapide si la levée échoue.",
-        ]
-
-        return "\n".join(lines)
-
-    def check_fertilizer_status(self, crop_name: str, days_after_sowing: int) -> str:
-        """
-        Vérifie si un apport d'engrais est nécessaire aujourd'hui.
-        Version robuste et contextualisée pour le Sahel burkinabè.
-        """
-
-        # Normalisation robuste
-        crop_key = (crop_name or "").lower().strip()
-        profile = SahelAgronomyDB.DATA.get(crop_key)
-
-        if not profile:
-            return f"Culture inconnue : '{crop_name}'."
-
-        # Sécurité : jours négatifs
-        if days_after_sowing < 0:
-            return "Le nombre de jours après semis ne peut pas être négatif."
-
-        # Sécurité : semis trop récent
-        if days_after_sowing < 3:
-            return (
-                f"Jour {days_after_sowing} : Trop tôt pour un apport d'engrais.\n"
-                "Attendre la levée complète avant toute application."
-            )
-
-        # Recherche d'une fenêtre d'application
-        for day_str, action in profile.fertilizer_schedule.items():
-            target_day = int(day_str)
-
-            # Fenêtre flexible : J-3 à J+5
-            if target_day - 3 <= days_after_sowing <= target_day + 5:
-                return (
-                    f"✅ ACTION REQUISE (Jour {days_after_sowing})\n"
-                    f"{action}\n\n"
-                    "Conseil Sahel :\n"
-                    "- Appliquer uniquement sur sol humide (après pluie ou arrosage).\n"
-                    "- Éviter les fortes chaleurs (risque de volatilisation).\n"
-                    "- Incorporer légèrement si possible pour limiter les pertes."
-                )
-
-        # Prochain apport
-        next_steps = [
-            int(d) for d in profile.fertilizer_schedule.keys()
-            if int(d) > days_after_sowing
-        ]
-
-        if next_steps:
-            delta = min(next_steps) - days_after_sowing
-            return (
-                f"Aucune action aujourd'hui (Jour {days_after_sowing}).\n"
-                f"⏳ Prochain apport prévu dans {delta} jours."
-            )
-
-        # Tous les apports sont passés
+        p = self._CROPS.get(crop.lower())
+        if not p: return f"Culture '{crop}' non répertoriée."
+        
+        vars_zone = p.varieties.get(zone.capitalize(), p.varieties["Centre"])
+        
         return (
-            f"✅ Fertilisation terminée pour cette saison (Jour {days_after_sowing}).\n"
-            "Surveiller l'état du feuillage et prévoir un apport foliaire si signes de carence."
+            f"📍 **FICHE TECHNIQUE : {p.name.upper()} ({zone.upper()})**\n"
+            f"--- \n"
+            f"🌾 **Variétés conseillées :** {', '.join(vars_zone)}\n"
+            f"⏱️ **Cycle moyen :** {p.cycle_days} jours\n"
+            f"📏 **Semis :** {p.seeding_density} à {p.depth_cm}cm de profondeur\n"
+            f"💩 **Fumure organique :** {p.organic_matter_min_tha} t/ha avant labour\n"
+            f"💧 **Stratégie Eau :** {p.water_strategy}\n"
+            f"⚠️ **Note :** Ne jamais appliquer d'engrais minéral sur sol sec."
         )
 
-
-    def estimate_harvest(self, crop_name: str, sowing_date_str: str) -> str:
+    def check_climate_risk(self, crop: str, days_remaining_rain: int) -> str:
         """
-        Estime la date de récolte pour une culture donnée.
-        Version robuste, avec calcul réel et conseils sahéliens.
+        Évalue si le cycle de la culture peut se terminer avant la fin des pluies.
         """
+        p = self._CROPS.get(crop.lower())
+        if not p: return "Culture inconnue."
+        
+        if p.cycle_days > days_remaining_rain:
+            return (f"🚨 **RISQUE ÉLEVÉ** : Le cycle ({p.cycle_days}j) dépasse la fin "
+                    f"estimée des pluies ({days_remaining_rain}j). Risque de flétrissement au stade grain.")
+        return f"✅ **SÉCURITÉ** : Le cycle de la culture est compatible avec la saison restante."
 
-        # Normalisation
-        crop_key = (crop_name or "").lower().strip()
-        profile = SahelAgronomyDB.DATA.get(crop_key)
+    def calculate_inputs(self, crop: str, surface_ha: float) -> Dict[str, Any]:
+        """
+        Calcule les besoins exacts en sacs de 50kg pour une surface donnée.
+        """
+        p = self._CROPS.get(crop.lower())
+        if not p: return {"error": "Culture inconnue"}
+        
+        # Exemple simplifié pour le Sorgho (100kg NPK, 50kg Urée)
+        npk_kg = 100 * surface_ha if "sorgho" in crop.lower() else 50 * surface_ha
+        urea_kg = 50 * surface_ha if "sorgho" in crop.lower() else 0
+        
+        return {
+            "surface_ha": surface_ha,
+            "NPK_sacs_50kg": round(npk_kg / 50, 1),
+            "Uree_sacs_50kg": round(urea_kg / 50, 1),
+            "Fumure_organique_tonnes": p.organic_matter_min_tha * surface_ha
+        }
 
-        if not profile:
-            return f"Culture inconnue : '{crop_name}'."
-
-        # Vérification de la date
-        try:
-            sowing_date = datetime.strptime(sowing_date_str, "%Y-%m-%d")
-        except ValueError:
-            return (
-                "Format de date invalide. Utilisez le format AAAA-MM-JJ.\n"
-                "Exemple : 2025-06-15"
-            )
-
-        # Calcul de la date estimée
-        harvest_date = sowing_date + timedelta(days=profile.cycle_days)
-
-        # Construction du message
-        return (
-            f"Estimation Récolte – {profile.name}\n"
-            f"- Cycle moyen : {profile.cycle_days} jours\n"
-            f"- Semis effectué le : {sowing_date.strftime('%d/%m/%Y')}\n"
-            f"- Récolte estimée : {harvest_date.strftime('%d/%m/%Y')}\n\n"
-            "Conseils Sahel :\n"
-            "- La date peut varier selon les pluies et la fertilité du sol.\n"
-            "- En cas de stress hydrique prolongé, ajouter 7 à 15 jours.\n"
-            "- Sur sols pauvres, la maturité peut être retardée.\n"
-            "- Sur sols bien fumés, la récolte peut être légèrement avancée."
-        )
+    def get_rotation_advice(self, current_crop: str, previous_crop: str) -> str:
+        """
+        Conseille sur la rotation pour lutter contre le Striga et l'appauvrissement.
+        """
+        c, p = current_crop.lower(), previous_crop.lower()
+        
+        if c == p:
+            return "⚠️ **MAUVAISE ROTATION** : Évitez la monoculture (risque Striga et parasites)."
+        if "niébé" in p or "arachide" in p:
+            return "🌟 **EXCELLENTE ROTATION** : La légumineuse a enrichi le sol en azote."
+        return "✅ **ROTATION CORRECTE**."
