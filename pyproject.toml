@@ -1,17 +1,19 @@
 [tool.poetry]
 name = "agconnect"
 version = "0.1.0"
-description = "Agriculture multi-agent"
+description = "Agriculture multi-agent with Robust RAG"
 authors = ["IDOEFRAIM <idoefraimtanka@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 
-# 👇 Add this line to tell Poetry where your code is
 packages = [
     { include = "agents" },
-    {include="rag"},
-    {include="Tools"},
-    {include="services"}
+    { include = "rag" },
+    { include = "Tools" },
+    { include = "services" },
+    { include = "orchestrator" },
+    { include = "backend" },
+    { include = "frontend" }
 ]
 
 [tool.poetry.dependencies]
@@ -32,14 +34,24 @@ aiofiles = "^23.1"
 pdfminer-six = "^20221105"
 pytest = "^7.0"
 fastapi = "^0.115"
+uvicorn = "^0.30"
+python-multipart = ">=0.0.18"
 aiohttp = "^3.9"
 torch = "^2.2"
 pymilvus = "^2.4"
 aioredis = "^2.0"
 srsly = "^2.5.0"
 spacy = "^3.7"
-langgraph = "^1.0.4"
-langchain = "^1.0.4"
+langgraph = ">=0.2"
+langchain = "^0.3"
+langchain-community = "^0.3"
+faiss-cpu = "^1.8"
+scikit-learn = "^1.5"
+python-dotenv = "^1.0"
+gradio = "^6.3.0"
+requests = "^2.32.5"
+apscheduler = "^3.11.2"
+beautifulsoup4 = "^4.14.3"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

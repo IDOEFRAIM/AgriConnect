@@ -1,4 +1,6 @@
 import logging
+import json
+import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
 
@@ -20,39 +22,32 @@ class SoilDoctorTool:
     Gère la santé du sol, la rétention d'eau et les techniques de conservation (CES).
     """
 
-    _SOILS = {
-        "sableux": SahelSoilProfile(
-            name="Sol Sableux",
-            local_term="Dior / Seno",
-            description="Sol filtrant, pauvre en humus.",
-            water_retention="Faible",
-            pwp_fc=(5, 12),
-            ces_technique="Zaï et Poquets fertilisés",
-            ces_description="Creuser des trous de 20-30cm, y mettre du fumier pour concentrer l'humidité."
-        ),
-        "gravillonnaire": SahelSoilProfile(
-            name="Sol Ferrugineux",
-            local_term="Zipellé (si dénudé)",
-            description="Sol dur avec gravillons rouges (latérite).",
-            water_retention="Moyenne-Basse",
-            pwp_fc=(8, 18),
-            ces_technique="Cordons pierreux / Demi-lunes",
-            ces_description="Barrières de pierres suivant les courbes de niveau pour freiner l'eau."
-        ),
-        "argileux": SahelSoilProfile(
-            name="Sol Argileux",
-            local_term="Bas-fond / Baogo",
-            description="Sol lourd, riche mais risque d'asphyxie.",
-            water_retention="Très Forte",
-            pwp_fc=(20, 35),
-            ces_technique="Billonnage cloisonné",
-            ces_description="Créer des diguettes pour retenir ou évacuer l'eau selon la pluie."
-        )
-    }
+    def __init__(self):
+        self.logger = logging.getLogger("SoilDoctorTool")
+        self._SOILS = self._load_soils()
+
+    def _load_soils(self) -> Dict[str, SahelSoilProfile]:
+        try:
+            json_path = os.path.join(os.path.dirname(__file__), 'soils_data.json')
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            soils = {}
+            for key, value in data.items():
+                # Convert list to tuple for pwp_fc
+                value['pwp_fc'] = tuple(value['pwp_fc'])
+                soils[key] = SahelSoilProfile(**value)
+            return soils
+        except Exception as e:
+            self.logger.error(f"Error loading soils data: {e}")
+            return {}
 
     def get_full_diagnosis(self, texture: str, obs_text: str, ph: float = 6.5) -> Dict[str, Any]:
         """Effectue un diagnostic complet : Texture, Eau et Chimie."""
-        profile = self._SOILS.get(texture.lower(), self._SOILS["sableux"])
+        profile = self._SOILS.get(texture.lower(), self._SOILS.get("sableux"))
+        if not profile:
+             # Fallback if even default is missing (unlikely)
+             return {"error": "Données de sol non disponibles."}
         
         # 1. Analyse de l'humidité par observation (Heuristique sahélienne)
         moisture_est = self._estimate_moisture(obs_text)
@@ -66,7 +61,7 @@ class SoilDoctorTool:
         ph_diag = self._analyze_ph_local(ph)
 
         # 4. Choix du diagramme CES
-        diagram = "" if "Zaï" in profile.ces_technique else ""
+        diagram = "Diagramme Zaï" if "Zaï" in profile.ces_technique else "Diagramme Cordons Pierreux"
 
         return {
             "soil_type": f"{profile.name} ({profile.local_term})",
@@ -101,3 +96,24 @@ class SoilDoctorTool:
         if budget == "bas":
             return "Utilisez le **Burkina Phosphate (BP)** : 200kg/ha. Moins cher et durable (effet sur 3 ans)."
         return "Utilisez le **NPK 15-15-15** : 150kg/ha pour un effet immédiat."
+
+    def calculate_compost_maturity(self, start_date: str) -> Dict[str, Any]:
+        """
+        Estime la date de maturité du compost.
+        start_date format: 'YYYY-MM-DD'
+        """
+        # (Dans un vrai système, on utiliserait datetime, ici on simule)
+        return {
+            "status": "EN COURS",
+            "message": "Le compost doit chauffer pendant 3 semaines (phase thermophile) puis mûrir 3 mois.",
+            "test_maturite": "Prenez une poignée : si ça sent la terre de forêt et que c'est noir, c'est bon.",
+            "danger": "Si ça chauffe encore ou sent l'ammoniac, c'est TOXIQUE pour les racines."
+        }
+
+    def check_soil_fatigue(self, crop_history: List[str]) -> str:
+        """Détecte si le sol est épuisé par la monoculture."""
+        if not crop_history: return "Pas d'historique."
+        last_crop = crop_history[-1].lower()
+        if crop_history.count(last_crop) >= 2:
+            return f"⛔ **SOL FATIGUÉ** : Trop de {last_crop} successifs. Le sol a faim. Il faut tourner avec de l'Arachide ou du Niébé."
+        return "✅ **SOL SAIN** : La rotation semble respectée."

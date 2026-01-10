@@ -8,6 +8,10 @@ from datetime import datetime
 from typing import Dict, Any, Callable, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 
+import sys
+# Ajout du root au path pour trouver config.py
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import config
 
 # Importer tes services (adapter si signatures différentes)
@@ -97,6 +101,8 @@ class ScraperOrchestrator:
         future = executor.submit(_safe_call_retryable, fn, *args, **kwargs)
         try:
             result = future.result(timeout=timeout_s)
+            # Sauvegarde locale immédiate (même si cette méthode n'est pas utilisée par run_all, c'est une bonne pratique)
+            self._save_local_cache(task_name, result)
             return result
         except TimeoutError:
             logger.error("Timeout: la tâche %s a dépassé %ds", task_name, timeout_s)
@@ -104,6 +110,19 @@ class ScraperOrchestrator:
         except Exception as e:
             logger.exception("Exception inattendue lors de l'exécution de %s: %s", task_name, e)
             return {"status": "ERROR", "results": [], "error": str(e)}
+
+    def _save_local_cache(self, task_name: str, data: Dict[str, Any]):
+        """Persiste les données brutes pour les Agents (Offline-First)."""
+        try:
+            # Création du dossier 'data/cache' pour ne pas polluer la racine 'data/' si nécessaire
+            # Mais par simplicité on met tout dans 'data/' comme demandé
+            filename = f"data/{task_name}_latest.json"
+            os.makedirs("data", exist_ok=True)
+            with open(filename, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            logger.info(f"💾 Données sauvegardées pour {task_name} -> {filename}")
+        except Exception as e:
+            logger.warning(f"Impossible de sauvegarder le cache local pour {task_name}: {e}")
 
     def run_all(self, save_report: bool = True) -> Dict[str, Any]:
         """
@@ -147,6 +166,10 @@ class ScraperOrchestrator:
                     dur = res_wrapper.get("duration", 0.0)
                     results[name] = _normalize_result(out)
                     durations[name] = dur
+                    
+                    # --- NOUVEAU : SAUVEGARDE SYSTÉMATIQUE ---
+                    self._save_local_cache(name, results[name])
+                    
                     logger.info("Tâche %s terminée en %.2fs (status=%s)", name, dur, results[name].get("status"))
                 except TimeoutError:
                     logger.error("Timeout global pour la tâche %s", name)

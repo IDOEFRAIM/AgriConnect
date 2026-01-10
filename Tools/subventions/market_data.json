@@ -1,0 +1,50 @@
+{
+  "maïs": {
+    "crop": "Maïs grain",
+    "base_price_harvest": 140,
+    "peak_price_soudure": 275,
+    "local_demand": "Très Forte",
+    "export_potential": "Régional",
+    "is_regulated": false
+  },
+  "niébé": {
+    "crop": "Niébé",
+    "base_price_harvest": 250,
+    "peak_price_soudure": 500,
+    "local_demand": "Forte",
+    "export_potential": "International",
+    "is_regulated": false
+  },
+  "sorgho": {
+    "crop": "Sorgho",
+    "base_price_harvest": 130,
+    "peak_price_soudure": 250,
+    "local_demand": "Moyenne (base)",
+    "export_potential": "Nulle",
+    "is_regulated": false
+  },
+  "coton": {
+    "crop": "Coton graine",
+    "base_price_harvest": 300,
+    "peak_price_soudure": 300,
+    "local_demand": "Monopole",
+    "export_potential": "Mondial",
+    "is_regulated": true
+  },
+  "anacarde": {
+    "crop": "Noix de Cajou",
+    "base_price_harvest": 310,
+    "peak_price_soudure": 450,
+    "local_demand": "Export",
+    "export_potential": "Très Fort",
+    "is_regulated": false
+  },
+  "sésame": {
+    "crop": "Sésame",
+    "base_price_harvest": 600,
+    "peak_price_soudure": 850,
+    "local_demand": "Faible",
+    "export_potential": "Très Fort",
+    "is_regulated": false
+  }
+}

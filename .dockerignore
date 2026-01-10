@@ -1,0 +1,15 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.git
+.gitignore
+.vscode/
+chroma_persist/
+data/vector_store/
+orchestration_report.json
+*.log

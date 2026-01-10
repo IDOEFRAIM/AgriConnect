@@ -1,0 +1,102 @@
+{
+  "0": {
+    "source_type": "METEO_VECTOR",
+    "title": "Sans titre",
+    "source": "Sans titre",
+    "url": null,
+    "created_at": "2026-01-10",
+    "zone_id": "Dédougou",
+    "text_content": "Climatologie de Dédougou : Analyse des températures. Les températures varient de 18.5°C (le minimum annuel en Janvier) à 42.0°C (le maximum annuel en Mai). Détails mensuels : - Janvier: 18.5°C (Période fraîche, favorable aux cultures maraîchères mais croissance ralentie). - Mai: 42.0°C (Période chaude, risque de stress hydrique pour les jeunes plants). - Août: 28.0°C",
+    "chunk_index": 0
+  },
+  "1": {
+    "source_type": "METEO_ALERT",
+    "title": "Alerte Inondation Ouagadougou",
+    "source": "Alerte Inondation Ouagadougou",
+    "url": null,
+    "created_at": "2026-05-15",
+    "zone_id": "Ouagadougou",
+    "text_content": "Alerte Rouge : Le barrage n°3 menace de céder. Les quartiers de Tanghin et Kilwin sont à risque d'inondation majeure. Évacuation conseillée.",
+    "chunk_index": 0
+  },
+  "2": {
+    "source_type": "MARKET_REPORT",
+    "title": "Rapport Hebdomadaire SIM - Bobo",
+    "source": "Rapport Hebdomadaire SIM - Bobo",
+    "url": null,
+    "created_at": "2026-01-09",
+    "zone_id": "Bobo-Dioulasso",
+    "text_content": "À Bobo-Dioulasso, le prix du maïs blanc est en hausse à 22 000 FCFA le sac de 100kg. Le sorgho rouge reste stable à 19 000 FCFA. Grande disponibilité de l'igname.",
+    "chunk_index": 0
+  },
+  "3": {
+    "source_type": "MARKET_REPORT",
+    "title": "Prix Céréales Fada N'Gourma",
+    "source": "Prix Céréales Fada N'Gourma",
+    "url": null,
+    "created_at": "2026-01-09",
+    "zone_id": "Fada N'Gourma",
+    "text_content": "Pénurie de mil à Fada. Les prix flambent à 28 000 FCFA. Les commerçants attendent les stocks du Bénin.",
+    "chunk_index": 0
+  },
+  "4": {
+    "source_type": "AGRI_REPORT",
+    "title": "Guide Technique: Culture du Maïs",
+    "source": "Guide Technique: Culture du Maïs",
+    "url": null,
+    "created_at": "2025-11-20",
+    "zone_id": "General",
+    "text_content": "Le semis du maïs doit se faire après une pluie utile de 20mm. Ecartement recommandé : 80cm x 40cm. Variété recommandée pour la zone soudano-sahélienne : Barka.",
+    "chunk_index": 0
+  },
+  "5": {
+    "source_type": "AGRI_REPORT",
+    "title": "Gestion du Coton Bt",
+    "source": "Gestion du Coton Bt",
+    "url": null,
+    "created_at": "2025-10-10",
+    "zone_id": "General",
+    "text_content": "Pour le Coton, le traitement contre les jassides doit être préventif. Réduisez l'épandage en cas de vent fort.",
+    "chunk_index": 0
+  },
+  "6": {
+    "source_type": "AGRI_REPORT",
+    "title": "Amender les sols argileux",
+    "source": "Amender les sols argileux",
+    "url": null,
+    "created_at": "2025-06-01",
+    "zone_id": "General",
+    "text_content": "Les sols argileux de la Vallée du Sourou nécessitent un apport en matière organique pour améliorer le drainage. Évitez le labour profond quand le sol est trop humide.",
+    "chunk_index": 0
+  },
+  "7": {
+    "source_type": "AGRI_REPORT",
+    "title": "Alerte Chenille Légionnaire",
+    "source": "Alerte Chenille Légionnaire",
+    "url": null,
+    "created_at": "2026-01-05",
+    "zone_id": "General",
+    "text_content": "Foyers de chenilles légionnaires signalés dans la Boucle du Mouhoun. Traitement urgent avec Emamectine Benzoate recommandé le soir.",
+    "chunk_index": 0
+  },
+  "8": {
+    "source_type": "OFFICIAL_NOTICE",
+    "title": "Subvention Engrais 2026",
+    "source": "Subvention Engrais 2026",
+    "url": null,
+    "created_at": "2026-01-02",
+    "zone_id": "General",
+    "text_content": "Le Ministère de l'Agriculture lance l'opération 'Engrais pour Tous'. Subvention de 50% sur le NPK et l'Urée. Inscription auprès des CRA avant le 15 mars.",
+    "chunk_index": 0
+  },
+  "9": {
+    "source_type": "OFFICIAL_NOTICE",
+    "title": "Aide Équipement",
+    "source": "Aide Équipement",
+    "url": null,
+    "created_at": "2026-01-03",
+    "zone_id": "General",
+    "text_content": "Subvention pour l'achat de charrues et tracteurs. Financement à hauteur de 30% pour les coopératives enregistrées.",
+    "chunk_index": 0
+  }
+}

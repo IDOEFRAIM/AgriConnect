@@ -6,7 +6,8 @@ from typing import TypedDict, Dict, Any, Optional
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_community.chat_models import ChatOllama
-from Tools.meteo.basis_tools import SahelAgriAdvisor,SoilType
+from tools.meteo.basis_tools import SahelAgriAdvisor,SoilType
+from tools.meteo.flood_risk import FloodRiskTool
 
 # Configuration du Logger
 logging.basicConfig(level=logging.INFO)
@@ -20,20 +21,22 @@ class AgentState(TypedDict):
     weather_data: Dict[str, Any]
     culture_info: Dict[str, Any]
     raw_diagnosis: Optional[Dict[str, Any]]
+    flood_risk: Optional[Dict[str, Any]]
     final_response: str
     error_log: list[str]
 
 # ==============================================================================
-# 2. L'AGENT ROBUSTE
+# 2. L'AGENT VIGILANCE CLIMATIQUE
 # ==============================================================================
-class MeteoAgent:
+class ClimateVigilance:
     def __init__(self, OLLAMA_MODEL="llama3:8b", ollama_host="http://localhost:11434",llm_client=None):
         self.advisor = SahelAgriAdvisor()
+        self.flood_tool = FloodRiskTool()
         self.llm_name = OLLAMA_MODEL
         
         # Initialisation prudente du LLM
         try:
-            self.llm_client = llm_client if llm_client else ChatOllama(model=self.llm_name, base_url=ollama_host, temperature=0.1) # adapte la temperature
+            self.llm = llm_client if llm_client else ChatOllama(model=self.llm_name, base_url=ollama_host, temperature=0.1) # adapte la temperature
         except Exception as e:
             logger.error(f"Échec initialisation Ollama: {e}")
             self.llm = None
@@ -57,10 +60,10 @@ class MeteoAgent:
             errors.append("Nom de la culture manquant dans culture_info")
 
         if errors:
-            return {"error_log": errors, "raw_diagnosis": None}
+            return {"error_log": errors, "raw_diagnosis": None, "flood_risk": None}
 
         try:
-            # Appel sécurisé de ton Tool
+            # 1. Calcul Agronomique (Tool existant)
             diagnosis = self.advisor.get_daily_diagnosis(
                 crop_key=c["crop_name"],
                 soil=c.get("soil_type", SoilType.STANDARD),
@@ -71,10 +74,19 @@ class MeteoAgent:
                 doy=datetime.now().timetuple().tm_yday,
                 lat=float(c.get("lat", 14.0))
             )
-            return {"raw_diagnosis": diagnosis, "error_log": []}
+            
+            # 2. Vérification des Risques d'Inondation (Nouveau Tool)
+            # On utilise la localisation fournie ou une valeur par défaut
+            location = c.get("location", "Zone Agricole")
+            lat = float(c.get("lat", 12.37))
+            lon = float(c.get("lon", -1.52))
+            
+            flood_risk = self.flood_tool.check_flood_risk(location, lat, lon)
+            
+            return {"raw_diagnosis": diagnosis, "flood_risk": flood_risk, "error_log": []}
         except Exception as e:
             logger.error(f"Erreur lors du calcul technique: {e}")
-            return {"error_log": [f"Erreur technique: {str(e)}"], "raw_diagnosis": None}
+            return {"error_log": [f"Erreur technique: {str(e)}"], "raw_diagnosis": None, "flood_risk": None}
 
     # --- ÉTAPE 2: GÉNÉRATION DE RÉPONSE (AVEC FALLBACK) ---
     def generate_expert_response(self, state: AgentState):
@@ -86,15 +98,25 @@ class MeteoAgent:
             return {"final_response": f"⚠️ Désolé, je ne peux pas calculer de conseil précis : {error_msg}. Veuillez vérifier vos capteurs."}
 
         diag = state["raw_diagnosis"]
+        flood = state.get("flood_risk", {})
         
         # CAS OÙ LE LLM EST INDISPONIBLE
         if not self.llm:
             logger.warning("Mode Fallback : Ollama indisponible.")
-            return {"final_response": self._fallback_template(diag)}
+            return {"final_response": self._fallback_template(diag, flood)}
 
         # CAS NORMAL : LLM EXPERT
-        system_prompt = "Tu es un agronome expert. Transforme les données techniques en conseils pratiques."
-        human_content = f"Données: {diag}. Question: {state['user_query']}"
+        system_prompt = (
+            "Tu es un assistant agricole intelligent pour le Sahel (Burkina Faso), expert en météo et agronomie. "
+            "Ton objectif est de répondre DANS LE CONTEXTE de la question de l'utilisateur.\n\n"
+            "RÈGLES D'OR POUR LA GÉNÉRATION DE RÉPONSE :\n"
+            "1. 🎯 RÉPONSE DIRECTE : Si l'utilisateur pose une question précise (ex: 'Va-t-il pleuvoir ?'), réponds par OUI ou NON + les prévisions exactes. Ne tourne pas autour du pot.\n"
+            "2. 💡 DÉCISION DRIVEN : Ne donne pas juste la météo. Donne l'IMPACT sur la culture. (ex: 'Pas de pluie = Stress Hydrique -> Irriguer ce soir').\n"
+            "3. 🚫 PAS DE TEMPLATE RIGIDE : Adapte la structure à la question. Pas besoin de sections 'Plan d'action' si la question est simple.\n"
+            "4. 📉 PREUVE : Cite les chiffres clés (mm, °C) pour justifier ton conseil.\n\n"
+            "Ton : Expert, Directif, Bienveillant. Tu parles à un agriculteur, sois clair et concis."
+        )
+        human_content = f"CONTEXTE ACTUEL:\n- Données Agronomiques: {diag}\n- Risque Inondation: {flood}\n- QUESTION UTILISATEUR: '{state['user_query']}'\n\nInstructions: Réponds à la question de l'utilisateur en utilisant les données ci-dessus. Sois bref et précis."
 
         try:
             response = self.llm.invoke([
@@ -104,16 +126,31 @@ class MeteoAgent:
             return {"final_response": response.content}
         except Exception as e:
             logger.error(f"Erreur LLM: {e}")
-            return {"final_response": self._fallback_template(diag)}
+            return {"final_response": self._fallback_template(diag, flood)}
 
-    def _fallback_template(self, diag: Dict) -> str:
+    def _fallback_template(self, diag: Optional[Dict], flood: Optional[Dict] = None) -> str:
         """Réponse de secours structurée si le LLM crash."""
+        flood_msg = ""
+        if flood and flood.get("risk_level") in ["Élevé", "Critique"]:
+            flood_msg = f"\n⚠️ ALERTE INONDATION ({flood['risk_level']}) : {flood['alert_message']}\n"
+        elif flood:
+            flood_msg = f"\nℹ️ Info Inondation : {flood['alert_message']}\n"
+
+        if not diag or "error" in diag:
+            return (
+                f"📢 [CONSEIL TECHNIQUE AUTOMATIQUE]\n"
+                f"{flood_msg}"
+                f"⚠️ Impossible de calculer le diagnostic agronomique précis.\n"
+                f"Raison : {diag.get('error', 'Données manquantes') if diag else 'Données manquantes'}"
+            )
+
         return (
             f"📢 [CONSEIL TECHNIQUE AUTOMATIQUE]\n"
-            f"- Culture : {diag['culture']}\n"
-            f"- Besoin Eau : {diag['besoin_eau_etc_mm']}mm\n"
-            f"- Bilan : {diag['bilan_hydrique_mm']}mm ({diag['conseil_irrigation']})\n"
-            f"- Traitement : {diag['pulverisation']} (Delta T: {diag['delta_t']})"
+            f"{flood_msg}"
+            f"- Culture : {diag.get('culture', 'N/A')}\n"
+            f"- Besoin Eau : {diag.get('besoin_eau_etc_mm', 'N/A')}mm\n"
+            f"- Bilan : {diag.get('bilan_hydrique_mm', 'N/A')}mm ({diag.get('conseil_irrigation', 'N/A')})\n"
+            f"- Traitement : {diag.get('pulverisation', 'N/A')} (Delta T: {diag.get('delta_t', 'N/A')})"
         )
 
     # --- WORKFLOW ---

@@ -8,10 +8,10 @@ from typing import List, Dict, Optional, Any
 from pathlib import Path
 # Import UTC for DeprecationWarning fix
 from datetime import UTC 
-from rag.re_ranker import Reranker
-from rag.vector_store import VectorStoreHandler
-from rag.retriever import AgentRetriever
-from rag.metrics import RAGMetrics
+from rag.components.re_ranker import Reranker
+from rag.components.vector_store import VectorStoreHandler
+from rag.components.retriever import AgentRetriever
+from rag.utils.metrics import RAGMetrics
 from services.utils.embedding import EmbeddingService
 from services.utils.cache import StorageManager
 # ==============================================================================

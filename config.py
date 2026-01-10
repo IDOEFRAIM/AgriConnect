@@ -2,6 +2,10 @@
 import os
 import logging
 from typing import List, Dict, Tuple, Optional
+from dotenv import load_dotenv
+
+# Charger les variables d'environnement depuis .env
+load_dotenv()
 
 # Configuration des logs
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

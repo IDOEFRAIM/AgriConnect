@@ -1,0 +1,29 @@
+{
+  "sableux": {
+    "name": "Sol Sableux",
+    "local_term": "Dior / Seno",
+    "description": "Sol filtrant, pauvre en humus.",
+    "water_retention": "Faible",
+    "pwp_fc": [5, 12],
+    "ces_technique": "Zaï et Poquets fertilisés",
+    "ces_description": "Creuser des trous de 20-30cm, y mettre du fumier pour concentrer l'humidité."
+  },
+  "gravillonnaire": {
+    "name": "Sol Ferrugineux",
+    "local_term": "Zipellé (si dénudé)",
+    "description": "Sol dur avec gravillons rouges (latérite).",
+    "water_retention": "Moyenne-Basse",
+    "pwp_fc": [8, 18],
+    "ces_technique": "Cordons pierreux / Demi-lunes",
+    "ces_description": "Barrières de pierres suivant les courbes de niveau pour freiner l'eau."
+  },
+  "argileux": {
+    "name": "Sol Argileux",
+    "local_term": "Bas-fond / Baogo",
+    "description": "Sol lourd, riche mais risque d'asphyxie.",
+    "water_retention": "Très Forte",
+    "pwp_fc": [20, 35],
+    "ces_technique": "Billonnage cloisonné",
+    "ces_description": "Créer des diguettes pour retenir ou évacuer l'eau selon la pluie."
+  }
+}

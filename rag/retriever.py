@@ -1,91 +1,97 @@
 import logging
+import json
 from typing import List, Dict, Any, Optional
-# Simuler l'importation de vos classes Milvus/HNSW
-# from vector_store_handler import VectorStoreHandler
-# from embedder import Embedder, Reranker
 
-logger = logging.getLogger("AgentRetriever")
-# Initialisation du logger
+# --- Configuration du Logging ---
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("rag.Retriever")
 
 class AgentRetriever:
     """
-    Récupère des chunks pour un agent spécifique en utilisant un store vectoriel, 
-    un embedder et un reranker.
+    Système de récupération de contextes (Retrieval) optimisé.
+    Stratégie Hybride : 
+    1. Cache/SQL pour les données structurées chaudes (Alertes, Prix actuels).
+    2. Vector Search (FAISS) pures pour la connaissance non-structurée (Bulletins, PDFs).
     """
     
-    def __init__(self, store: Any, embedder: Any, reranker: Any, storage: Any):
-        """
-        Initialisation avec les dépendances (le store serait votre VectorStoreHandler pour Milvus/HNSW).
-        """
-        self.store = store # VectorStoreHandler (Milvus/HNSW)
-        self.embedder = embedder # Modèle d'embedding
-        self.reranker = reranker # Modèle de reranking
-        self.storage = storage # StorageManager (Couche Cache/SQLite)
-        logger.info("AgentRetriever initialisé (store, embedder, reranker, storage).")
-
-
-    # CORRECTION : Ajout de l'argument 'filters' dans la signature.
-    def retrieve_for_agent(self, query: str, agent_role: str, zone_id: str, limit: int = 5, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """
-        Récupère les documents pertinents pour une requête et un rôle d'agent donné.
-
-        :param query: La requête de l'utilisateur.
-        :param agent_role: Le rôle de l'agent ('CROP', 'METEO', etc.) utilisé pour filtrer.
-        :param zone_id: L'ID de la zone géographique pour le filtre structurel.
-        :param limit: Le nombre maximal de documents à retourner.
-        :param filters: Filtres additionnels passés par l'évaluateur (par exemple, pour des tests plus granulaires).
-        :return: Une liste de documents récupérés et classés.
-        """
+    def __init__(self, store: Any, embedder: Any, storage: Any = None):
+        self.store = store      # FAISS VectorStoreHandler
+        self.embedder = embedder # SBERT EmbeddingService
+        self.storage = storage   # (Optionnel) Accès SQL/CacheDirect
         
-        # --- RÉPONSE À VOTRE QUESTION : Utilisation du cache pour le "retrieve facile" ---
-        # Si la requête concerne une donnée structurelle très récente (alerte, date limite),
-        # il est plus rapide et plus fiable d'interroger la table raw_agent_data (le cache)
-        # plutôt que le Vector Store.
-        if agent_role in ["ALERTE_INONDATION", "SUBVENTION", "METEO"]:
-            # On vérifie si la donnée la plus récente suffit (ex: "Quelle est l'alerte actuelle à Lyon ?")
-            logger.info(f"Vérification du cache (SQLite) pour les données structurelles de {agent_role}...")
-            
-            # Utilisation de la méthode de récupération du StorageManager
-            latest_data = self.storage.get_raw_data(zone_id=zone_id, category=agent_role, limit=3)
-            
-            if latest_data:
-                # Si l'alerte est trouvée, on la retourne immédiatement (retrieve très facile)
-                if agent_role == "ALERTE_INONDATION":
-                    logger.info("Alerte critique trouvée dans le cache. Skipping vector search.")
-                    return latest_data 
-        # ---------------------------------------------------------------------------------
-        
+        logger.info("📡 AgentRetriever prêt (FAISS + Embedding).")
+
+    def retrieve_for_agent(self, query: str, agent_role: str, zone_id: str, limit: int = 4, cache_ttl_minutes: int = 60) -> List[Dict[str, Any]]:
+        """
+        Point d'entrée principal pour les agents.
+        :param query: La question de l'utilisateur (Ex: "Quel est le prix du maïs ?").
+        :param agent_role: Le contexte métier (MARKET_REPORT, METEO_VECTOR, AGRI_REPORT).
+        :param zone_id: La zone géographique (Ex: "Boucle du Mouhoun").
+        :param cache_ttl_minutes: Durée de vie du cache en minutes (default: 60).
+        """
+        logger.info(f"🔎 Retrieval demandé par {agent_role} (Zone: {zone_id}) : '{query}'")
+
+        # --- 1. CACHE CHECK (HOT PATH) ---
+        # Check if we have a cached result for this exact query/agent/zone combo
+        if self.storage is not None:
+            try:
+                cached_results = self.storage.get_agent_cache(query, agent_role, zone_id, ttl_minutes=cache_ttl_minutes)
+                if cached_results is not None:
+                    logger.info(f"⚡ CACHE HIT for {agent_role}/{zone_id} - Skipping embedding computation")
+                    return cached_results
+            except Exception as e:
+                logger.warning(f"⚠️ Cache lookup failed (non-blocking): {e}")
+
+        # --- 2. VECTOR SEARCH (DEEP PATH) ---
         try:
-            # 1. Embed la requête (Simulé car l'embedder n'est pas fourni)
-            # query_vector = self.embedder.embed_query(query)
-            query_vector = [0.1] * 128 # Simuler le vecteur
+            # A. Vectorisation de la requête (only if cache miss)
+            logger.debug(f"💾 CACHE MISS - Computing embedding for query")
+            query_vector = self.embedder.model.encode([query])[0].tolist()
 
-            # 2. Recherche initiale dans le store vectoriel (Milvus/HNSW)
-            # Utilise agent_role comme filtre de source
-            initial_results = self.store.search(
+            # B. Recherche FAISS avec filtres
+            source_filter = self._map_role_to_source(agent_role)
+            
+            results = self.store.search(
                 query_vector=query_vector, 
-                k=limit * 2, 
-                source_filter=agent_role,
-                # Le filtre Milvus/HNSW peut combiner l'agent_role et zone_id
-                vector_filters={"zone_id": zone_id, **(filters or {})}
+                k=limit, 
+                source_filter=source_filter
             )
             
-            if not initial_results:
-                logger.warning(f"Aucun résultat vectoriel trouvé pour le rôle {agent_role}.")
-                return []
+            # C. Post-Processing (Log & Format)
+            formatted_results = []
+            for res in results:
+                formatted_results.append({
+                    "content": res.get("content"),
+                    "score": res.get("score"),
+                    "source": res.get("metadata", {}).get("title"),
+                    "date": res.get("metadata", {}).get("created_at")
+                })
+            
+            logger.info(f"✅ {len(formatted_results)} documents trouvés pour {agent_role}.")
 
-            # 3. Reranking des résultats (Simulé car le reranker n'est pas fourni)
-            # reranked_results = self.reranker.rerank(query, initial_results)
-            reranked_results = initial_results # Pas de rerank dans la simulation
-            
-            # 4. Limiter au nombre final demandé
-            final_results = reranked_results[:limit]
-            
-            logger.debug(f"Récupération vectorielle réussie pour {agent_role}. Résultats finaux: {len(final_results)}")
-            return final_results
+            # --- 3. CACHE STORE (WARM UP FOR NEXT REQUEST) ---
+            if self.storage is not None and formatted_results:
+                try:
+                    self.storage.set_agent_cache(query, agent_role, zone_id, formatted_results)
+                    logger.debug(f"💾 Results cached for future requests")
+                except Exception as e:
+                    logger.warning(f"⚠️ Cache store failed (non-blocking): {e}")
+
+            return formatted_results
 
         except Exception as e:
-            # Lancement de l'erreur pour que l'évaluation puisse la capter et logguer
-            logger.error(f"Erreur retrieval pour {agent_role}: {e}")
-            raise
+            logger.error(f"❌ Erreur critique lors du retrieval : {e}")
+            return []
+
+    def _map_role_to_source(self, agent_role: str) -> Optional[str]:
+        """Convertit le rôle de l'agent en type de source documentaire."""
+        mapping = {
+            "SUBSIDY": "MARKET_REPORT", # L'agent business lit les rapports de marché
+            "MARKET": "MARKET_REPORT",
+            "METEO": "METEO_VECTOR",
+            "CLIMATE": "METEO_VECTOR",
+            "CROP": "AGRI_REPORT",
+            "HEALTH": "AGRI_REPORT"
+        }
+        # Retourne None si pas de mapping (recherche globale)
+        return mapping.get(agent_role, None)

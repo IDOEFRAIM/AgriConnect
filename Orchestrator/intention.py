@@ -90,6 +90,8 @@ class IntentClassifier:
         if not query or len(query.strip()) < 3:
             return "UNKNOWN"
 
+        llm_intent = "UNKNOWN"
+
         # 1. Tentative LLM
         if self.llm:
             try:
@@ -99,18 +101,30 @@ class IntentClassifier:
                 })
                 
                 intent = response.get("intent", "").upper().strip()
-                if intent in INTENTS:
-                    logger.info(f"🤖 LLM Predict: {intent} (Conf: {response.get('confidence', 0)})")
+                confidence = response.get("confidence", 0.0)
+                
+                # GOLDEN RULE: Only trust LLM if confident (>0.7) and specific (not UNKNOWN)
+                if intent in INTENTS and intent != "UNKNOWN" and confidence >= 0.7:
+                    logger.info(f"🤖 LLM Predict (Haute Confiance): {intent} (Conf: {confidence})")
                     return intent
+                
+                llm_intent = intent # On garde sa proposition en mémoire
+                logger.info(f"🤔 LLM Incertain ou UNKNOWN: {intent} (Conf: {confidence}) -> Vérification Regex...")
+
             except Exception as e:
                 logger.warning(f"⚠️ LLM indisponible, passage aux Regex. Erreur: {e}")
 
-        # 2. Tentative Regex (Robuste si le LLM est lent ou déconnecté)
+        # 2. Regex Attempt (Essential Safety Net)
         query_lower = query.lower()
         for intent, pattern in self._fallback_rules.items():
             if re.search(pattern, query_lower):
-                logger.info(f"🔍 Regex Predict: {intent}")
+                logger.info(f"🔍 Regex Predict (Correction): {intent}")
                 return intent
+        
+        # 3. Last resort: if Regex finds nothing, take what LLM said (even if weak)
+        if llm_intent in INTENTS and llm_intent != "UNKNOWN":
+             logger.info(f"🔙 Retour au choix LLM (par défaut): {llm_intent}")
+             return llm_intent
 
         return "UNKNOWN"
 

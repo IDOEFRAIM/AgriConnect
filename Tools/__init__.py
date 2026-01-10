@@ -1,7 +1,7 @@
-from Tools.meteo import *
-from Tools.crop import *
-from Tools.Soils import *
-from Tools.subventions import *
-from Tools.health import *
+from .meteo import *
+from .crop import *
+from .soils import *
+from .subventions import *
+from .health import *
 
 

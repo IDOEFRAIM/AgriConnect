@@ -4,7 +4,7 @@ import os
 from typing import Dict, Any, List, Optional
 # Imports des dépendances réelles (assumées)
 from services.utils.embedding import EmbeddingService
-from rag.vector_store import VectorStoreHandler
+from rag.components.vector_store import VectorStoreHandler
 from services.utils.pdf_parser import PDFParser 
 
 logger = logging.getLogger("UniversalIndexer")

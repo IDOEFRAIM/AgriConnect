@@ -1,0 +1,36 @@
+{
+  "maïs": [
+    {
+      "name": "Chenille Légionnaire d'Automne (CLA)",
+      "local_names": ["Spodoptera", "Chenille du cornet"],
+      "symptoms_keywords": ["y inversé", "trous ronds", "crottes", "cornet mangé", "larve verte"],
+      "risk_level": "CRITIQUE",
+      "threshold_pct": 20,
+      "bio_recipe": "Mélanger 50g de piment pilé + 50g d'ail + 1 cuillère de savon dans 10L d'eau. Filtrer et pulvériser le soir.",
+      "chemical_ref": "Émamectine benzoate ou Chlorantraniliprole.",
+      "prevention": "Semis précoces et destruction des résidus de récolte."
+    },
+    {
+      "name": "Striga",
+      "local_names": ["Herbe sorcière", "Wéogo"],
+      "symptoms_keywords": ["fleurs violettes", "jaunissement", "rabougrissement", "parasite"],
+      "risk_level": "CRITIQUE",
+      "threshold_pct": 1,
+      "bio_recipe": "Application de fumure organique massive ou culture de niébé 'faux-hôte' (variété Tiligré).",
+      "chemical_ref": "Peu efficace. Préférer 2,4-D en post-levée dirigée.",
+      "prevention": "Rotation stricte avec le coton et arrachage avant floraison."
+    }
+  ],
+  "niébé": [
+    {
+      "name": "Thrips des fleurs",
+      "local_names": ["Pucerons noirs", "Coulure des fleurs"],
+      "symptoms_keywords": ["fleurs tombent", "boutons noirs", "insectes minuscules", "coulure"],
+      "risk_level": "ÉLEVÉ",
+      "threshold_pct": 10,
+      "bio_recipe": "Extrait aqueux de feuilles de Neem (5kg feuilles pilées dans 10L d'eau pendant 12h).",
+      "chemical_ref": "Deltaméthrine ou Lambda-cyhalothrine.",
+      "prevention": "Éviter les semis trop denses."
+    }
+  ]
+}

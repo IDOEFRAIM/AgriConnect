@@ -1,0 +1,22 @@
+[
+  {
+    "id": "OFFER-001",
+    "type": "VENTE",
+    "product": "Maïs blanc",
+    "quantity_kg": 1000,
+    "price_per_kg": 160,
+    "location": "Bobo-Dioulasso",
+    "contact": "+226 70 00 00 01",
+    "date": "2025-12-28"
+  },
+  {
+    "id": "OFFER-002",
+    "type": "ACHAT",
+    "product": "Sésame",
+    "quantity_kg": 5000,
+    "price_per_kg": 700,
+    "location": "Ouagadougou",
+    "contact": "Société Export Bio",
+    "date": "2025-12-29"
+  }
+]

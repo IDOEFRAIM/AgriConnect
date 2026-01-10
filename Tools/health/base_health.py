@@ -1,4 +1,6 @@
 import logging
+import json
+import os
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Any
 
@@ -17,42 +19,23 @@ class DiseaseProfile:
 class SahelPathologyDB:
     """Base de connaissances spécialisée : Burkina Faso & Sahel."""
     
-    _DATA = {
-        "maïs": [
-            DiseaseProfile(
-                name="Chenille Légionnaire d'Automne (CLA)",
-                local_names=["Spodoptera", "Chenille du cornet"],
-                symptoms_keywords=["y inversé", "trous ronds", "crottes", "cornet mangé", "larve verte"],
-                risk_level="CRITIQUE",
-                threshold_pct=20,
-                bio_recipe="Mélanger 50g de piment pilé + 50g d'ail + 1 cuillère de savon dans 10L d'eau. Filtrer et pulvériser le soir.",
-                chemical_ref="Émamectine benzoate ou Chlorantraniliprole.",
-                prevention="Semis précoces et destruction des résidus de récolte."
-            ),
-            DiseaseProfile(
-                name="Striga",
-                local_names=["Herbe sorcière", "Wéogo"],
-                symptoms_keywords=["fleurs violettes", "jaunissement", "rabougrissement", "parasite"],
-                risk_level="CRITIQUE",
-                threshold_pct=1,
-                bio_recipe="Application de fumure organique massive ou culture de niébé 'faux-hôte' (variété Tiligré).",
-                chemical_ref="Peu efficace. Préférer 2,4-D en post-levée dirigée.",
-                prevention="Rotation stricte avec le coton et arrachage avant floraison."
-            )
-        ],
-        "niébé": [
-            DiseaseProfile(
-                name="Thrips des fleurs",
-                local_names=["Pucerons noirs", "Coulure des fleurs"],
-                symptoms_keywords=["fleurs tombent", "boutons noirs", "insectes minuscules", "coulure"],
-                risk_level="ÉLEVÉ",
-                threshold_pct=10,
-                bio_recipe="Extrait aqueux de feuilles de Neem (5kg feuilles pilées dans 10L d'eau pendant 12h).",
-                chemical_ref="Deltaméthrine ou Lambda-cyhalothrine.",
-                prevention="Éviter les semis trop denses."
-            )
-        ]
-    }
+    def __init__(self):
+        self.logger = logging.getLogger("SahelPathologyDB")
+        self._DATA = self._load_diseases()
+
+    def _load_diseases(self) -> Dict[str, List[DiseaseProfile]]:
+        try:
+            json_path = os.path.join(os.path.dirname(__file__), 'diseases_data.json')
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            diseases = {}
+            for crop, profiles in data.items():
+                diseases[crop] = [DiseaseProfile(**p) for p in profiles]
+            return diseases
+        except Exception as e:
+            self.logger.error(f"Error loading diseases data: {e}")
+            return {}
 
 class HealthDoctorTool:
     """
@@ -75,12 +58,26 @@ class HealthDoctorTool:
         best_match = None
         highest_score = 0
 
-        # Algorithme de matching par mots-clés
+        # Keyword matching algorithm
         for disease in candidates:
             score = sum(1 for symp in disease.symptoms_keywords if symp in observations)
             if score > highest_score:
                 highest_score = score
                 best_match = disease
+
+        # Specific logic for WONGO (Striga)
+        if "wongo" in observations or "striga" in observations or "fleurs violettes" in observations:
+             # Force Wongo detection even if other keywords are weak
+             # Could search for Wongo object in DB, here we simulate it if not found
+             if not best_match or "Striga" not in best_match.name:
+                 return {
+                    "diagnostique": "LE WONGO (Striga Hermonthica)",
+                    "niveau_alerte": "CRITIQUE",
+                    "diagramme_aide": "Cycle du Striga",
+                    "prescription_bio": "Arrachage manuel AVANT la floraison. Rotation avec Coton ou Arachide.",
+                    "conseil_chimique": "Aucun herbicide n'est aussi efficace que l'arrachage précoce.",
+                    "prevention": "Fumure organique riche (Le Wongo aime les sols pauvres)."
+                 }
 
         if not best_match:
             return {
@@ -93,11 +90,11 @@ class HealthDoctorTool:
         needs_chemical = infestation_rate >= best_match.threshold_pct
         
         # Sélection du diagramme contextuel
-        diagram = ""
+        diagram = "Diagramme générique"
         if "Chenille" in best_match.name:
-            diagram = ""
+            diagram = "Cycle de la Chenille Légionnaire"
         elif "Striga" in best_match.name:
-            diagram = ""
+            diagram = "Cycle du Striga"
 
         return {
             "diagnostique": best_match.name,
@@ -112,9 +109,10 @@ class HealthDoctorTool:
 
     def get_biopesticide_tutorial(self, recipe_type: str) -> str:
         """Fournit les étapes de préparation des solutions locales (Neem, Cendre, Piment)."""
+        header = "🧪 **RECETTE APPROUVÉE PAR LE DOCTEUR DES PLANTES**"
         recipes = {
-            "neem": "1. Piler 1kg de graines ou 5kg de feuilles. 2. Mélanger dans 10L d'eau. 3. Laisser reposer 12h. 4. Filtrer et ajouter un peu de savon liquide.",
-            "cendre": "Saupoudrer la cendre de bois tamisée tôt le matin sur les feuilles humides pour lutter contre les pucerons.",
-            "savon": "Diluer 50g de savon de Marseille/Noir dans 5L d'eau contre les acariens."
+            "neem": f"{header}\n1. Piler 1kg de graines ou 5kg de feuilles de Neem.\n2. Mélanger dans 10L d'eau.\n3. Laisser reposer 12h (une nuit).\n4. Filtrer avec un pagne et ajouter une cuillère de savon liquide (pour coller).",
+            "cendre": f"{header}\n1. Tamiser de la cendre de bois froide.\n2. Saupoudrer tôt le matin sur les feuilles humides de rosée.\n3. Répéter après chaque pluie.",
+            "piment": f"{header}\n1. Piler 100g de piment mûr avec 5 gousses d'ail.\n2. Mélanger dans 10L d'eau savonneuse.\n3. ATTENTION : Porter un masque/foulard lors de la pulvérisation !"
         }
         return recipes.get(recipe_type.lower(), "Recette non trouvée.")

@@ -1,4 +1,4 @@
-import requests
+﻿import requests
 from bs4 import BeautifulSoup
 import io
 import json
@@ -14,14 +14,10 @@ logger = logging.getLogger("DocumentScraper")
 
 try:
     from PyPDF2 import PdfReader
-    PdfReader = True
-except Exception as e:
-    PdfReader = False
-    logger.warning(f'Nous n avons pas pu importer pypdf2 du a cette erreur:{e}')
-
-
-
-
+    HAS_PYPDF2 = True
+except ImportError:
+    HAS_PYPDF2 = False
+    logger.warning("PyPDF2 n'est pas installé. L'extraction de contenu PDF sera limitée.")
 
 class DocumentScraper:
     """
@@ -29,37 +25,34 @@ class DocumentScraper:
     à partir d'une page d'index et extraire leur contenu.
     """
 
-    # --- MODIFICATION 1: Suppression de l'argument 'index_url' ---
     def __init__(
             self,
             headless: bool = True,
-            index_path:str="produits/bulletin-agrometeologique-decadaire",
+            index_path: str = "produits/bulletin-agrometeologique-decadaire",
             base_url: str = "https://meteoburkina.bf"
         ):
         """
-        Initialise le scraper avec une URL d'index fixe.
+        Initialise le scraper.
 
         Args:
             headless (bool): Indique si le navigateur est lancé en mode sans tête (non utilisé ici).
+            index_path (str): Le chemin relatif vers la page d'index des bulletins.
             base_url (str): L'URL de base pour normaliser les liens relatifs.
-            index_path:
         """
         self.headless = headless 
         self.base_url = base_url.rstrip("/")
         self.index_path = index_path
-        # --- MODIFICATION 2: Initialisation avec la valeur fixe ---
         self.index_url = urljoin(self.base_url + "/", self.index_path) 
         
         self.scraped_data: List[Dict[str, Any]] = []
 
-        logger.info("Scraper initialisé. Index URL fixe: %s", self.index_url)
-
-        if not PdfReader:
-             logger.warning("PyPDF2 est manquant. L'extraction de contenu PDF sera désactivée.")
+        logger.info("Scraper initialisé. Index URL: %s", self.index_url)
 
     def _normalize_url(self, href: str) -> str:
         """Normalise un lien relatif ou absolu en lien absolu complet."""
-        if not href.startswith("https"):
+        if not href:
+            return ""
+        if not href.startswith("http"):
             return urljoin(self.base_url + "/", href)
         return href
 
@@ -77,7 +70,7 @@ class DocumentScraper:
         
         # Filtres robustes : liens qui semblent pointer vers un bulletin ou un document
         keywords = ["bulletin", "situation", "document", "rapport", "pdf"]
-        links = []
+        links = set() # Utiliser un set pour éviter les doublons
         
         for a in soup.find_all("a", href=True):
             href = self._normalize_url(a["href"])
@@ -90,54 +83,71 @@ class DocumentScraper:
                 is_relevant = True
             
             # 2. Lien contenant un mot-clé pertinent dans le chemin d'URL
-            if any(keyword in href_lower for keyword in keywords):
+            elif any(keyword in href_lower for keyword in keywords):
                 # Éviter les liens de navigation de base ou les ancres internes
-                if urlparse(href).netloc == urlparse(self.index_url).netloc and len(urlparse(href).path.split('/')) > 3:
-                     is_relevant = True
+                # On vérifie si le lien est sur le même domaine et a une profondeur suffisante
+                parsed_href = urlparse(href)
+                parsed_index = urlparse(self.index_url)
+                
+                if parsed_href.netloc == parsed_index.netloc:
+                     # Exclure les liens qui sont juste des ancres ou la page elle-même
+                     if parsed_href.path != parsed_index.path and len(parsed_href.path.split('/')) > 2:
+                        is_relevant = True
 
             if is_relevant:
                 # Filtrer les liens qui ne sont que des ancres (#)
-                if href and not href.endswith("#") and href not in links:
-                    links.append(href)
+                if href and not href.endswith("#"):
+                    links.add(href)
 
         logger.info("%d liens de documents uniques trouvés.", len(links))
-        return links
+        return list(links)
 
     def _scrape_document_content(self, url: str) -> Dict[str, Any]:
         """Télécharge un document (HTML ou PDF) et extrait un résumé de son contenu."""
         logger.debug("Scraping du document: %s", url)
         try:
-            # Utiliser requests.get standard sans stream si le contenu est géré par io.BytesIO
-            response = requests.get(url, timeout=10)
+            response = requests.get(url, timeout=15)
             response.raise_for_status()
             content_type = response.headers.get("Content-Type", "").lower()
 
-            if "application/pdf" in content_type and PdfReader:
-                # Traitement PDF
-                pdf_file = io.BytesIO(response.content)
-                reader = PdfReader(pdf_file)
-                text = ""
-                # Extraire le texte des 3 premières pages
-                for page in reader.pages[:3]:
-                    extracted = page.extract_text()
-                    if extracted:
-                        text += extracted + "\n"
-                
-                title = url.split("/")[-1].replace(".pdf", "").replace("-", " ").strip()
-                return {
-                    "url": url,
-                    "type": "pdf",
-                    "title": title or "PDF sans titre",
-                    "content": text.strip()
-                }
+            if "application/pdf" in content_type:
+                if HAS_PYPDF2:
+                    # Traitement PDF
+                    try:
+                        pdf_file = io.BytesIO(response.content)
+                        reader = PdfReader(pdf_file)
+                        text = ""
+                        # Extraire le texte des 3 premières pages
+                        for page in reader.pages[:3]:
+                            extracted = page.extract_text()
+                            if extracted:
+                                text += extracted + "\n"
+                        
+                        title = url.split("/")[-1].replace(".pdf", "").replace("-", " ").strip()
+                        return {
+                            "url": url,
+                            "type": "pdf",
+                            "title": title or "PDF sans titre",
+                            "content": text.strip()
+                        }
+                    except Exception as e:
+                        logger.warning(f"Erreur lecture PDF {url}: {e}")
+                        return {"url": url, "type": "pdf", "title": "Erreur PDF", "content": "Lecture impossible"}
+                else:
+                    return {
+                        "url": url,
+                        "type": "pdf",
+                        "title": "PDF (Non lu)",
+                        "content": "PyPDF2 manquant - Contenu non extrait"
+                    }
 
             elif "text/html" in content_type:
                 # Traitement HTML
                 soup = BeautifulSoup(response.text, "html.parser")
                 title = soup.title.string if soup.title else "HTML Sans titre"
-                # Extraire le texte des 5 premiers paragraphes ou divs de contenu
-                content_elements = soup.find_all(["p", "div", "article"], limit=5)
-                paragraphs = [p.get_text(strip=True) for p in content_elements if p.get_text(strip=True)]
+                # Extraire le texte des paragraphes significatifs
+                content_elements = soup.find_all(["p", "div", "article"], limit=10)
+                paragraphs = [p.get_text(strip=True) for p in content_elements if len(p.get_text(strip=True)) > 20]
                 content_summary = " ".join(paragraphs)
                 
                 return {
@@ -163,7 +173,6 @@ class DocumentScraper:
             logger.error("Erreur d'extraction pour %s: %s", url, e)
             return {"url": url, "type": "error", "title": "Erreur d'extraction", "content": str(e)}
 
-    # Renommage en scrape_bulletins et format de retour Dictionnaire
     def scrape_bulletins(self) -> Dict[str, Any]:
         """
         Exécute le processus complet de scraping des bulletins et retourne 
@@ -176,8 +185,9 @@ class DocumentScraper:
                 return {"status": "SUCCESS", "message": "Aucun bulletin trouvé sur la page d'index.", "results": []}
 
             all_docs = []
-            for i, link in enumerate(links):
-                logger.info("Progression: %d/%d - Scraping: %s", i + 1, len(links), link)
+            # Limiter à 5 documents pour éviter de surcharger lors des tests
+            for i, link in enumerate(links[:5]):
+                logger.info("Progression: %d/%d - Scraping: %s", i + 1, min(len(links), 5), link)
                 doc_data = self._scrape_document_content(link)
                 all_docs.append(doc_data)
             
@@ -187,14 +197,11 @@ class DocumentScraper:
             return {
                 "status": "SUCCESS", 
                 "message": f"{len(all_docs)} bulletins agronomiques scrapés et prêts pour l'indexation.",
-                "results": all_docs # Les données pour l'indexation
+                "results": all_docs
             }
         except Exception as e:
             logger.error("Erreur globale lors de l'exécution du scraping des bulletins: %s", e, exc_info=True)
             return {"status": "ERROR", "message": f"Échec critique du scraping: {str(e)}", "results": []}
-
-
-    # Les méthodes save_to_json et save_to_csv restent inchangées
 
     def save_to_json(self, filepath: str, data: Optional[List[Dict[str, Any]]] = None) -> None:
         """Sauvegarde les données scrapées dans un fichier JSON."""
@@ -207,12 +214,11 @@ class DocumentScraper:
             os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
             with open(filepath, "w", encoding="utf-8") as f:
                 json.dump(data_to_save, f, indent=2, ensure_ascii=False)
-            logger.info("✅ Fichier JSON créé avec succès: %s (%d documents)", filepath, len(data_to_save))
+            logger.info(" Fichier JSON créé avec succès: %s (%d documents)", filepath, len(data_to_save))
         except Exception as e:
             logger.error("Erreur lors de la sauvegarde en JSON: %s", e)
 
     def save_to_csv(self, filepath: str, data: Optional[List[Dict[str, Any]]] = None) -> None:
-
         """Sauvegarde les données scrapées dans un fichier CSV."""
         data_to_save = data if data is not None else self.scraped_data
         if not data_to_save:
@@ -225,7 +231,6 @@ class DocumentScraper:
                 writer = csv.writer(f)
                 writer.writerow(["URL", "Type", "Titre", "Résumé/Contenu"])
                 for doc in data_to_save:
-                    # Tronquer et nettoyer le contenu pour le CSV
                     content = doc.get("content", "").replace("\n", " ").strip()[:500]
                     writer.writerow([
                         doc.get("url", ""), 
@@ -233,12 +238,11 @@ class DocumentScraper:
                         doc.get("title", "N/A"), 
                         content
                     ])
-            logger.info("✅ Fichier CSV créé avec succès: %s (%d documents)", filepath, len(data_to_save))
+            logger.info(" Fichier CSV créé avec succès: %s (%d documents)", filepath, len(data_to_save))
         except Exception as e:
             logger.error("Erreur lors de la sauvegarde en CSV: %s", e)
 
-
-if __name__ == '__name__':
+if __name__ == '__main__':
     document_scrapper = DocumentScraper()
-    result= document_scrapper.scrape_bulletins()
-    print(result)
+    result = document_scrapper.scrape_bulletins()
+    print(json.dumps(result, indent=2, ensure_ascii=False))

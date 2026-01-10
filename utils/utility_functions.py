@@ -80,15 +80,15 @@ urls = [
 
 corpus, sources = [], []
 
- # Les noms de fichiers et dossiers utilises pour stocker les donnees extraites
+ # File and folder names used to store extracted data
 DATA_DIR = 'data/'
 PDF_DIR = os.getenv("PDF_DIR", "data/localDocuments")
 
 THEME = "Agriculture"
 
-# Nous definissons quelques fonctions qui nous seront utiles lors de l'extraction
+# We define some functions that will be useful during extraction
 
-# is_allowed nous permet de verifier si le scrapping est autorise par le fichier robots.txt du site web. Elle prend en entree l'url du document a scraper et nous retourne un booleen :Autorise/Non Autorise
+# is_allowed allows us to verify if scraping is allowed by the website's robots.txt. It takes the document url as input and returns a boolean: Allowed/Not Allowed
 
 def is_allowed(url) -> bool:
     BASE_URL = url.split("/")[0] + "//" + url.split("/")[2]
@@ -102,7 +102,7 @@ def is_allowed(url) -> bool:
     except:
         return False 
 
-# detectFormat nous permet de detecter le format du document a scraper. Comme format,nous pouvons citer:PDF,HTML...Elle prend en entree le content_type et l'url du document et nous retourne le format detecte
+# detectFormat allows us to detect the format of the document to scrape. Formats include: PDF, HTML... It takes content_type and document url as input and returns the detected format
       
 def detectFormat(content_type, url)-> str:
     if content_type:
@@ -124,7 +124,7 @@ def detectFormat(content_type, url)-> str:
             return "txt"
     return "unknown"
 
-# Cette fonction nous permet d'extraire le texte des differents formats de documents .Elle prend en entree l'url et le format du document et nous retourne le texte extrait
+# This function allows us to extract text from different document formats. It takes the url and document format as input and returns the extracted text
 
 def extract_text_from_url(url, formatType)-> str:
     if formatType == "html":
@@ -145,7 +145,7 @@ def extract_text_from_url(url, formatType)-> str:
     else:
         return ""
 
-# La fonction handleText nous permet d'extraire le texte,le nettoyer et le normaliser. En gros ,il nous permet de faire du preprocessing sur le texte extrait 
+# The handleText function allows us to extract, clean, and normalize the text. Basically, it allows us to do preprocessing on the extracted text
 
 def handleText(url,formatType):
     text = extract_text_from_url(url, formatType)
@@ -158,7 +158,7 @@ def handleText(url,formatType):
 def extract_url(url):
     corpus = []
     for url in urls:
-        # On commence par verifier si le scrapping est autorise. Si oui ,on passe a l'extraction. Si non ,on passe a l'url suivant
+        # Check if scraping is allowed first. If yes, proceed to extraction. If no, move to next url
         if is_allowed(url):
             logger.info(f"Autorise : {url}")
             try:
@@ -166,9 +166,9 @@ def extract_url(url):
                 content_type = response.headers.get("Content-Type")
                 formatType = detectFormat(content_type, url)
                 text = handleText(url,formatType)
-                    # Si le texte extrait est superieur a 20 caracteres ,on l'ajoute au corpus.En fait ,c'est une simple regle empirique pour eviter d'avoir des textes trop courts ou vides dans le corpus
+                    # If extracted text is greater than 20 characters, add it to corpus. Basically, it's a simple empirical rule to avoid having too short or empty texts in the corpus
                 if len(text.strip()) > 20:
-                    langage = detect(text) # Cette ligne nous permet de detecter la langue du texte extrait
+                    langage = detect(text) # This line allows us to detect the language of the extracted text
                     corpus.append({
                             "source": url,
                             "text": text,
@@ -186,17 +186,17 @@ def extract_url(url):
         else:
             logger.warning(f"Interdit par robot.txt : {url}")
     return corpus
-# La fonction SetCorpus nous permet de constituer le corpus a partir des urls et des documents pdf locaux. 
+# The SetCorpus function allows us to build the corpus from urls and local pdf documents.
 
 def SetCorpus(urls,PDF_DIR):
 
 
     
 
-    """ Maintenant ,nous passons a l'extraction a partir des documents pdf locaux.
-      Nous devons parcourir le dossier contenant les pdf et pour chaque pdf ,
-      nous allons extraire le texte en utilisant la fonction handleText.
-      Nous devons nous assurer que la variable pdf_folder est de type Path pour pouvoir utiliser iterdir()"""
+    """ Now, we move to extraction from local pdf documents.
+      We must iterate through the folder containing pdfs and for each pdf,
+      we will extract the text using the handleText function.
+      We must ensure that the pdf_folder variable is of type Path to use iterdir()"""
     
     PDF_DIR = Path(PDF_DIR)
 

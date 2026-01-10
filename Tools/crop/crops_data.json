@@ -1,0 +1,36 @@
+{
+  "maïs": {
+    "name": "Maïs",
+    "varieties": {
+      "Sahel": ["Espoir", "Barka"],
+      "Centre": ["SR21", "Bondofa"],
+      "Sud": ["SR22", "Massongo"]
+    },
+    "cycle_days": 90,
+    "seeding_density": "80cm x 40cm, 2 plants par poquet",
+    "depth_cm": 5,
+    "organic_matter_min_tha": 5.0,
+    "mineral_fertilizer": {
+      "NPK": "200kg/ha au sarclo-buttage",
+      "Urée": "100kg/ha à la montaison"
+    },
+    "water_strategy": "Zaï mécanisé recommandé dans le Centre-Nord, labours profonds au Sud."
+  },
+  "niébé": {
+    "name": "Niébé",
+    "varieties": {
+      "Sahel": ["Gorom", "Tiligré"],
+      "Centre": ["Komcallé", "Nafi"],
+      "Sud": ["KVX", "Samsorgui"]
+    },
+    "cycle_days": 70,
+    "seeding_density": "40cm x 20cm",
+    "depth_cm": 3,
+    "organic_matter_min_tha": 2.5,
+    "mineral_fertilizer": {
+      "NPK": "100kg/ha au démarrage",
+      "Urée": "Non recommandé (légumineuse)"
+    },
+    "water_strategy": "Culture très résistante à la sécheresse, billonnage simple."
+  }
+}

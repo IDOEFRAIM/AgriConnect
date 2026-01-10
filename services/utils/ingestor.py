@@ -3,8 +3,11 @@ import json
 from pathlib import Path
 from typing import Dict, Any, List
 
-from services.utils import UniversalIndexer,EmbeddingService
-from rag.vector_store import VectorStoreHandler
+from services.utils.embedding import EmbeddingService
+from services.utils.indexer import UniversalIndexer
+from rag.components.vector_store import VectorStoreHandler
+from rag.utils.chunker import TextChunker
+from rag.processors.textualizer import MeteoProcessor # <-- Import du processeur
 
 import config
 
@@ -13,77 +16,86 @@ logger = logging.getLogger("rag.ingestor")
 
 class DataIngestor:
     """
-    Classe responsable de l'ingestion des données brutes vers la base vectorielle.
-    Gère le cycle de vie des données (Nettoyage -> Embedding -> Indexation).
+    Classe responsable de l'ingestion ETL (Extract, Transform, Load) des données.
+    Processus : 
+    1. Réception donnée brute -> 2. Textualisation & Enrichissement -> 3. Chunking -> 4. Embedding -> 5. FAISS
     """
 
     def __init__(self):
-        self.indexer = UniversalIndexer()
+        self.chunker = TextChunker(chunk_size=500, chunk_overlap=50)
         self.store_handler = VectorStoreHandler()
-        self.embedder = EmbeddingService()  # <-- ajout embedder
-        self.processed_data_dir = Path(getattr(config, 'PROCESSED_DATA_DIR', './data/processed'))
+        self.embedder = EmbeddingService()
 
     def _determine_source_type(self, data: Dict[str, Any]) -> str:
-        if data.get('content_type') in ['pdf', 'pdf_via_html', 'html_article']:
-            return "BULLETIN_PDF"
-        if data.get('features_data') is not None and data.get('category') not in ['health', 'agriculture', 'logistics']:
+        """Détermine le type de source (Métier) à partir de la structure de la donnée."""
+        metadata = data.get("metadata", {})
+        if "source_type" in metadata:
+            return metadata["source_type"]
+        
+        # Heuristiques
+        if "raw_data" in metadata or "Highcharts" in str(data):
             return "METEO_VECTOR"
-        if data.get('category') in config.WATCHLIST_CATEGORIES:
-            return "METEO_ALERT"
-        if data.get('category') == 'agriculture' or 'crop_health' in data.get('tags', []):
-            return "AGRI_REPORT"
-        if data.get('category') == 'health' or 'epidemic_risk' in data.get('tags', []):
-            return "HEALTH_DATA"
-        if data.get('category') == 'logistics' or 'infrastructure_status' in data.get('tags', []):
-            return "INFRA_ALERT"
-        return "UNKNOWN"
+        if "market" in str(data) or "prix" in str(data).lower():
+            return "MARKET_REPORT"
+            
+        return "GENERAL_DOC"
 
     def ingest_data_from_orchestrator(self, scraped_data: List[Dict[str, Any]]):
-        logger.info(f"--- Démarrage de l'Ingestion RAG pour {len(scraped_data)} éléments ---")
+        """Pipeline complet d'ingestion robuste avec étape de textualisation."""
+        logger.info(f"--- 🚀 Démarrage Ingestion RAG ({len(scraped_data)} items) ---")
 
-        # Nettoyage sélectif (ex: supprimer uniquement les données expirées)
         self.store_handler.delete_by_source("METEO_ALERT")
-        self.store_handler.delete_by_source("METEO_VECTOR")
-        logger.info("🧹 Données METEO/ALERT obsolètes supprimées.")
+        
+        documents_buffer = []
 
-        indexed_count = 0
-
-        # Préparer batch pour embedding
-        texts_to_embed = [d.get('text_content', '') for d in scraped_data if d.get('text_content')]
-        if texts_to_embed:
-            vectors = self.embedder.embed_documents(texts_to_embed)
-        else:
-            vectors = []
-
-        for idx, data in enumerate(scraped_data):
+        for data in scraped_data:
             source_type = self._determine_source_type(data)
-            try:
-                if source_type == "BULLETIN_PDF":
-                    self.indexer.index_document({
-                        "title": data.get('title'),
-                        "period": data.get('period'),
-                        "download_url": data.get('download_url'),
-                        "text_content": data.get('text_content', ''),
-                        "vector": vectors[idx] if idx < len(vectors) else [0.0]*self.embedder.dimension
-                    })
-                    indexed_count += 1
+            
+            # --- PHASE DE TEXTUALISATION (Pré-Chunking) ---
+            # Transformer la donnée brute (JSON) en texte narratif riche
+            raw_text = ""
+            
+            if source_type == "METEO_VECTOR" and "raw_data" in data.get("metadata", {}):
+                # Cas spécial : JSON Météo brute (Highcharts)
+                city = data.get("metadata", {}).get("city", "Ville Inconnue")
+                raw_series = data["metadata"]["raw_data"][0]["series"][0]["data"]
+                # C'est ici que la magie opère : JSON -> Texte Agronome
+                raw_text = MeteoProcessor.process_highcharts_series(city, raw_series)
+                logger.info(f"📝 Textualisation Météo pour {city}: Succès")
 
-                elif source_type in ["METEO_VECTOR", "METEO_ALERT"]:
-                    self.indexer.index_meteo_data(
-                        features=data.get('features_data', []),
-                        category=data.get('category'),
-                        source_url=data.get('snapshot_path', 'MapViewer')
-                    )
-                    indexed_count += len(data.get('features_data', []))
+            else:
+                # Cas standard : le texte existe déjà (PDF parsé)
+                raw_text = data.get("content") or data.get("text_content") or ""
 
-                elif source_type in ["AGRI_REPORT", "HEALTH_DATA", "INFRA_ALERT"]:
-                    self.indexer.index_structured_data(data, source_type)
-                    indexed_count += 1
+            if not raw_text:
+                continue
 
-                else:
-                    logger.warning(f"Type de donnée non indexé/non reconnu : {source_type}")
+            # --- PHASE DE CHUNKING ---
+            base_doc = {
+                "source_type": source_type,
+                "title": data.get("title", "Sans titre"),
+                "source": data.get("title", "Sans titre"), # Alignement pour Retriever
+                "url": data.get("url") or data.get("downloaded_path"),
+                "created_at": data.get("timestamp"),
+                "zone_id": data.get("metadata", {}).get("city") or "General" 
+            }
+            
+            chunks = self.chunker.split_text(raw_text)
+            
+            for i, chunk_text in enumerate(chunks):
+                doc_chunk = base_doc.copy()
+                doc_chunk["text_content"] = chunk_text
+                doc_chunk["chunk_index"] = i
+                documents_buffer.append(doc_chunk)
 
-            except Exception as e:
-                logger.error(f"❌ Échec de l'indexation pour {data.get('category', source_type)}: {e}")
+        # ... (Embedding et Indexation inchangés) ...
+        # 3. Embedding en Batch (Performance)
+        logger.info(f"⚡ Calcul des embeddings pour {len(documents_buffer)} chunks...")
+        batch_texts = [d["text_content"] for d in documents_buffer]
+        vectors = self.embedder.model.encode(batch_texts) 
+        
+        for i, doc in enumerate(documents_buffer):
+            doc["vector"] = vectors[i].tolist() 
 
-        logger.info(f"✅ Ingestion terminée. {indexed_count} entrées ajoutées au total.")
+        self.store_handler.add_documents(documents_buffer)
+        logger.info(f"✅ Ingestion terminée avec Textualisation. {len(documents_buffer)} nouveaux vecteurs.")
