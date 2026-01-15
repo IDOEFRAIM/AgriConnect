@@ -4,15 +4,10 @@ from datetime import datetime
 from typing import TypedDict, List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
-
-# --- Importations LangChain & LangGraph ---
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_community.chat_models import ChatOllama
 
-# ==============================================================================
-# 1. TON TOOL (SahelAgriAdvisor & Math)
-# ==============================================================================
 class SoilType(Enum):
     SABLEUX = "sableux"
     ARGILEUX = "argileux"
@@ -66,11 +61,21 @@ class SahelAgriAdvisor:
             "niébé": CropProfile("Niébé", 12, 36, {'ini': 0.4, 'mid': 1.0, 'end': 0.35}, 75, False)
         }
 
+    def _compute_confiance(self, distance_km: float, inc_rain: float) -> tuple:
+        if distance_km < 10 and inc_rain < 0.2:
+            return ("🟢", "Confiance élevée")
+        elif distance_km < 20:
+            return ("🟠", "Confiance moyenne")
+        else:
+            return ("🔴", "Confiance faible (Station éloignée)")
+
     def get_daily_diagnosis(self, crop_key: str, soil: SoilType, 
                             t_min: float, t_max: float, rh: float, 
-                            precip: float, doy: int, lat: float) -> dict:
+                            precip: float, doy: int, lat: float,
+                            distance_km: float = 0.0) -> dict:
         crop = self.crops.get(crop_key.lower())
         if not crop: return {"error": "Culture non reconnue"}
+        
         et0 = self.math.calculate_hargreaves_et0(t_min, t_max, lat, doy)
         etc = et0 * crop.kc['mid']
         pe = self._calculate_pe(precip, soil)
@@ -78,23 +83,38 @@ class SahelAgriAdvisor:
         heat_alert = t_max > crop.t_max_optimal
         delta_t, spray_status = self.math.calculate_delta_t(t_max, rh)
 
+        inc_rain = 0.0
+        needs_ground_check = False
+        recos = []
+
+        if distance_km >= 20:
+            inc_rain = 0.5
+            needs_ground_check = True
+            recos.append("Distance importante : Appliquer la procédure de vérification manuelle de l'humidité.")
+        elif distance_km >= 10:
+            inc_rain = 0.3
+
+        emoji, conf_txt = self._compute_confiance(distance_km, inc_rain)
+        
         return {
             "culture": crop.name,
-            "besoin_eau_etc_mm": etc,
-            "bilan_hydrique_mm": water_balance,
+            "etc": etc,
+            "bilan": water_balance,
             "conseil_irrigation": "NECESSAIRE" if water_balance < -3 else "SURVEILLANCE",
             "alerte_chaleur": heat_alert,
             "pulverisation": spray_status,
-            "delta_t": delta_t
+            "delta_t": delta_t,
+            "distance": distance_km,
+            "recommandations": recos,
+            "emoji": emoji,
+            "confiance": conf_txt,
+            "check_terrain": needs_ground_check,
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M")
         }
 
     def _calculate_pe(self, rain: float, soil: SoilType) -> float:
         coeffs = {SoilType.SABLEUX: 0.5, SoilType.ARGILEUX: 0.7, SoilType.STANDARD: 0.6}
         return round(rain * coeffs.get(soil, 0.6), 2) if rain > 5 else 0.0
-
-# ==============================================================================
-# 2. CONFIGURATION DE L'AGENT LANGGRAPH
-# ==============================================================================
 
 class AgentState(TypedDict):
     user_query: str
@@ -106,16 +126,12 @@ class AgentState(TypedDict):
 class SahelAgent:
     def __init__(self, ollama_model="llama3:8b"):
         self.advisor = SahelAgriAdvisor()
-        self.llm = ChatOllama(model=ollama_model, temperature=0.2)
-        logger = logging.getLogger("agent")
+        self.llm = ChatOllama(model=ollama_model, temperature=0.1)
 
     def call_agri_tool_node(self, state: AgentState):
-        """Utilise le moteur mathématique pour obtenir des données brutes."""
         w = state["weather_data"]
         c = state["culture_info"]
-        
-        # On exécute le diagnostic technique
-        diagnosis = self.advisor.get_daily_diagnosis(
+        diag = self.advisor.get_daily_diagnosis(
             crop_key=c["crop_name"],
             soil=c["soil_type"],
             t_min=w["t_min"],
@@ -123,30 +139,32 @@ class SahelAgent:
             rh=w["rh"],
             precip=w["precip"],
             doy=datetime.now().timetuple().tm_yday,
-            lat=c["lat"]
+            lat=c["lat"],
+            distance_km=c.get("distance_km", 0.0)
         )
-        return {"raw_diagnosis": diagnosis}
+        return {"raw_diagnosis": diag}
 
     def ollama_expert_node(self, state: AgentState):
-        """Ollama traduit les chiffres en conseils humains et bienveillants."""
         diag = state["raw_diagnosis"]
         
         system_prompt = (
-            "Tu es un expert agronome sahélien. Ton but est d'expliquer les résultats "
-            "scientifiques (ETc, Bilan hydrique, Delta T) de manière simple à un paysan. "
-            "Sois fraternel, utilise des emojis et donne des conseils pratiques basés sur les chiffres."
+            "Tu es un expert agronome sahélien leader. Ton ton est fraternel mais ferme. "
+            "Tu transformes les incertitudes de distance en rigueur de terrain. "
+            "Si check_terrain est VRAI, tu imposes la vérification manuelle comme une étape obligatoire. "
+            "Structure : 1. État global (emoji), 2. Action immédiate, 3. Sécurité terrain si besoin."
         )
         
         human_content = f"""
-        Voici le diagnostic technique :
+        Diagnostic {diag['emoji']} ({diag['confiance']}) :
         - Culture : {diag['culture']}
-        - Besoin en eau (ETc) : {diag['besoin_eau_etc_mm']} mm
-        - Bilan hydrique : {diag['bilan_hydrique_mm']} mm
-        - Conseil Irrigation : {diag['conseil_irrigation']}
+        - Besoin Eau : {diag['etc']} mm | Bilan : {diag['bilan']} mm
+        - Irrigation : {diag['conseil_irrigation']}
+        - Pulvérisation : {diag['pulverisation']} (Delta T: {diag['delta_t']})
         - Alerte Chaleur : {'OUI' if diag['alerte_chaleur'] else 'NON'}
-        - Condition Pulvérisation (Delta T) : {diag['pulverisation']} (Valeur: {diag['delta_t']})
+        - Vérification terrain requise : {diag['check_terrain']}
+        - Distance station : {diag['distance']} km
 
-        Réponds à la question de l'utilisateur : "{state['user_query']}"
+        Question : {state['user_query']}
         """
         
         response = self.llm.invoke([
@@ -159,33 +177,25 @@ class SahelAgent:
         workflow = StateGraph(AgentState)
         workflow.add_node("calculate", self.call_agri_tool_node)
         workflow.add_node("explain", self.ollama_expert_node)
-        
         workflow.set_entry_point("calculate")
         workflow.add_edge("calculate", "explain")
         workflow.add_edge("explain", END)
-        
         return workflow.compile()
 
-# ==============================================================================
-# 3. TEST DE L'AGENT
-# ==============================================================================
 if __name__ == "__main__":
-    agent_instance = SahelAgent()
-    app = agent_instance.build_graph()
+    agent = SahelAgent()
+    app = agent.build_graph()
 
-    # Simulation de données reçues (ex: via une API météo ou un capteur)
     inputs = {
-        "user_query": "Est-ce que c'est le bon moment pour traiter mon champ de maïs et comment va l'irrigation ?",
-        "weather_data": {
-            "t_min": 22.0, "t_max": 38.0, "rh": 40.0, "precip": 0.0
-        },
+        "user_query": "La station est loin, est-ce que je peux faire confiance au conseil d'irrigation ?",
+        "weather_data": {"t_min": 23.0, "t_max": 39.5, "rh": 30.0, "precip": 0.0},
         "culture_info": {
             "crop_name": "maïs",
             "soil_type": SoilType.SABLEUX,
-            "lat": 14.5  # Latitude typique (ex: Sénégal/Mali)
+            "lat": 14.0,
+            "distance_km": 28.0
         }
     }
 
     result = app.invoke(inputs)
-    print("\n=== RÉPONSE DE L'AGENT EXPERT ===\n")
     print(result["final_response"])

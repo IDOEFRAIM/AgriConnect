@@ -1,5 +1,5 @@
 import logging
-from typing import TypedDict, Dict, Any, Optional
+from typing import TypedDict, Dict, Any, Optional, List
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_community.chat_models import ChatOllama
@@ -18,127 +18,101 @@ class AgentState(TypedDict):
     diagnosis_raw: Optional[Dict[str, Any]]
     technical_advice_text: str
     final_response: str
-    status: str
+    status: str  # 'START', 'FOUND', 'UNKNOWN', 'ERROR'
 
 # ==============================================================================
-# 2. L'AGENT DE SANTÉ VÉGÉTALE (DOCTEUR DES PLANTES)
+# 2. L'AGENT DE SANTÉ VÉGÉTALE
 # ==============================================================================
 class PlantHealthDoctor:
-
-    def __init__(self,ollama_host: str = "http://localhost:11434",llm_client=None,OLLAMA_MODEL:Optional[str] = "mistral" ):
+    def __init__(self, ollama_host: str = "http://localhost:11434", llm_client=None, model_name: str = "mistral"):
         self.doctor = HealthDoctorTool() 
-        self.model_name = OLLAMA_MODEL
-        self.llm_client = self._initialize_llm(OLLAMA_MODEL, llm_client, ollama_host)
+        self.model_name = model_name
+        self.llm = llm_client if llm_client else self._initialize_llm(model_name, ollama_host)
 
-    def _initialize_llm(self, model_name, llm_client, ollama_host: str):
+    def _initialize_llm(self, model_name, ollama_host):
         try:
-            return llm_client if llm_client else ChatOllama(model=model_name, base_url=ollama_host, temperature=0.1) # adapte la temperature
-
+            return ChatOllama(model=model_name, base_url=ollama_host, temperature=0.1)
         except Exception as e:
-            logger.error(f"Échec connexion LLM: {e}")
+            logger.error(f"❌ Échec connexion LLM: {e}")
             return None
 
     def _identify_symptoms_semantically(self, user_text: str) -> str:
-        """
-        Traduit les descriptions vagues en mots-clés techniques pour aider l'outil.
-        Ex: 'belles fleurs violettes qui tuent mon mil' -> 'WONGO STRIGA'
-        """
-        if not self.llm_client: return user_text
+        """Détecte les mots-clés techniques à partir du langage naturel."""
+        if not self.llm: 
+            return user_text
         
         prompt = (
-            "Tu es un phytopathologiste expert au Sahel. Analyse cette description : \n"
-            f"'{user_text}'\n\n"
-            "TÂCHE :\n"
-            "Identifie les menaces potentielles même si l'utilisateur ne connait pas le nom.\n"
-            "- Si ça ressemble au Striga (fleurs violettes, plante parasite, herbe sorcière), ajoute 'SUSPICION_WONGO STRIGA'.\n"
-            "- Si ça parle de trous dans les feuilles ou de vers, ajoute 'CHENILLE LEGIONNAIRE'.\n"
-            "- Si les feuilles jaunissent ou sèchent, ajoute 'SECHERESSE ou MALADIE FONGIQUE'.\n\n"
-            "Réponds juste avec les mots-clés techniques détectés."
+            "Tu es un expert en phytopathologie sahélienne.\n"
+            "Analyse les symptômes décrits par l'agriculteur et extrais les termes techniques.\n"
+            "Exemple : 'fleurs violettes' -> STRIGA WONGO.\n"
+            f"Description : '{user_text}'\n"
+            "Réponds UNIQUEMENT avec les mots-clés extraits, séparés par des virgules."
         )
         try:
-            resp = self.llm_client.invoke([SystemMessage(content=prompt), HumanMessage(content="Analyse les symptômes.")])
-            # On ajoute l'analyse à la requête originale pour garantir que l'outil attrape les mots-clés
-            return f"{user_text} {resp.content.upper()}"
-        except Exception as e:
-            logger.error(f"Erreur semantic symptom detect: {e}")
+            resp = self.llm.invoke([SystemMessage(content=prompt)])
+            return f"{user_text}, {resp.content.upper()}"
+        except Exception:
             return user_text
 
-    # --- NŒUD 1 : ANALYSE (LOGIQUE MÉTIER) ---
-    def analyze_node(self, state: AgentState) -> AgentState:
-        """Utilise le HealthDoctorTool pour identifier la menace."""
+    # --- NŒUD 1 : ANALYSE ---
+    def analyze_node(self, state: AgentState) -> Dict[str, Any]:
+        logger.info("--- NODE: ANALYSE ---")
         config = state.get("culture_config", {})
-        crop_name = config.get("crop_name", "Culture inconnue")
+        crop = config.get("crop_name", "Culture inconnue")
         query = state.get("user_query", "")
         
-        # --- ENRICHISSEMENT SÉMANTIQUE ---
-        # "Je vois des fleurs violettes" -> L'IA ajoute "WONGO STRIGA" -> L'outil déclenche l'alerte
+        # 1. Identification sémantique
         enhanced_query = self._identify_symptoms_semantically(query)
 
-        # Appel à l'outil métier importé
-        diag = self.doctor.diagnose_and_prescribe(
-            crop=crop_name, 
-            user_obs=enhanced_query
-        )
+        # 2. Diagnostic via l'outil métier
+        diag = self.doctor.diagnose_and_prescribe(crop=crop, user_obs=enhanced_query)
 
-        # Construction du rapport technique brut enrichi de supports visuels
-        # Le nouvel outil retourne un dict avec 'diagnostique' si trouvé, sinon 'status': 'Inconnu'
-        if "diagnostique" in diag:
-            # On insère ici les tags visuels pour aider l'agriculteur à confirmer le diagnostic
-            visual_aid = diag.get("diagramme_aide", "")
-            prep_aid = self.doctor.get_biopesticide_tutorial("neem") # Exemple par défaut
+        if diag.get("status") == "Trouvé" or "diagnostique" in diag:
+            # Extraction dynamique du tutoriel (ex: neem ou piment selon le diagnostic)
+            target_bio = diag.get("target_pest", "neem")
+            prep_aid = self.doctor.get_biopesticide_tutorial(target_bio)
             
             report = (
-                f"PATHOLOGIE DÉTECTÉE : {diag['diagnostique']}\n"
-                f"NIVEAU DE RISQUE : {diag.get('niveau_alerte')}\n"
-                f"RECETTE BIO : {diag.get('prescription_bio')}\n"
-                f"GUIDE DE PRÉPARATION : {prep_aid}\n"
-                f"CONSEIL CHIMIQUE : {diag.get('conseil_chimique')}\n"
-                f"MESURES PRÉVENTIVES : {diag.get('prevention')}"
+                f"🎯 PATHOLOGIE : {diag.get('diagnostique')}\n"
+                f"⚠️ RISQUE : {diag.get('niveau_alerte')}\n"
+                f"🌿 SOLUTION BIO : {diag.get('prescription_bio')}\n"
+                f"📖 MÉTHODE : {prep_aid}\n"
+                f"🧪 CHIMIE (Dernier recours) : {diag.get('conseil_chimique')}\n"
+                f"🛡️ PRÉVENTION : {diag.get('prevention')}"
             )
-            status = "Trouvé"
-        else:
-            report = f"ERREUR : {diag.get('message', 'Symptômes non reconnus.')}"
-            status = "Inconnu"
-
+            return {
+                "diagnosis_raw": diag,
+                "technical_advice_text": report,
+                "status": "FOUND"
+            }
+        
         return {
-            **state,
-            "diagnosis_raw": diag,
-            "technical_advice_text": report,
-            "status": status
+            "technical_advice_text": "Désolé, je n'ai pas pu identifier la maladie. Veuillez consulter un agent de terrain.",
+            "status": "UNKNOWN"
         }
 
-    # --- NŒUD 2 : FORMATAGE (LLM) ---
-    def format_node(self, state: AgentState) -> AgentState:
-        """Rend le diagnostic humain, bienveillant et structuré."""
-        if self.llm_client is None or state["status"] != "Trouvé":
-            return {**state, "final_response": state["technical_advice_text"]}
+    # --- NŒUD 2 : FORMATAGE ---
+    def format_node(self, state: AgentState) -> Dict[str, Any]:
+        logger.info("--- NODE: FORMATAGE ---")
+        if not self.llm or state["status"] != "FOUND":
+            return {"final_response": state["technical_advice_text"]}
 
         system_prompt = (
-            "Tu es le **Guérisseur des Plantes d'AgriConnect**. Ton but est de sauver la récolte ET la santé du paysan.\n"
-            "Ton ennemi juré est 'Le Wongo' (Striga) et l'abus de chimie.\n\n"
-            "**TON SERMENT :**\n"
-            "'Je ne proposerai jamais un poison si un remède naturel existe.'\n\n"
-            "**DIRECTIVES MÉDICALES :**\n"
-            "1. **BIO D'ABORD :** Ta première ordonnance est TOUJOURS locale (Feuilles de Neem, Piment, Cendres, Ail). C'est gratut et sain.\n"
-            "2. **CHIMIE EN DERNIER RECOURS :** Si l'attaque est critique, propose la chimie mais avec des **Avertissements de Sécurité EXTRÊMES** (Gants, masques).\n"
-            "3. **DIAGNOSTIC WONGO :** Si c'est le Striga, dis 'Le problème est dans le sol, pas sur la feuille'. Ordonne l'arrachage immédiat avant la floraison.\n\n"
-            "**STRUCTURE DE L'ORDONNANCE :**\n"
-            "- 🔍 LE NOM DU MAL : Ce que la plante a attrapé.\n"
-            "- 🌿 LE REMÈDE DE GRAND-MÈRE (Bio) : La recette exacte.\n"
-            "- 🧪 LE REMÈDE CHOC (Chimique) : Seulement si nécessaire (+ Précautions).\n"
-            "- 🛡️ LE VACCIN (Prévention) : Comment éviter que ça revienne."
+            "Tu es le Guérisseur des Plantes d'AgriConnect.\n"
+            "TON : Bienveillant, expert, protecteur. Utilise des listes à puces.\n"
+            "RÈGLE D'OR : Priorité absolue aux remèdes naturels (Bio)."
         )
 
         try:
-            msg = self.llm_client.invoke([
+            msg = self.llm.invoke([
                 SystemMessage(content=system_prompt),
-                HumanMessage(content=f"Rapport Technique :\n{state['technical_advice_text']}")
+                HumanMessage(content=f"Transforme ce rapport en conseil amical :\n{state['technical_advice_text']}")
             ])
-            return {**state, "final_response": msg.content, "status": "COMPLETED"}
+            return {"final_response": msg.content}
         except Exception:
-            return {**state, "final_response": state["technical_advice_text"], "status": "FALLBACK"}
+            return {"final_response": state["technical_advice_text"]}
 
-    # --- CONSTRUCTION DU WORKFLOW ---
+    # --- CONSTRUCTION DU GRAPH ---
     def get_graph(self):
         workflow = StateGraph(AgentState)
         workflow.add_node("analyze", self.analyze_node)

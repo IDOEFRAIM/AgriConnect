@@ -1,4 +1,5 @@
 import logging
+import json
 from typing import Dict, List, Optional, Any, TypedDict
 from datetime import datetime
 
@@ -7,15 +8,15 @@ from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_community.chat_models import ChatOllama
 
-# --- IMPORTATION DES OUTILS RÉELS ---
+# --- IMPORTATION DES OUTILS ---
+# Assure-toi que le chemin correspond bien à l'emplacement de ton fichier Tool corrigé
 from tools.subventions.base_subsidy import AgrimarketTool 
 
-logger = logging.getLogger("agent.subsidy_finance")
+logger = logging.getLogger("agent.agri_business")
 
 # ======================================================================
 # 1. ÉTAT DE L'AGENT
 # ======================================================================
-
 class AgentState(TypedDict):
     zone_id: str
     user_query: str
@@ -23,198 +24,161 @@ class AgentState(TypedDict):
     technical_advice_raw: Optional[str]
     final_response: str
     status: str
+    metadata: Dict[str, Any]
 
 # ======================================================================
-# 2. SERVICE BUSINESS DU GRAND FRERE
+# 2. SERVICE BUSINESS DU GRAND FRÈRE
 # ======================================================================
-
 class AgriBusinessCoach:
-    OLLAMA_MODEL = "mistral"
+    OLLAMA_MODEL = "mistral"  # Ou "llama3:8b" selon ton installation
 
     def __init__(self, ollama_host: str = "http://localhost:11434", llm_client=None):
         self.market_tool = AgrimarketTool() 
-        self.llm_client = self._initialize_ollama(llm_client, ollama_host)
-
-    def _initialize_ollama(self, llm_client, host: str):
+        
+        # Initialisation sécurisée avec Timeout pour éviter les déconnexions
         try:
-            return llm_client if llm_client else ChatOllama(model=self.OLLAMA_MODEL, base_url=host, temperature=0.1)
+            self.llm = llm_client if llm_client else ChatOllama(
+                model=self.OLLAMA_MODEL, 
+                base_url=ollama_host, 
+                temperature=0,
+                timeout=60,  # Augmenté à 60s pour éviter le "RemoteDisconnected"
+                keep_alive="5m" # Garde le modèle en mémoire 5 minutes
+            )
         except Exception as e:
-            logger.error(f"LLM non disponible: {e}")
-            return None
+            logger.error(f"Erreur init Ollama : {e}")
+            self.llm = None
 
     def _analyze_intent_semantically(self, query: str) -> Dict[str, Any]:
         """
-        Remplace les mots-clés fragiles par une compréhension IA du contexte.
-        Retourne : {'is_scam': bool, 'intent': 'VENTE'|'ACHAT'|'INFO'}
+        Analyse sémantique pour détecter les arnaques et l'intention réelle.
         """
-        if not self.llm_client:
-            # Fallback (Mode secours si pas d'IA)
-            scam_words = ["payer", "frais", "code", "envoie"]
-            is_scam = any(w in query.lower() for w in scam_words)
-            intent = "INFO"
-            if "vend" in query.lower() or "dispo" in query.lower(): intent = "VENTE"
-            elif "ach" in query.lower() or "cherch" in query.lower(): intent = "ACHAT"
-            return {"is_scam": is_scam, "intent": intent}
+        if not self.llm:
+            return {"is_scam": False, "intent": "INFO", "reason": "No LLM"}
 
-        prompt = (
-            "Tu es le cerveau de sécurité d'AgriConnect. Analyse cette phrase paysanne.\n"
-            f"Phrase : '{query}'\n\n"
-            "TÂCHES :\n"
-            "1. DETECTION ARNAQUE : L'utilisateur a-t-il reçu une demande suspecte d'argent/code ? (Attention: s'il veut payer un service légitime, ce n'est pas une arnaque).\n"
-            "2. INTENTION : Veut-il VENDRE (proposer), ACHETER (chercher) ou s'INFORMER ?\n\n"
-            "Réponds UNIQUEMENT sous ce format : 'SCAM=[OUI/NON] | INTENT=[VENTE/ACHAT/INFO]'"
+        system_prompt = (
+            "Tu es l'expert en sécurité d'AgriConnect Burkina. Analyse la requête.\n"
+            "Réponds UNIQUEMENT au format JSON :\n"
+            '{"is_scam": boolean, "intent": "VENTE" | "ACHAT" | "INFO", "reason": "string"}'
         )
-        
+
         try:
-            resp = self.llm_client.invoke([SystemMessage(content=prompt), HumanMessage(content="Analyse ça.")])
-            text = resp.content.upper()
+            messages = [SystemMessage(content=system_prompt), HumanMessage(content=query)]
+            resp = self.llm.invoke(messages)
             
-            is_scam = "SCAM=OUI" in text
-            if "INTENT=VENTE" in text: intent = "VENTE"
-            elif "INTENT=ACHAT" in text: intent = "ACHAT"
-            else: intent = "INFO"
+            # Nettoyage robuste du JSON (au cas où le LLM met du Markdown autour)
+            clean_content = resp.content.strip()
+            if "```json" in clean_content:
+                clean_content = clean_content.split("```json")[1].split("```")[0].strip()
+            elif "```" in clean_content:
+                clean_content = clean_content.split("```")[1].strip()
             
-            return {"is_scam": is_scam, "intent": intent}
+            data = json.loads(clean_content)
+            
+            return {
+                "is_scam": bool(data.get("is_scam", False)),
+                "intent": data.get("intent", "INFO").upper(),
+                "reason": data.get("reason", "")
+            }
         except Exception as e:
-            logger.error(f"Erreur analyse sémantique: {e}")
-            return {"is_scam": False, "intent": "INFO"}
+            logger.error(f"Erreur analyse sémantique : {e}")
+            # Fallback de sécurité basique
+            is_scam_keyword = any(x in query.lower() for x in ["payer", "frais", "orange money", "code"])
+            return {"is_scam": is_scam_keyword, "intent": "INFO", "reason": "fallback"}
 
     def analyze_node(self, state: AgentState) -> AgentState:
-        """Analyse Sécurité, Marché et Subventions."""
-        query = state.get("user_query", "").lower()
+        """Nœud logique principal."""
+        query = state["user_query"]
         profile = state.get("user_profile", {})
         crop = profile.get("crop", "Maïs")
-        region = state.get("zone_id", "Centre")
-        current_month = datetime.now().month
         
-        # --- 0. ANALYSE SÉMANTIQUE (Le Cerveau) ---
-        semantic = self._analyze_intent_semantically(query)
-        
+        # 1. Analyse de l'intention
+        analysis = self._analyze_intent_semantically(query)
         response_parts = []
         status = "SUCCESS"
 
-        # --- 1. SÉCURITÉ (Phishing) ---
-        if semantic["is_scam"]:
+        # 2. Gestion SCAM / ARNAQUE
+        if analysis["is_scam"]:
             status = "SCAM_DETECTED"
-            tag_scam = ""
-            response_parts.append(f"🚨 **ALERTE SÉCURITÉ** {tag_scam}")
-            response_parts.append("\n⚠️ **STOP !** Analyse IA : Cette demande ressemble à une arnaque.")
-            response_parts.append("L'État et AgriConnect ne demandent JAMAIS de code ou de frais par message.")
-
-        # --- 2. GRAND MARCHÉ NATIONAL ---
-        elif semantic["intent"] in ["VENTE", "ACHAT"]:
-            response_parts.append(f"🏢 **GRAND MARCHÉ NATIONAL**")
-            
-            if semantic["intent"] == "VENTE":
-                # Simulation de publication (dans une vraie app, on demanderait les détails)
-                # Ici on liste les offres d'achat existantes pour matcher
-                offers = self.market_tool.list_offers("ACHAT")
-                response_parts.append(f"Voici les acheteurs potentiels pour vos produits :")
-                for o in offers:
-                    response_parts.append(f"- {o['product']} : {o['quantity_kg']}kg à {o['price_per_kg']} FCFA/kg ({o['location']}) - 📞 {o['contact']}")
-                
-                response_parts.append("\n🛒 **VENDRE EN TOUTE SÉCURITÉ** :")
-                response_parts.append("1. **TIERS DE CONFIANCE** : L'acheteur dépose l'argent sur AgriConnect. Vous êtes payé à la livraison. Zéro risque.")
-                response_parts.append("2. **LOGISTIQUE** : Qui paie le transport ? (Cochez la case sur le bon de commande).")
-                response_parts.append("Pour publier votre offre, dites 'Je veux vendre X kg de Y'.")
-            
-            elif semantic["intent"] == "ACHAT":
-                offers = self.market_tool.list_offers("VENTE")
-                response_parts.append(f"Voici les produits disponibles :")
-                for o in offers:
-                    response_parts.append(f"- {o['product']} : {o['quantity_kg']}kg à {o['price_per_kg']} FCFA/kg ({o['location']}) - 📞 {o['contact']}")
-                response_parts.append("\n🔒 **ACHAT SÉCURISÉ** : Votre argent est protégé par le Tiers de Confiance AgriConnect jusqu'à réception.")
-
-        # --- 3. INTELLIGENCE MARCHÉ & AIDES ---
+            response_parts.append("🚨 **ALERTE SÉCURITÉ : TENTATIVE D'ARNAQUE DÉTECTÉE**")
+            response_parts.append("\n⚠️ **STOP !** AgriConnect ne demande JAMAIS d'argent pour une subvention.")
+            response_parts.append("Ne donnez jamais votre code Orange Money ou Moov Money.")
+        
         else:
-            # Info Marché
-            market = self.market_tool.analyze_market_timing(crop, current_month)
+            intent = analysis["intent"]
             
-            # --- FEATURE : PRIX SONAGESS & REGRET VENDEUR ---
-            sonagess_price = 1500 # Prix officiel simulé (Mock) pour l'exemple
-            market_price_raw = market.get('prix_actuel_estime', 1000)
-            try:
-                current_price = int(str(market_price_raw).replace('F', '').replace('CFA', '').strip())
-            except:
-                current_price = 800
+            # --- CAS 1 : VENTE ---
+            if intent == "VENTE":
+                offers = self.market_tool.list_offers("ACHAT")
+                response_parts.append("🏢 **OPPORTUNITÉS DE VENTE**")
+                if offers:
+                    for o in offers[:3]:
+                        # Utilisation sécurisée des clés (.get)
+                        prod = o.get('product', 'Produit')
+                        price = o.get('price_per_kg', 'Prix N/C')
+                        loc = o.get('location', 'Lieu N/C')
+                        response_parts.append(f"✅ Acheteur : {prod} à {price} FCFA/kg ({loc})")
+                else:
+                    response_parts.append("Aucun acheteur enregistré pour le moment.")
+                
+                response_parts.append("\n💡 *Utilisez notre Tiers de Confiance pour sécuriser la transaction.*")
 
-            response_parts.append(f"📈 **MARCHÉ : {crop.upper()}**")
-            
-            # Indicateur Visuel
-            if current_price < sonagess_price:
-                response_parts.append(f"🔴 **MAUVAISE VENTE**")
-                response_parts.append(f"Prix marché ({current_price}F) < PRIX OFFICIEL SONAGESS ({sonagess_price}F).")
-                response_parts.append(f"⚠️ Les 'Gens de l'Ombre' essaient de vous arnaquer.")
+            # --- CAS 2 : ACHAT ---
+            elif intent == "ACHAT":
+                offers = self.market_tool.list_offers("VENTE")
+                response_parts.append("🛒 **OFFRES DISPONIBLES**")
+                if offers:
+                    for o in offers[:3]:
+                        prod = o.get('product', 'Produit')
+                        price = o.get('price_per_kg', 'Prix N/C')
+                        contact = o.get('contact', 'N/C')
+                        response_parts.append(f"📦 {prod} : {price} FCFA/kg (Tel: {contact})")
+                else:
+                    response_parts.append("Aucune offre disponible pour le moment.")
+
+            # --- CAS 3 : INFO / CONSEIL ---
             else:
-                 response_parts.append(f"🟢 **BONNE VENTE** (Prix marché {current_price}F > Officiel).")
-            
-            # --- FEATURE AJOUTÉE : STOCKAGE ANTI-REGRET (Si prix bas) ---
-            if current_price < sonagess_price:
-                 nearby_storage = self.market_tool.find_nearby_storage(region)
-                 response_parts.append(f"\n🏚️ **MAGASIN DE STOCKAGE (Solution)**")
-                 if nearby_storage:
-                     w = nearby_storage[0]
-                     response_parts.append(f"Ne bradez pas ! Stockez à **{w['name']}** ({w['ville']}).")
-                     response_parts.append("En stockant 3 mois, vous vendrez au prix fort.")
-                 else:
-                     response_parts.append("Cherchez un magasin agréé pour faire du Warrantage.")
+                # CORRECTION MAJEURE ICI : Suppression de l'argument 'month'
+                # L'outil calcule le mois tout seul via datetime.now()
+                timing = self.market_tool.analyze_market_timing(crop)
+                
+                response_parts.append(f"📈 **INTELLIGENCE MARCHÉ : {crop.upper()}**")
+                
+                if timing.get("warrantage") == "CONSEILLÉ":
+                    # Insertion du visuel Warrantage
+                    response_parts.append("\n")
+                    response_parts.append(f"💰 **CONSEIL OR :** {timing.get('conseil')}")
+                else:
+                    response_parts.append(f"ℹ️ **AVIS :** {timing.get('conseil')}")
 
-            # Le Regret du Vendeur
-            predicted_price = int(current_price * 1.5) # +50% dans 3 mois
-            response_parts.append(f"\n🔮 **MANQUE À GAGNER POTENTIEL**")
-            response_parts.append(f"Si vous vendez aujourd'hui : {current_price}F/kg")
-            response_parts.append(f"Si vous stockez 3 mois : {predicted_price}F/kg (Prévision)")
-            response_parts.append(f"💰 **Vous perdez {predicted_price - current_price}F par kilo en vendant maintenant !**")
-
-            # Warrantage (Si applicable)
-            if market.get('opportunite_warrantage') == "CONSEILLÉ":
-                tag_warr = ""
-                response_parts.append(f"\n💡 **WARRANTAGE** : Stockez vos sacs et obtenez un crédit immédiat sans vendre.")
-
-            # Subventions
-            sub_text = self.market_tool.get_subsidy_status(region)
-            response_parts.append(f"\n💰 **AIDES RÉGIONALES :**")
-            tag_docs = ""
-            response_parts.append(tag_docs)
-            response_parts.append(sub_text)
-
-        raw_text = "\n".join(response_parts)
-        return {**state, "technical_advice_raw": raw_text, "status": status}
+        state["technical_advice_raw"] = "\n".join(response_parts)
+        state["status"] = status
+        state["metadata"] = analysis
+        return state
 
     def format_node(self, state: AgentState) -> AgentState:
-        """Mise en forme pédagogique via LLM."""
-        if state["status"] == "SCAM_DETECTED" or not self.llm_client:
-            return {**state, "final_response": state["technical_advice_raw"]}
+        """Mise en forme chaleureuse."""
+        # Si c'est une arnaque ou si LLM cassé, on renvoie le brut
+        if state["status"] == "SCAM_DETECTED" or not self.llm:
+            state["final_response"] = state["technical_advice_raw"]
+            return state
 
         system_prompt = (
-            "Tu es le 'Grand Frère' d'AgriConnect. Ton but : protéger le revenu du paysan burkinabè.\n\n"
-            
-            "CONTEXTE : L'agriculteur a peur des arnaques ('ceux qui fouillent avec l'argent') et "
-            "regrette souvent de vendre trop tôt (perte de 50% de gain).\n\n"
-            
-            "CONSIGNES DE RÉPONSE :\n"
-            "1. ANALYSE PRIX : Compare le prix proposé au prix SONAGESS. Si < officiel, alerte en ROUGE.\n"
-            "2. STRATÉGIE ANTI-REGRET : Si l'historique montre que le prix va doubler (ex: Oignons), "
-            "propose le STOCKAGE au lieu de la vente immédiate.\n"
-            "3. SÉCURITÉ : Rappelle que l'argent est bloqué par le 'Tiers de Confiance' AgriConnect "
-            "jusqu'à ce que le taxi-moto livre la marchandise.\n"
-            "4. TRANSPARENCE FRAIS : Précise que nous prenons 100 F/sac uniquement SI la vente réussit.\n\n"
-            
-            "STRUCTURE :\n"
-            "💰 VERDICT PRIX : [Prix Marché] vs [Prix SONAGESS]. C'est une [Bonne/Mauvaise] affaire.\n"
-            "📈 PRÉVISION : 'Si tu attends 3 mois, tu pourrais gagner X FCFA de plus.'\n"
-            "🛡️ ACTION : 'Je bloque l'argent de l'acheteur maintenant. Qui paie le transport ?'\n"
-            "📦 QUALITÉ : 'Envoie-moi une photo du sac pour que je confirme le deal.'"
+            "Tu es le 'Grand Frère' d'AgriConnect Burkina. Ton ton est protecteur et expert.\n"
+            "Tu ne changes PAS les données chiffrées.\n"
+            "Tu gardes impérativement les balises  telles quelles.\n"
+            "Sois concis et encourageant."
         )
-        
+
         try:
-            res = self.llm_client.invoke([
+            resp = self.llm.invoke([
                 SystemMessage(content=system_prompt),
-                HumanMessage(content=state["technical_advice_raw"])
+                HumanMessage(content=f"Voici les infos brutes : {state['technical_advice_raw']}")
             ])
-            return {**state, "final_response": res.content, "status": "COMPLETED"}
+            state["final_response"] = resp.content
         except Exception:
-            return {**state, "final_response": state["technical_advice_raw"], "status": "FALLBACK"}
+            state["final_response"] = state["technical_advice_raw"]
+            
+        return state
 
     def get_graph(self):
         workflow = StateGraph(AgentState)

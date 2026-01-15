@@ -58,7 +58,8 @@ async def ask_agent(req: UserRequest):
         elif req.flow_type == "REPORT":
             report_data = result.get("final_report", {})
             final_output = report_data.get("content", "Rapport vide.")
-            
+        
+        print('respponse',final_output)
         return {
             "status": "success",
             "response": final_output,

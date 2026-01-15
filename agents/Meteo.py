@@ -72,7 +72,8 @@ class ClimateVigilance:
                 rh=float(w["rh"]),
                 precip=float(w["precip"]),
                 doy=datetime.now().timetuple().tm_yday,
-                lat=float(c.get("lat", 14.0))
+                lat=float(c.get("lat", 14.0)),
+                distance_km=25.0  # Constante pour test
             )
             
             # 2. Vérification des Risques d'Inondation (Nouveau Tool)

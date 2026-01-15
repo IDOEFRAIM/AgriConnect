@@ -1,118 +1,190 @@
-import logging
 import json
 import os
-from dataclasses import dataclass
-from typing import List, Dict, Optional, Any
+import logging
+import math
+from datetime import datetime
+from typing import TypedDict, List, Dict, Any, Optional, Tuple
+from dataclasses import dataclass, field
+from enum import Enum
+from langgraph.graph import StateGraph, END
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_community.chat_models import ChatOllama
+
+# ==============================================================================
+# 1. STRUCTURES DE DONNÉES & PROFILS (SAHEL / BURKINA)
+# ==============================================================================
+
+class SoilType(Enum):
+    SABLEUX = "sableux"
+    ARGILEUX = "argileux"
+    LIMONNEUX = "limonneux"
+    FERRUGINEUX = "ferrugineux"
+    STANDARD = "standard"
+
+@dataclass(frozen=True)
+class CropProfile:
+    name: str
+    t_base: float
+    t_max_optimal: float
+    kc: Dict[str, float]
+    cycle_days: int
+    drought_sensitive: bool
+
+@dataclass
+class SahelianCropProfile:
+    name: str
+    varieties: Dict[str, List[str]]
+    cycle_days: int
+    seeding_density: str
+    depth_cm: int
+    organic_matter_min_tha: float
+    mineral_fertilizer: Dict[str, str]
+    water_strategy: str
 
 @dataclass
 class DiseaseProfile:
-    """Profil expert d'une pathologie ou d'un ravageur sahélien."""
     name: str
     local_names: List[str]
     symptoms_keywords: List[str]
-    risk_level: str  # CRITIQUE, ÉLEVÉ, MOYEN
-    threshold_pct: int  # Seuil d'intervention économique (%)
-    bio_recipe: str     # Recette détaillée (Neem, Piment, etc.)
-    chemical_ref: str   # Molécule de référence (dernier recours)
+    risk_level: str
+    threshold_pct: int
+    bio_recipe: str
+    chemical_ref: str
     prevention: str
 
-class SahelPathologyDB:
-    """Base de connaissances spécialisée : Burkina Faso & Sahel."""
-    
-    def __init__(self):
-        self.logger = logging.getLogger("SahelPathologyDB")
-        self._DATA = self._load_diseases()
+# ==============================================================================
+# 2. OUTILS TECHNIQUES (MATH, FLOOD, HEALTH, BURKINA)
+# ==============================================================================
 
-    def _load_diseases(self) -> Dict[str, List[DiseaseProfile]]:
-        try:
-            json_path = os.path.join(os.path.dirname(__file__), 'diseases_data.json')
-            with open(json_path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-            
-            diseases = {}
-            for crop, profiles in data.items():
-                diseases[crop] = [DiseaseProfile(**p) for p in profiles]
-            return diseases
-        except Exception as e:
-            self.logger.error(f"Error loading diseases data: {e}")
-            return {}
+class SahelAgroMath:
+    @staticmethod
+    def calculate_hargreaves_et0(t_min: float, t_max: float, lat: float, doy: int) -> float:
+        phi = math.radians(lat)
+        dr = 1 + 0.033 * math.cos(2 * math.pi * doy / 365.0)
+        delta = 0.409 * math.sin(2 * math.pi * doy / 365.0 - 1.39)
+        x = -math.tan(phi) * math.tan(delta)
+        omega_s = math.acos(max(-1.0, min(1.0, x)))
+        ra = (24 * 60 / math.pi) * 0.0820 * dr * (
+            omega_s * math.sin(phi) * math.sin(delta) +
+            math.cos(phi) * math.cos(delta) * math.sin(omega_s)
+        )
+        t_mean = (t_max + t_min) / 2
+        et0 = 0.0023 * 0.408 * ra * (t_mean + 17.8) * math.sqrt(max(0.001, t_max - t_min))
+        return round(et0, 2)
+
+    @staticmethod
+    def calculate_delta_t(temp: float, rh: float) -> Tuple[float, str]:
+        tw = (temp * math.atan(0.151977 * math.sqrt(rh + 8.313659)) + 
+              math.atan(temp + rh) - math.atan(rh - 1.676331) + 
+              0.00391838 * (rh**1.5) * math.atan(0.023101 * rh) - 4.686035)
+        delta_t = round(temp - tw, 1)
+        if 2 <= delta_t <= 8: advice = "OPTIMAL"
+        elif delta_t > 10: advice = "DANGER_EVAPORATION"
+        else: advice = "RISQUE_LESSIVAGE"
+        return delta_t, advice
 
 class HealthDoctorTool:
-    """
-    Outil de diagnostic et de prescription phytosanitaire.
-    Optimisé pour le conseil agricole de premier niveau au Burkina Faso.
-    """
-
     def __init__(self):
-        self.db = SahelPathologyDB()
-        self.logger = logging.getLogger("HealthDoctor")
+        # Simulation d'une base de données locale
+        self._DATA = {
+            "maïs": [
+                DiseaseProfile("Chenille Légionnaire d'Automne", ["Spodoptera", "Chenille"], ["feuilles trouées", "sciure", "cœur mangé"], 
+                               "CRITIQUE", 15, "Solution au Neem ou Piment/Ail", "Emamectine benzoate", "Semis précoces"),
+                DiseaseProfile("Striga (Wongo)", ["Wongo", "Striga"], ["fleurs violettes", "jaunissement", "croissance arrêtée"], 
+                               "CRITIQUE", 1, "Arrachage manuel avant floraison", "N/A", "Fumure organique massive")
+            ]
+        }
 
-    def diagnose_and_prescribe(self, crop: str, user_obs: str, infestation_rate: Optional[float] = 0.0) -> Dict[str, Any]:
-        """
-        Analyse les observations, identifie la menace et propose des solutions graduées.
-        """
-        crop_key = crop.lower().strip()
-        observations = user_obs.lower()
-        candidates = self.db._DATA.get(crop_key, [])
-        
+    def diagnose(self, crop: str, observations: str, rate: float = 0.0) -> Dict[str, Any]:
+        candidates = self._DATA.get(crop.lower(), [])
         best_match = None
-        highest_score = 0
-
-        # Keyword matching algorithm
-        for disease in candidates:
-            score = sum(1 for symp in disease.symptoms_keywords if symp in observations)
-            if score > highest_score:
-                highest_score = score
-                best_match = disease
-
-        # Specific logic for WONGO (Striga)
-        if "wongo" in observations or "striga" in observations or "fleurs violettes" in observations:
-             # Force Wongo detection even if other keywords are weak
-             # Could search for Wongo object in DB, here we simulate it if not found
-             if not best_match or "Striga" not in best_match.name:
-                 return {
-                    "diagnostique": "LE WONGO (Striga Hermonthica)",
-                    "niveau_alerte": "CRITIQUE",
-                    "diagramme_aide": "Cycle du Striga",
-                    "prescription_bio": "Arrachage manuel AVANT la floraison. Rotation avec Coton ou Arachide.",
-                    "conseil_chimique": "Aucun herbicide n'est aussi efficace que l'arrachage précoce.",
-                    "prevention": "Fumure organique riche (Le Wongo aime les sols pauvres)."
-                 }
-
-        if not best_match:
-            return {
-                "status": "Inconnu",
-                "message": "Symptômes non identifiés. Inspectez l'envers des feuilles et les racines.",
-                "action": "Consultez l'agent de vulgarisation le plus proche."
-            }
-
-        # Détermination de l'urgence
-        needs_chemical = infestation_rate >= best_match.threshold_pct
+        score = 0
+        obs = observations.lower()
         
-        # Sélection du diagramme contextuel
-        diagram = "Diagramme générique"
-        if "Chenille" in best_match.name:
-            diagram = "Cycle de la Chenille Légionnaire"
-        elif "Striga" in best_match.name:
-            diagram = "Cycle du Striga"
-
+        for d in candidates:
+            match_score = sum(1 for k in d.symptoms_keywords if k in obs)
+            if match_score > score:
+                score = match_score
+                best_match = d
+        
+        if not best_match: return {"status": "Inconnu"}
+        
         return {
-            "diagnostique": best_match.name,
-            "confiance": "Haute" if highest_score >= 2 else "Moyenne",
-            "niveau_alerte": best_match.risk_level,
-            "diagramme_aide": diagram,
-            "prescription_bio": best_match.bio_recipe,
-            "seuil_alerte": f"{best_match.threshold_pct}%",
-            "conseil_chimique": best_match.chemical_ref if needs_chemical else "Non nécessaire à ce stade.",
-            "prevention": best_match.prevention
+            "nom": best_match.name,
+            "alerte": best_match.risk_level,
+            "bio": best_match.bio_recipe,
+            "chimique": best_match.chemical_ref if rate >= best_match.threshold_pct else "Non requis",
+            "prevention": best_match.prevention,
+            "diagramme": "Cycle du Striga" if "Striga" in best_match.name else "Cycle de la Chenille Légionnaire"
         }
 
-    def get_biopesticide_tutorial(self, recipe_type: str) -> str:
-        """Fournit les étapes de préparation des solutions locales (Neem, Cendre, Piment)."""
-        header = "🧪 **RECETTE APPROUVÉE PAR LE DOCTEUR DES PLANTES**"
-        recipes = {
-            "neem": f"{header}\n1. Piler 1kg de graines ou 5kg de feuilles de Neem.\n2. Mélanger dans 10L d'eau.\n3. Laisser reposer 12h (une nuit).\n4. Filtrer avec un pagne et ajouter une cuillère de savon liquide (pour coller).",
-            "cendre": f"{header}\n1. Tamiser de la cendre de bois froide.\n2. Saupoudrer tôt le matin sur les feuilles humides de rosée.\n3. Répéter après chaque pluie.",
-            "piment": f"{header}\n1. Piler 100g de piment mûr avec 5 gousses d'ail.\n2. Mélanger dans 10L d'eau savonneuse.\n3. ATTENTION : Porter un masque/foulard lors de la pulvérisation !"
+# ==============================================================================
+# 3. AGENT SAHELIEN INTEGRÉ (LANGGRAPH)
+# ==============================================================================
+
+class SahelAgriAdvisor:
+    def __init__(self):
+        self.math = SahelAgroMath()
+        self.health = HealthDoctorTool()
+        self.crops_math = {
+            "maïs": CropProfile("Maïs", 10, 35, {'ini': 0.3, 'mid': 1.2, 'end': 0.6}, 90, True),
+            "niébé": CropProfile("Niébé", 12, 36, {'ini': 0.4, 'mid': 1.0, 'end': 0.35}, 70, False)
         }
-        return recipes.get(recipe_type.lower(), "Recette non trouvée.")
+
+    def get_full_diagnosis(self, state: Dict) -> dict:
+        w, c = state["weather_data"], state["culture_info"]
+        crop = self.crops_math.get(c["crop_name"].lower())
+        
+        # 1. Calculs Hydriques
+        et0 = self.math.calculate_hargreaves_et0(w["t_min"], w["t_max"], c["lat"], datetime.now().timetuple().tm_yday)
+        etc = et0 * crop.kc['mid']
+        delta_t, spray_status = self.math.calculate_delta_t(w["t_max"], w["rh"])
+        
+        # 2. Diagnostic Santé
+        health_diag = self.health.diagnose(c["crop_name"], state.get("user_obs", ""), state.get("infestation_rate", 0.0))
+        
+        return {
+            "culture": crop.name,
+            "etc": etc,
+            "pulverisation": spray_status,
+            "sante_plante": health_diag,
+            "distance": c.get("distance_km", 0.0),
+            "check_terrain": c.get("distance_km", 0.0) >= 20
+        }
+
+class SahelAgent:
+    def __init__(self):
+        self.advisor = SahelAgriAdvisor()
+        self.llm = ChatOllama(model="llama3:8b", temperature=0.1)
+
+    def process(self, state: Dict):
+        diag = self.advisor.get_full_diagnosis(state)
+        
+        prompt = (
+            f"Tu es l'Expert AgConnect. Réponds avec fraternité et précision.\n"
+            f"Culture: {diag['culture']} | Pulvérisation: {diag['pulverisation']}\n"
+            f"Santé détectée: {diag['sante_plante'].get('nom', 'RAS')}\n"
+            f"Action Bio: {diag['sante_plante'].get('bio', 'N/A')}\n"
+            f"Note Distance: {diag['distance']} km (Terrain requis: {diag['check_terrain']})\n"
+            f"Question utilisateur: {state['user_query']}"
+        )
+        
+        response = self.llm.invoke([SystemMessage(content="Expert Agronome Sahélien"), HumanMessage(content=prompt)])
+        return response.content
+
+# ==============================================================================
+# 4. EXÉCUTION & CONSEILS EXPERTS
+# ==============================================================================
+
+if __name__ == "__main__":
+    agent = SahelAgent()
+    inputs = {
+        "user_query": "Il y a des fleurs violettes partout dans mon maïs et les feuilles jaunissent. Que faire ?",
+        "user_obs": "fleurs violettes, jaunissement, maïs petit",
+        "infestation_rate": 20,
+        "weather_data": {"t_min": 24, "t_max": 37, "rh": 40, "precip": 0},
+        "culture_info": {"crop_name": "maïs", "lat": 12.3, "lon": -1.5, "distance_km": 12}
+    }
+    
+    print("=== RÉPONSE DE L'AGENT DOCTEUR ===\n")
+    print(agent.process(inputs))

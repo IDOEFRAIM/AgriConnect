@@ -1,0 +1,40 @@
+{
+  "metadata": {
+    "generated_at": "2025-12-30T22:42:21.948465",
+    "source": "CloudFloodUpdater"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "station_name": "Ouagadougou-Station",
+        "risk_level": "Faible",
+        "water_level": 45,
+        "timestamp": "2025-12-30T22:42:21.948147"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.52,
+          12.37
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "station_name": "Bobo-Dioulasso-Station",
+        "risk_level": "Faible",
+        "water_level": 80,
+        "timestamp": "2025-12-30T22:42:21.948171"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -4.29,
+          11.17
+        ]
+      }
+    }
+  ]
+}

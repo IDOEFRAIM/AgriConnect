@@ -6,224 +6,148 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 
-# --- CONFIGURATION MARCHÉ SAHÉLIEN ---
-
 @dataclass
 class MarketPrice:
     crop: str
-    base_price_harvest: int  # Prix au champ (récolte) en FCFA/kg
-    peak_price_soudure: int  # Prix pendant la période de soudure (juin-août)
+    base_price_harvest: int
+    peak_price_soudure: int
     local_demand: str
     export_potential: str
-    is_regulated: bool       # Si le prix est fixé par l'État (ex: Coton)
+    is_regulated: bool
 
 class AgrimarketTool:
-    """
-    Outil d'intelligence économique pour le producteur burkinabè.
-    Gère les prix, les opportunités de stockage (Warrantage), les intrants
-    et l'accès au Grand Marché National.
-    """
-
-    def __init__(self):
+    def __init__(self, data_path: str = "market_data.json"):
         self.logger = logging.getLogger("AgrimarketTool")
+        self.data_path = data_path
         self._MARKET_DATA = self._load_market_data()
-        self._OFFERS_FILE = os.path.join(os.path.dirname(__file__), 'market_offers.json')
+        self._OFFERS_FILE = 'market_offers.json'
 
     def _load_market_data(self) -> Dict[str, MarketPrice]:
+        # Données de base harmonisées
+        default_market = {
+            "maize": MarketPrice("Maize", 150, 250, "High", "Medium", False),
+            "sorghum": MarketPrice("Sorghum", 160, 260, "High", "Low", False),
+            "sesame": MarketPrice("Sesame", 500, 850, "Medium", "Very High", False),
+            "cotton": MarketPrice("Cotton", 300, 300, "Low", "Total", True)
+        }
+        
+        if not os.path.exists(self.data_path):
+            return default_market
+
         try:
-            json_path = os.path.join(os.path.dirname(__file__), 'market_data.json')
-            with open(json_path, 'r', encoding='utf-8') as f:
+            with open(self.data_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            
-            market_data = {}
-            for key, value in data.items():
-                market_data[key] = MarketPrice(**value)
-            return market_data
+                return {k.lower(): MarketPrice(**v) for k, v in data.items()}
         except Exception as e:
-            self.logger.error(f"Error loading market data: {e}")
-            return {}
+            self.logger.error(f"Error loading prices: {e}")
+            return default_market
+
+    # ======================================================================
+    # FIXED METHOD: list_offers with English Keys
+    # ======================================================================
+    def list_offers(self, offer_type: str = "ACHAT") -> List[Dict[str, Any]]:
+        """
+        Lists available market offers.
+        Uses English keys to match the Agent's expectations.
+        """
+        if not os.path.exists(self._OFFERS_FILE):
+            # Default mock data with English keys: 'product', 'price_per_kg', 'location'
+            return [
+                {
+                    "id": 1, 
+                    "type": "ACHAT", 
+                    "product": "Maize", 
+                    "quantity": "5 tons", 
+                    "price_per_kg": 175, 
+                    "location": "Ouagadougou"
+                },
+                {
+                    "id": 2, 
+                    "type": "ACHAT", 
+                    "product": "Sesame", 
+                    "quantity": "2 tons", 
+                    "price_per_kg": 650, 
+                    "location": "Bobo-Dioulasso"
+                }
+            ] if offer_type == "ACHAT" else []
+
+        try:
+            with open(self._OFFERS_FILE, 'r', encoding='utf-8') as f:
+                all_offers = json.load(f)
+                # Ensure we filter by type and return consistent keys
+                return [o for o in all_offers if o.get('type') == offer_type.upper()]
+        except Exception as e:
+            self.logger.error(f"Error reading offers file: {e}")
+            return []
 
     def get_market_prices(self) -> Dict[str, Any]:
-        """Retourne les prix actuels du marché avec analyse de tendance et prix juste."""
+        """Retourne les prix actuels avec analyse de tendance saisonnière."""
         prices = {}
         current_month = datetime.now().month
         
-        for crop, data in self._MARKET_DATA.items():
-            # 1. Calcul du Prix Théorique (Saisonnalité)
-            if 6 <= current_month <= 8: # Soudure (Prix Haut)
-                theoretical_price = data.peak_price_soudure
+        for crop_key, data in self._MARKET_DATA.items():
+            if 6 <= current_month <= 8:
+                price = data.peak_price_soudure
                 trend = "HAUSSE (Soudure)"
-            elif 9 <= current_month <= 11: # Récolte (Prix Bas)
-                theoretical_price = data.base_price_harvest
+            elif 9 <= current_month <= 11:
+                price = data.base_price_harvest
                 trend = "BAISSE (Récolte)"
             else:
-                theoretical_price = (data.base_price_harvest + data.peak_price_soudure) // 2
+                price = (data.base_price_harvest + data.peak_price_soudure) // 2
                 trend = "STABLE"
             
-            # 2. Simulation de "Prix du Marché Réel" (avec volatilité)
-            # Parfois le marché est plus bas que prévu (spéculation/surproduction)
-            market_price = theoretical_price
-            
-            # 3. Détection d'anomalie (Prix Juste vs Prix Marché)
-            fair_price = theoretical_price
-            gap = 0
-            
             prices[data.crop] = {
-                "price": f"{market_price} FCFA/kg",
-                "fair_price": f"{fair_price} FCFA/kg",
+                "price": f"{price} FCFA/kg",
                 "trend": trend,
                 "is_regulated": data.is_regulated
             }
         return prices
 
-    def list_offers(self, filter_type: str = None) -> List[Dict[str, Any]]:
-        """Liste les offres du Grand Marché National."""
-        try:
-            if not os.path.exists(self._OFFERS_FILE):
-                return []
-            with open(self._OFFERS_FILE, 'r', encoding='utf-8') as f:
-                offers = json.load(f)
-            
-            if filter_type:
-                return [o for o in offers if o.get('type') == filter_type.upper()]
-            return offers
-        except Exception as e:
-            self.logger.error(f"Error reading offers: {e}")
-            return []
-
-    def post_offer(self, offer_type: str, product: str, quantity: float, price: float, location: str, contact: str) -> str:
-        """Publie une offre sur le Grand Marché National."""
-        try:
-            offers = self.list_offers()
-            new_offer = {
-                "id": f"OFFER-{len(offers)+1:03d}",
-                "type": offer_type.upper(),
-                "product": product,
-                "quantity_kg": quantity,
-                "price_per_kg": price,
-                "location": location,
-                "contact": contact,
-                "date": datetime.now().strftime("%Y-%m-%d")
-            }
-            offers.append(new_offer)
-            
-            with open(self._OFFERS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(offers, f, ensure_ascii=False, indent=2)
-            
-            return f"Offre {new_offer['id']} publiée avec succès sur le Grand Marché National."
-        except Exception as e:
-            self.logger.error(f"Error posting offer: {e}")
-            return "Erreur lors de la publication de l'offre."
-
-    def analyze_market_timing(self, crop_name: str, current_month: int) -> Dict[str, Any]:
-        """
-        Analyse s'il faut vendre maintenant ou stocker (stratégie de Warrantage).
-        
-        Args:
-            crop_name: Nom de la culture.
-            current_month: Mois actuel (1-12).
-        """
-        crop = crop_name.lower().strip()
-        data = self._MARKET_DATA.get(crop)
+    def analyze_market_timing(self, crop_name: str) -> Dict[str, Any]:
+        """Conseille le producteur sur le stockage (Warrantage)."""
+        crop_key = crop_name.lower().strip()
+        data = self._MARKET_DATA.get(crop_key)
+        current_month = datetime.now().month
         
         if not data:
-            return {"status": "Erreur", "message": "Données non disponibles."}
+            return {"status": "Erreur", "message": "Culture non répertoriée."}
 
-        # Simulation du prix actuel selon la saisonnalité sahélienne
-        # La période de "Soudure" (Mois 6, 7, 8) voit les prix doubler
-        if 6 <= current_month <= 8:
-            current_price = data.peak_price_soudure - random.randint(0, 30)
-            market_state = "Période de Soudure (Prix Hauts)"
-        elif 9 <= current_month <= 11:
-            current_price = data.base_price_harvest + random.randint(0, 20)
-            market_state = "Période de Récolte (Prix Bas)"
-        else:
-            current_price = (data.base_price_harvest + data.peak_price_soudure) // 1.5
-            market_state = "Transition"
-
-        # Conseil de stockage (Warrantage)
-        can_warrant = not data.is_regulated and current_month >= 9
+        # Logique : Stocker est rentable si le prix n'est pas régulé et qu'on est en période de récolte
+        should_store = not data.is_regulated and (9 <= current_month <= 12)
         
         return {
             "culture": data.crop,
-            "prix_actuel_estime": f"{current_price} FCFA/kg",
-            "etat_marche": market_state,
-            "opportunite_warrantage": "CONSEILLÉ" if can_warrant else "NON APPLICABLE",
-            "conseil": "Stockez dans un magasin agréé pour obtenir un crédit et vendre en période de soudure." if can_warrant else "Vente immédiate recommandée."
+            "etat_actuel": "Récolte" if 9 <= current_month <= 11 else "Soudure" if 6 <= current_month <= 8 else "Transition",
+            "warrantage": "CONSEILLÉ" if should_store else "NON PRIORITAIRE",
+            "conseil": "Stockez pour vendre à prix d'or en période de soudure (juin-août)." if should_store else "Vente immédiate recommandée pour la trésorerie."
         }
 
     def calculate_profitability(self, crop_name: str, surface_ha: float, yield_kg_ha: float, total_costs: float) -> Dict[str, Any]:
-        """
-        Calcule le point mort (break-even) et le bénéfice net estimé.
-        """
-        data = self._MARKET_DATA.get(crop_name.lower())
-        if not data: return {"error": "Inconnu"}
+        """Calcule le bénéfice net et le prix de revient."""
+        crop_key = crop_name.lower().strip()
+        data = self._MARKET_DATA.get(crop_key)
+        if not data: return {"error": "Données manquantes"}
 
         total_production = surface_ha * yield_kg_ha
-        # On utilise le prix moyen
-        avg_price = (data.base_price_harvest + data.peak_price_soudure) / 2
+        avg_sale_price = (data.base_price_harvest + data.peak_price_soudure) / 2
         
-        gross_revenue = total_production * avg_price
-        net_profit = gross_revenue - total_costs
-        break_even_price = total_costs / total_production if total_production > 0 else 0
+        revenue = total_production * avg_sale_price
+        profit = revenue - total_costs
+        break_even = total_costs / total_production if total_production > 0 else 0
 
         return {
-            "production_totale_kg": total_production,
-            "chiffre_affaires_estime": f"{int(gross_revenue)} FCFA",
-            "benefice_net": f"{int(net_profit)} FCFA",
-            "prix_de_revient_kg": f"{int(break_even_price)} FCFA/kg",
-            "rentabilite": "OUI" if net_profit > 0 else "NON"
-        }
-
-    def get_sonagess_price(self, crop: str) -> int:
-        """Récupère le prix officiel SONAGESS (Céréales) pour éviter l'arnaque."""
-        # Prix plancher officiels simulés 2026 (Mock)
-        prices = {
-            "maïs": 17500, # le sac de 100kg
-            "sorgho": 18000,
-            "mil": 19000,
-            "riz": 22000,
-            "sésame": 600000 # la tonne (600F/kg) prix plancher souvent
-        }
-        # Retourne prix au KG
-        key = crop.lower().strip()
-        price_sac = prices.get(key, 0)
-        return int(price_sac / 100) if price_sac > 0 else 0
-
-    def find_nearby_storage(self, zone: str) -> List[Dict[str, str]]:
-        """Trouve les Magasins de Stockage (Warrantage) agréés."""
-        # Mock de magasins
-        warehouses = [
-            {"name": "Magasin COOPABO", "ville": "Bobo", "capacite": "Dispo"},
-            {"name": "Grenier de Sécurité", "ville": "Ouahigouya", "capacite": "Saturé"},
-            {"name": "Silo SONAGESS", "ville": "Fada", "capacite": "Dispo"}
-        ]
-        return [w for w in warehouses if w['ville'] in zone or zone == "Centre"]
-
-    def initiate_secure_deal(self, buyer_phone: str, seller_phone: str, amount: int, product: str) -> Dict[str, Any]:
-        """
-        Crée une transaction ESCROW (Tiers de Confiance).
-        L'argent est bloqué techniquement.
-        """
-        deal_id = f"TX-{random.randint(1000,9999)}"
-        return {
-            "transaction_id": deal_id,
-            "status": "PENDING_DEPOSIT",
-            "instruction_buyer": f"Déposez {amount} FCFA sur le compte AgriConnect (Code *144*4*1#) avec la réf {deal_id}.",
-            "instruction_seller": f"Ne livrez PAS tant que vous n'avez pas reçu le SMS de confirmation 'FONDS BLOQUÉS' de AgriConnect.",
-            "message_security": "L'argent sera libéré au vendeur uniquement après confirmation de livraison par l'acheteur ou GPS transporteur."
+            "production_totale": f"{total_production} kg",
+            "chiffre_affaires": f"{int(revenue)} FCFA",
+            "benefice_net": f"{int(profit)} FCFA",
+            "seuil_rentabilite_kg": f"{int(break_even)} FCFA/kg",
+            "resultat": "BÉNÉFICIAIRE" if profit > 0 else "DÉFICITAIRE"
         }
 
     def get_subsidy_status(self, region: str) -> str:
-        """
-        Simule les alertes de subvention gouvernementale (MAAH) au Burkina Faso.
-        """
-        subsidized_npk = 12000 # Prix subventionné cible
-        market_npk = 28000
-        
+        """Affiche les alertes de prix subventionnés par l'État."""
         return (
-            f"📢 **ALERTE SUBVENTION ({region})**\n"
-            f"- Le sac de NPK subventionné est à **{subsidized_npk} FCFA** contre {market_npk} au marché.\n"
-            f"- **Condition :** Être recensé dans la base RGA (Recensement Général de l'Agriculture).\n"
-            f"- **Lieu :** Direction Régionale de l'Agriculture."
+            f"📢 **ALERTE SUBVENTION - {region.upper()}**\n"
+            f"- Engrais NPK : 12 000 FCFA le sac (Prix subventionné).\n"
+            f"- Semences : Disponibles à la Direction Régionale.\n"
+            f"- **Action :** Présentez votre carte de producteur RGA."
         )

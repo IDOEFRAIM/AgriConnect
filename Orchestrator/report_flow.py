@@ -12,126 +12,99 @@ from tools.subventions.base_subsidy import AgrimarketTool
 logger = logging.getLogger("ReportFlow")
 
 class DailyReportFlow:
+    """
+    Générateur de bulletins quotidiens proactifs.
+    Fusionne les risques environnementaux et les opportunités économiques.
+    """
     def __init__(self, llm_client=None):
         self.flood_tool = FloodRiskTool()
         self.market_tool = AgrimarketTool()
         
-        # Initialize LLM for report synthesis
+        # Initialisation du LLM de synthèse (Mistral est excellent pour le Français)
         try:
-            self.llm = llm_client if llm_client else ChatOllama(model="mistral", base_url="http://localhost:11434", temperature=0.3)
+            self.llm = llm_client if llm_client else ChatOllama(
+                model="mistral", 
+                base_url="http://localhost:11434", 
+                temperature=0.3
+            )
         except Exception as e:
-            logger.warning(f"LLM not available for report generation: {e}")
+            logger.warning(f"LLM non disponible pour la synthèse : {e}")
             self.llm = None
 
     def fetch_daily_data(self, state: GlobalAgriState):
-        """Fetches fresh data for the report."""
-        logger.info("Fetching daily data...")
-        
-        # 1. Flood Data
+        """Collecte les données fraîches du jour."""
+        logger.info("--- NODE: FETCHING DAILY DATA ---")
         location = state.get("zone_id", "Ouagadougou")
+        
+        # 1. Analyse Risque Inondation (coordonnées moyennes simulées pour la zone)
         flood_risk = self.flood_tool.check_flood_risk(location, 12.37, -1.52)
         
-        # 2. Market Data
+        # 2. Analyse Prix du Marché
         market_prices = self.market_tool.get_market_prices()
         
-        # 3. General Weather (Simulated or fetched via another tool if available)
-        # For now, we infer general weather context from flood risk or use a placeholder
-        # In a real integration, we would call ClimateVigilance's tool here.
+        # 3. Prévisions Météo Générales
         weather_summary = {
             "condition": "Ensoleillé avec passages nuageux",
-            "temp_max": 35,
-            "temp_min": 24,
-            "wind": "Modéré (15 km/h)"
+            "temp_max": 35, "temp_min": 24, "wind": "15 km/h"
         }
         
         return {
             "meteo_data": {"flood_risk": flood_risk, "forecast": weather_summary},
-            "market_data": market_prices,
-            "execution_path": ["Daily Data Fetched"]
+            "market_data": market_prices
         }
 
     def generate_report(self, state: GlobalAgriState):
-        """Synthesizes the data into a readable report using LLM."""
-        logger.info("Generating report...")
+        """Transforme les données en un flash info actionnable."""
+        logger.info("--- NODE: GENERATING ACTIONABLE REPORT ---")
         
-        flood_risk = state.get("meteo_data", {}).get("flood_risk", {})
-        forecast = state.get("meteo_data", {}).get("forecast", {})
-        market_data = state.get("market_data", {})
-        zone = state.get("zone_id", "Ouagadougou")
-        
-        # Prepare context for LLM
         context = {
-            "zone": zone,
-            "meteo": forecast,
-            "risque_inondation": flood_risk,
-            "marche": market_data
+            "zone": state.get("zone_id", "Ouagadougou"),
+            "meteo": state.get("meteo_data", {}).get("forecast", {}),
+            "risque_inondation": state.get("meteo_data", {}).get("flood_risk", {}),
+            "marche": state.get("market_data", {})
         }
         
         if self.llm:
             system_prompt = (
-                "Tu es l'Assistant Intelligent d'AgConnect. Ta tâche est de rédiger le 'Flash Quotidien' pour un agriculteur sahélien.\n"
-                "Ton rapport doit être concis, motivant et utile.\n\n"
-                "STRUCTURE DU RAPPORT :\n"
-                "1. 🌤️ MÉTÉO & ACTION : Ne donne pas juste la température. Interprète-la ! (ex: 'Il fait très chaud (38°C), évitez les traitements en plein soleil et arrosez ce soir').\n"
-                "2. ⚠️ VIGILANCE : Si risque inondation (Élevé/Critique), mets une ALERTE ROUGE. Sinon, dis que tout est calme.\n"
-                "3. 💰 LE GRAND MARCHÉ : Affiche le PRIX JUSTE vs PRIX MARCHÉ. Si l'écart est grand, dis 'Attention aux spéculateurs !'. Conseille de vendre ou stocker.\n"
-                "4. 💡 CONSEIL DU JOUR : Une phrase d'encouragement ou technique (ex: 'Bonne journée pour le sarclage').\n\n"
-                "Ton : Proche, respectueux, direct, orienté ACTION."
+                "Tu es le rédacteur en chef d'AgConnect Flash. Ton but est de protéger et d'enrichir l'agriculteur.\n"
+                "RÈGLES DE RÉDACTION :\n"
+                "1. TON : Fraternel, direct, expert.\n"
+                "2. PRIORITÉ : Si le risque d'inondation est Élevé/Critique, commence par '🚨 ALERTE ROUGE'.\n"
+                "3. ÉCONOMIE : Interprète les prix (ex: 'Le prix du maïs grimpe, attendez avant de vendre').\n"
+                "4. ACTION : Donne un conseil pratique basé sur la météo du jour."
             )
             
             try:
                 response = self.llm.invoke([
                     SystemMessage(content=system_prompt),
-                    HumanMessage(content=f"Données du jour : {json.dumps(context, ensure_ascii=False)}")
+                    HumanMessage(content=f"Données brutes : {json.dumps(context, ensure_ascii=False)}")
                 ])
                 report_content = response.content
             except Exception as e:
-                logger.error(f"LLM generation failed: {e}")
+                logger.error(f"Échec LLM : {e}")
                 report_content = self._fallback_report(context)
         else:
             report_content = self._fallback_report(context)
 
-        # Determine priority based on risk
-        priority = "HIGH" if flood_risk.get("risk_level") in ["Élevé", "Critique"] else "NORMAL"
+        # Logique de priorité pour le canal d'envoi (SMS vs Notification)
+        priority = "URGENT" if context["risque_inondation"].get("risk_level") in ["Élevé", "Critique"] else "NORMAL"
 
         return {
-            "final_report": {"content": report_content, "priority": priority},
-            "execution_path": ["Report Generated"]
+            "final_report": {"content": report_content, "priority": priority}
         }
 
     def _fallback_report(self, context: Dict) -> str:
-        """Template-based report if LLM fails."""
-        zone = context['zone']
-        flood = context['risque_inondation']
-        market = context['marche']
-        
-        report = f"📅 FLASH INFO - {zone}\n\n"
-        
-        # Meteo
-        report += f"🌤️ MÉTÉO : {context['meteo']['condition']}, Max {context['meteo']['temp_max']}°C\n\n"
-        
-        # Risk
-        level = flood.get("risk_level", "Inconnu")
-        if level in ["Élevé", "Critique"]:
-            report += f"⚠️ ALERTE INONDATION : {level} ! {flood.get('alert_message')}\n\n"
-        else:
-            report += f"✅ RISQUES : {level} (Situation normale)\n\n"
-            
-        # Market
-        report += "💰 PRIX DU JOUR :\n"
-        for crop, price in market.items():
-            report += f"- {crop} : {price}\n"
-            
-        return report
+        """Template de secours en cas de panne du LLM."""
+        return f"📢 FLASH AGCONNECT - {context['zone']}\n\nMétéo: {context['meteo']['condition']} ({context['meteo']['temp_max']}°C)\nRisque Inondation: {context['risque_inondation']['risk_level']}\nMarché: {len(context['marche'])} cultures suivies."
 
     def build_graph(self):
-        graph = StateGraph(GlobalAgriState)
+        """Compile le workflow LangGraph."""
+        workflow = StateGraph(GlobalAgriState)
+        workflow.add_node("fetch_data", self.fetch_daily_data)
+        workflow.add_node("generate_report", self.generate_report)
         
-        graph.add_node("fetch_data", self.fetch_daily_data)
-        graph.add_node("generate_report", self.generate_report)
+        workflow.set_entry_point("fetch_data")
+        workflow.add_edge("fetch_data", "generate_report")
+        workflow.add_edge("generate_report", END)
         
-        graph.set_entry_point("fetch_data")
-        graph.add_edge("fetch_data", "generate_report")
-        graph.add_edge("generate_report", END)
-        
-        return graph.compile()
+        return workflow.compile()
