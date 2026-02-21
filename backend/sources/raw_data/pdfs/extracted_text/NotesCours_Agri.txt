@@ -1,0 +1,1324 @@
+
+--- Page 1 ---
+Ecole Nationale de la Statistique et de l'Analyse Economique
+Dakar, Sénégal
+STATISTIQUES AGRICOLES
+Notes de cours
+Intervenant : Franck Cachia
+Volume horaire total : 15h
+Période : 1-5 février 2015
+1. Introduction, définitions et enjeux
+1.1. Champ : comment définir le secteur agricole ?
+Définition : le secteur agricole
+Dans son acception la plus stricte, l’agriculture est le travail de la terre ou du champ (ager
+signifie champ en latin) en vue de cultiver des espèces végétales destinées à l’alimentation ou à
+d’autres usages.
+Au sens large, le secteur agricole comprend les activités de cultures, d’élevage, de sylviculture,
+de chasse, de cueillette, de pêche et d’aquaculture.
+En comptabilité nationale, les nomenclatures d’activité distinguent généralement : le secteur
+agricole à proprement parler, composé des activités de culture et d’élevage et parfois de la
+chasse ; sylviculture et cueillette ; pêche et aquaculture. Exemple de la NACE rev. 2.
+Dans ce cours, nous définissons le secteur agricole comme :
+• L’ensemble des activités nécessitant l’exploitation des ressources naturelles en vue de la
+production des divers produits de la culture, de l'élevage et des forêts.
+• Nous excluons les secteurs de la chasse, de la cueillette et de la pêche en raison de leur
+spécificité para rapport aux autres activités agricoles : Il s’agit en effet d’activités qui
+consistent à prélever une ressource et non à l’exploiter et la transformer en vue de
+produire, comme c’est le cas pour les cultures, pour l’élevage, pour l’aquaculture et la
+sylviculture, par exemple.
+• Nous excluons également l’aquaculture, car bien qu’elle corresponde à une activité
+d’élevage, elle est souvent traitée de manière conjointe avec la pêche.
+
+--- Page 2 ---
+Définition : les différents types de cultures
+Cultures temporaires (ou transitoires) : culture dont le cycle de vie (on parle également de cycle
+végétatif), de la germination à la production de graines, s’étend sur une ou plusieurs saisons des
+pluies et qui meurt après la récolte. C’est le cas par exemple des céréales, légumineuses,
+tubercules et légumes.
+Cultures annuelles : culture temporaire dont le cycle de vie s’étend sur une année ou moins.
+C’est le cas de la plupart des céréales mais également de la plupart des tubercules. Nous feront
+référence dans ce cours aux cultures temporaires et cultures annuelles de manière
+interchangeable, même si la seconde constitue un sous-ensemble de la première.
+Cultures pérennes (ou permanentes) : une culture dont la durée de vie peut s'étaler sur plusieurs
+années. C’est le cas des arbres fruitiers, des plantations de cacao et de café, etc.
+1.2. Le secteur agricole en Afrique sub-saharienne : importance et défis
+Le secteur agricole en Afrique sub-saharienne représente une part importante de la richesse
+nationale, entre 20 et 50% selon les pays ;
+C’est un secteur qui reste peu capitalisé, encore fortement orienté vers l’agriculture de
+subsistance et caractérisé par des rendements faibles. Des politiques de développement du
+secteur agricole ont été mise en place en Afrique pour combler cet écart, à l’image de la
+déclaration de Malabo. Des statistiques fiables sont nécessaires afin de bien orienter et calibrer
+ces mesures et en suivre les résultats ;
+L’agriculture fait face à un double défi :
+• D’une part, son développement doit permettre de nourrir une population de plus en
+plus importante : les projections démographiques prévoient une population supérieure
+à 9 milliards d’individus d’ici à 2050 ;
+• D’autre part, elle doit réduire son empreinte environnementale, dans un contexte de
+tension sur les ressources naturelles, notamment la disponibilité des terres agricoles.
+« L’intensification durable », promue sur le plan international (FAO), pourrait répondre à ce
+défi. Cela consiste à réaliser une intensification de la production agricole tout en
+limitant/réduisant ses impacts sur l’environnement, notamment sur la dégradation des sols. Une
+telle politique suppose notamment :
+• L’accès et la capacité à mettre en place des techniques agricoles adaptées (rotations
+culturales, etc.) ;
+• L’accès à des variétés à meilleur rendement (se pose en particulier la question des
+OGM) ;
+• Une augmentation de la capitalisation du secteur agricole (irrigation, mécanisation, etc.)
+Ce double défi est d’autant plus pressant sur le continent africain car :
+• La majeure partie de la croissance démographique aura lieu en Afrique ;
+• La tension sur les ressources naturelles et les terres agricoles ira en s’accroissant,
+notamment dans les pays du sahel ;
+
+--- Page 3 ---
+• L’agriculture africaine est particulièrement sous-capitalisée et l’accès au capital est
+rendu difficile par la faible disponibilité de mécanismes de financement adaptés.
+1.3. Pourquoi et pour qui produire des statistiques sur l’agriculture ?
+Malgré l’aspect stratégique des statistiques agricoles et le nombre importants d’utilisateurs
+potentiels, il est souvent difficile de mobiliser des fonds pour financer des opérations
+statistiques. Cela est en partie du au fait que, comme pour beaucoup d’opérations statistiques, il
+existe une asymétrie entre les coûts de la collecte des données et les bénéfices des statistiques
+produites : les premiers sont en général faciles à mesurer et supportés sur le court-terme alors
+que les seconds sont plutôt de nature intangible, donc difficiles à mesurer et intervenant sur le
+moyen/long-terme. Il est donc important pour les organismes en charge de ces statistiques de
+bien identifier les utilisateurs de statistiques et les bénéficies associés à l’existence de ces
+données et à leur utilisation.
+La diversité des utilisateurs et utilisations possibles de statistiques agricoles est le reflet de la
+multiplicité des thématiques abordées :
+• Elles touchent aux pratiques agricoles et à leurs conséquences économiques, sociales et
+environnementales ;
+• A la problématique de la sécurité alimentaire ;
+• à l’emploi rural ; etc.
+Les statistiques agricoles, par l’intermédiaire d’enquêtes appropriées, permettent de traiter ces
+thématiques à la fois au niveau individuel ou microéconomique (ménage, exploitation agricole)
+et au niveau agrégé ou macroéconomique (secteur agricole).
+Les principaux utilisateurs de statistiques agricoles sont :
+Les agriculteurs :
+Les statistiques agricoles fournissent un ensemble d’informations économiques (rentabilité,
+coûts, prix, etc.), de structure (mécanisation, infrastructures, etc.), sur les pratiques agricoles
+(méthodes de labour, rotations, etc.) mais aussi de nature environnementale permettant à
+l’exploitant de se situer par rapport à des moyennes nationales, régionales ou d’autres groupes.
+Ces données favorisent ainsi une meilleure prise de décision, par exemple en fournissant des
+informations sur la rentabilité comparée de certaines cultures, pratiques, etc.
+Les marchés et la chaîne de valeur agricole :
+Les statistiques agricoles fournissent une information sur des variables clés telles que la
+production agricole et les prix. Ces informations sont utilisées par les différents acteurs du
+secteur dans leur prise de décision en matière d’achats/vente et de détermination des prix.
+Une meilleure information des marchés permet une meilleure allocation des ressources, une
+réduction des coûts de transactions et moins de possibilités d’arbitrage (tirer parti d’une
+information privilégiée ou d’une information imparfaite des acteurs pour prendre des positions
+qui ne sont pas compatibles avec les fondamentaux réels du marché).
+Les décideurs publics :
+
+--- Page 4 ---
+Cela concerne l’ensemble des décideurs aux différentes échelles géographiques (locales,
+nationales, internationales). Des statistiques agricoles de qualité sont nécessaires aux décideurs
+afin de bien calibrer et cibler les politiques agricoles et de suivre leur efficacité.
+Par exemple, la mise en place de prix minimums d’achat pour certains produits agricoles requiert
+l’existence de données précises sur les coûts de production de ces produits (cf. exemple de la
+Zambie). La mesure des effets de la mise en place d’incitations fiscales à l’achat d’équipements
+agricoles nécessite une mesure précise et régulière du taux d’équipement des exploitations, de la
+nature de ces équipements, etc.
+Pour le système de comptabilité nationale :
+Les statistiques agricoles, notamment les données sur la production, les prix et les coûts de
+production sont nécessaires pour produire les comptes de l’agriculture, qui sont des comptes
+satellites dans le système de comptabilité nationale.
+De meilleures statistiques agricoles permettent de mieux mesurer la valeur ajoutée agricole et
+donc le poids de l’agriculture dans l’économie nationale. Elles permettent également de mieux
+caractériser et mesurer les flux économiques au sein du secteur agricole et entre le secteur
+agricole et d’autres secteurs, participant ainsi à une meilleure spécification des tableaux entrées-
+sorties.
+Enfin, les interactions entre l’environnement et l’agriculture doivent être mesurées pour établir
+une comptabilité économique et environnementale pour l’agriculture (SEEA-Agri). Ces
+interactions prennent notamment la forme de prélèvements du secteur agricole en ressources
+naturelles et de rejets agricoles dans l’environnement.
+Pour les chercheurs et analystes
+L’existence de statistiques agricoles alimente les recherches en économie agricole (productivité
+des facteurs, rentabilité comparé, etc.), dans le domaine de l’agro-écologie (mesure des
+différentes pratiques agricoles et culturales sur l’environnement), de l’analyse de la dimension
+sociale de l’agriculture (nature et évolution de l’emploi agricole, effets « genre »), de son
+importance pour la sécurité alimentaire (capacité de l’agriculture familiale a générer une
+production et/ou un surplus commercial), pour ne citer que quelques thèmes.
+Les résultats de ces recherches alimentent à leur tour la sphère décisionnelle, publique ou privé,
+qui dispose alors d’une information de meilleure qualité pour concevoir et mettre œuvre ses
+mesures, choix d’investissement et de production.
+1.4. Quelques indicateurs économiques clés
+Production : c’est la quantité produite pour une culture ou un produit donné. Elle peut
+s’exprimer en unités physiques standard comme la tonne métrique ou le litre (pour le lait par
+exemple) ou unités physiques spécifiques comme le boisseau (utilisé pour le grain), sac, etc. S’il
+n’est en général pas pertinent d’additionner les quantités produites de deux produits de groupes
+différents (quantités de blé et de pommes de terre, par exemple), des agrégations peuvent faire
+sens au niveau de groupes de produits : tonnage total en céréales, en tubercules, etc.
+Chiffre d’affaire (ou valeur de la production) : il s’agit des quantités produites multipliées par
+leur prix de vente « à la sortie de la ferme ». Si l’exploitant lui-même transporte le produit au
+
+--- Page 5 ---
+premier point de vente, pour obtenir le prix à la sortie de la ferme il faut retrancher de ce prix le
+coût de transport.
+Coût de production total : c’est l’ensemble des coûts monétaires et non-monétaires que
+l’exploitation doit engager afin de produire. Les coûts non-monétaires sont l’ensemble des coûts
+qui ne résultent pas d’un échange monétaire mais qui constituent un coût d’opportunité pour
+l’exploitant, comme par exemple la main d’œuvre familiale non-salariée ou le fourrage produit
+sur l’exploitation.
+Coûts variables (ou charges opérationnelles): ce sont l’ensemble des dépenses qui varient avec
+les quantités produites. Les achats d’intrants, coûts salariaux, frais de combustible et dépenses
+en eau et en énergie entrent dans cette catégorie.
+Coûts fixes: Il s’agit des dépenses que doit engager l’agriculteur quelque soit sont niveau de
+production. La dépréciation du capital fixe fait partie de cette catégorie, tout comme les frais
+d’entretien régulier des infrastructures agricoles (bâtiments, machines), les frais d’assurances et
+les coûts liés à des permis ou licences.
+Coût de production moyen : c’est le coût de production par unité produite.
+Coût de production marginal : c’est le coût de production d’une unité supplémentaire. Fonction
+généralement décroissante (jusqu’à un certain seuil) des quantités produites, il se calcule comme
+la dérivée première de la fonction de coût par rapport aux quantités produites. D’après la théorie
+microéconomique, la maximisation du profit sous contrainte de coût (ou, de manière
+équivalente, la minimisation des coûts sous contrainte de production) conduit à une égalité entre
+le prix de vente et le coût marginal.
+Marge brute (ou valeur ajoutée brute) : chiffre d’affaire moins les coûts variables. Elle est
+exprimée par unité de surface (ha, par exemple) s’il s’agit de cultures ou par tête de bétail dans
+le cas de l’élevage. Cet indicateur permet de mesurer la rentabilité économique des exploitations
+agricoles. Il est notamment utilisé par l’UE dans le cadre de la politique agricole commune (PAC).
+Marge nette (ou valeur ajoutée nette) : c’est la marge brute moins les coûts fixes, ou encore le
+chiffre d’affaire moins l’ensemble des coûts de production.
+
+--- Page 6 ---
+2. Méthodes de collecte des données
+2.1. Introduction et définitions des principaux concepts
+La stratégie en matière de collecte des données dépend d’une multitude de facteurs, en
+particulier : de l’objectif de l’étude, du budget disponible, des contraintes d’ordre technique, du
+niveau de représentativité souhaité, du niveau de détail.
+Nous présentons ici les principales méthodes, leurs conditions d’utilisation ainsi que des
+éléments sur leurs coûts et avantages respectifs.
+Quelque soit la méthode utilisée pour recueillir des informations sur le secteur agricole, il est
+nécessaire de s’entendre sur certains concepts statistiques clés, définis ci-dessous.
+Population d’intérêt (ou cible) : Il s’agit de la population sur laquelle va porter la collecte
+d’information et qui résulte directement des objectifs du programme statistique. Il s’agit
+généralement de préciser :
+• La nature des activités agricoles à couvrir, c’est-à-dire quels sont les produits de base qui
+seront couverts par l’enquête. Cela dépend évidemment de la thématique, mais en
+général les principaux produits au regard de leur poids économique ou importance
+stratégique (pare exemple en matière de sécurité alimentaire) sont couverts. Il se peut
+également qu’il existe des mesures économiques (fiscales, etc.) portant sur un secteur en
+particulier et rendant donc nécessaire sa couverture ;
+• Le type d’exploitations agricoles, comme par exemple les exploitations familiales ou
+commerciales, petites ou grandes ;
+• La couverture géographique : celle-ci dépend notamment de la nécessité ou non
+d’obtenir des résultats qui soient représentatifs au niveau national, régional ou à
+d’autres échelles géographiques. Le choix du niveau de couverture géographique a
+évidemment un impact sur les coûts.
+Unité d’observation (ou unité statistique) : il s’agit de l’unité pour laquelle l’information
+statistique sera récoltée. Dans le domaine de l’agriculture, l’unité statistique est souvent
+l’exploitation agricole elle-même, l’unité de production, le ménage ou la parcelle.
+Exploitation agricole : c’est une unité économique de production agricole soumise à une
+direction unique (WCA 2010).
+Unité de production (ou activité) : elle correspond à une activité de production d’un produit
+donné. Dans une exploitation mixte élevage/cultures, on pourra donc distinguer au moins deux
+unités de production avec des technologies de production distinctes, celle relative à l’activité
+élevage et l’autre aux cultures. Au sein de l’activité élevage, il est également possible de
+distinguer l’activité lait de l’activité viande.
+Parcelle : il s’agit d’une zone sur l’exploitation destiné à une ou plusieurs cultures, de forme et de
+surface variable.
+
+--- Page 7 ---
+Ménage : un ménage, au sens statistique du terme, désigne l'ensemble des occupants d'un
+même logement sans que ces personnes soient nécessairement unies par des liens de parenté
+(INSEE, 2016).
+Unité d’échantillonnage (ou de sondage): Il s’agit des unités de la population d’intérêt
+directement soumise à une opération de sélection par sondage.
+Unité d’analyse : il s’agit de l’unité sur laquelle porte l'analyse statistique et la constitution
+d’indicateur. Elle ne correspond pas forcément à l’unité d’observation ou à l’unité
+d’échantillonnage : le ménage peut être par exemple l’unité d’échantillonnage mais l’analyse
+porter sur des individus qui sont alors les unités d’analyse.
+2.2. Recensements
+Définition : Un recensement agricole permet de compter l’ensemble des exploitations agricoles
+et de collecter des informations de structure sur chacune d’entre-elles, par exemple : la taille de
+l’exploitation, les infrastructures qui y sont présente, sa localisation.
+Les activités agricoles au sens large peuvent être recensées de manière séparée ou groupée : il
+est par exemple courant de couvrir à la fois les activités agricoles au sens strict (cultures
+annuelles et pérennes), l’élevage (sédentaire, nomade et transhumant) et la sylviculture. Les
+activités d’aquaculture peuvent également être incluses dans le champ du recensement. La
+pêche fait souvent l’objet de recensements ou d’enquêtes spécifiques.
+Bases de sondage : La réalisation d’un recensement permet de constituer une base de sondage
+à partir de laquelle des échantillons pourront être tirés pour des enquêtes spécifiques
+(production, pratiques agricoles, etc.). Les données structurelles fournies par le recensement
+peuvent être utilisées comme information auxiliaire en vue de la constitution d’échantillons
+stratifiés.
+En Afrique, néanmoins, il est courant que les recensements agricoles ne soient exhaustifs que
+pour une partie de la population cible, par exemple les grandes exploitations, les exploitations
+modernes ou périurbaines. Les informations sur le reste de l’activité agricole, notamment
+l’agriculture familiale et de subsistance, n’étant renseignées qu’à partir d’un échantillon
+d’exploitations ou de ménages. Cela limite donc la possibilité d’utiliser les résultats du
+recensement comme base de sondage pour des enquêtes futures. Pour combler ce manque
+éventuel, il est possible de tirer parti des informations provenant d’autres recensements, comme
+par exemple le recensement de la population.
+Fréquence des recensements : Compte-tenu du coût budgétaire associé à cette opération
+statistique et de la nature structurelle des informations recueillies (qui évoluent donc
+relativement lentement), il n’est pas possible ni utile de réaliser cette opération de manière
+très fréquente. La fréquence à retenir dépend au final des caractéristiques du secteur agricole du
+pays concerné (changement structurel ou stabilité), d’objectifs politiques (volonté de mettre en
+place une politique agricole nécessitant des données complètes et robustes), du niveau de
+sophistication de l’infrastructure statistique dans le pays (expérience dans la réalisation
+d‘enquêtes et recensements, capacité de stockage et traitement des données, etc.) et bien sûr
+des capacités budgétaires. Il est cependant utile de prendre comme référence le Programme
+
+--- Page 8 ---
+mondial pour le recensement agricole de la FAO (WCA), qui recommande la réalisation d’un
+recensement tous les dix ans.
+Approche modulaire : Le WCA recommande d’intégrer le programme de recensement agricole
+et différentes enquêtes thématiques dans une approche dite modulaire :
+• Des données portant sur certaines variables de structure sont collectées sur l’ensemble
+de la population, comme la taille de l’exploitation, le type de cultures/production, sa
+localisation : c’est le recensement à proprement parler ;
+• Puis un certain nombre d’enquêtes thématiques, portant par exemple sur les pratiques
+agricoles ou l’emploi, sont réalisées sur un échantillon de la population selon une
+fréquence et un séquençage prédéterminé.
+Cette approche modulaire, ou d’enquêtes intégrées, permet de satisfaire les besoins de base en
+terme d’énumération des exploitations agricoles et de leur caractérisation mais également de
+recueillir des informations plus détaillées qui peuvent être directement utilisées pour la prise de
+décision au niveau privé ou public, tout en tenant compte de la contrainte budgétaire.
+2.3. Enquêtes statistiques
+Les enquêtes par sondage constituent le moyen le plus répandu pour collecter de l’information
+sur l’activité agricole. La principale raison est qu’elles permettent d’obtenir des résultats
+suffisamment précis au niveau de l’exploitation pouvant être extrapolés à l’ensemble de la
+population d’intérêt. Cette propriété dite de représentativité est recherchée par les décideurs
+publics pour estimer l’impact d’une mesure sur le secteur dans son ensemble ou pour le
+calibrage d’instruments incitatifs.
+2.3.3 Bases de sondage
+La possibilité de réaliser une enquête par sondage dépend d’abord de l’existence de bases de
+sondage adaptées, c’est-à-dire d’un ensemble qui répertorie et identifie l’ensemble de la
+population cible. Elles sont de 3 types:
+Bases de sondage de liste : elles répertorient et identifient l’ensemble des éléments de la
+population d’intérêt. Les unités répertoriées peuvent être des ménages, l’exploitation en tant
+que telle, des individus, etc. Les unités sont en général identifiées par un code (numéro
+d’entreprise, de contribuable, de téléphone, etc.). Ces bases sont couteuses à construire et à
+maintenir, car elles doivent être actualisées régulièrement afin de garantir leur complétude et
+leur exactitude : en effet, les unités statistiques peuvent disparaitre (cessation d’activité, décès,
+etc.), fusionner ou se scinder.
+Bases de sondage aréolaire : elles consistent en un ensemble de zones géographiques
+partitionnant le territoire de l’étude. Dans certains cas, les bases de sondage aréolaire
+permettent d’identifier directement les unités d’observation, comme les parcelles. Plus
+généralement, elles consistent en une partition du territoire suivant un maillage spécifique (par
+exemple des carrés de 1km de côté) ou suivant des caractéristiques relatives à la couverture ou
+l’usage de sols (segments/zones délimités par des barrières naturelles ou artificielles, par
+exemple) contenant les unités statistiques. Par construction, les bases aréolaires sont complètes
+
+--- Page 9 ---
+car elles résultent d’un partitionnement du territoire. En revanche, il peut s’avérer difficile
+d’identifier les unités statistiques sans avoir recours à une base de liste en complément.
+Bases de sondage multiples : elles consistent en l’utilisation conjointe des bases de liste et des
+bases aréolaires dans les procédures d’échantillonnage, un cas de figure très fréquents dans le
+domaine des enquêtes agricoles.
+2.3.4 Choix de l’unité d’observation
+Dans le domaine de l’agriculture, l’unité statistique est souvent l’exploitation agricole elle-même,
+l’unité de production, le ménage ou la parcelle.
+Le choix de l’exploitation comme unité statistique peut s’avérer pertinent dans la mesure où la
+comptabilité économique est généralement tenue au niveau de l’exploitation. Certaines
+informations, par exemple sur certains facteurs de production, ne sont disponibles qu’à ce
+niveau. Les informations au niveau de l’exploitation sont nécessaires pour produire des
+indicateurs mesurant la santé économique et financière de l’exploitation ainsi que pour
+approcher le revenu agricole.
+Enquêter directement l’unité de production permet de produire des données nécessaires à la
+réalisation d’analyses comparatives entre produits et à l’établissement des comptes de la nation,
+notamment les tableaux entrées-sortie. Cependant, certaines informations n’étant pas
+directement disponibles à ce niveau, comme par exemple les données relatives à certains coûts
+non-séparables, le choix de l’unité de production comme unité d’observation peut s’avérer
+problématique.
+La parcelle est une unité statistique naturelle à laquelle l’agriculteur peut facilement se référer et
+pour laquelle il lui est plus facile de répondre. Dans le cas des enquêtes de production, les
+méthodes basées sur la récolte d’échantillons d’épis pour estimer la production se fait
+nécessairement au niveau de la parcelle.
+Le choix du ménage comme unité statistique est pertinent si l’objectif de l’enquête est par
+exemple de mesurer le revenu du ménage ou sa capacité à satisfaire ses propres besoins en
+matière alimentaire. C’est également un choix naturel dans les pays où une large part de
+l’agriculture est de nature familiale ou de subsistance et dans lesquels le revenu des ménages
+provient majoritairement d’activités agricoles. En revanche, étant donné que la correspondance
+entre ménages et exploitation agricole est rarement biunivoque (les membres d’un ménage
+peuvent travailler dans et/ou posséder plusieurs exploitations différentes), il s’avère en général
+difficile de passer directement d’une analyse ménage à une analyse exploitation/secteur. Si le
+niveau ménage est choisi comme unité d’échantillonnage, les bases de sondages utilisées dans
+les enquêtes ménages classiques, provenant généralement du recensement de la population,
+peuvent être utilisées.
+2.3.5 Échantillonnage
+Une enquête par sondage est ensuite caractérisée par une procédure de sélection aléatoire des
+éléments de la population, c’est-à-dire la constitution de l’échantillon. Les méthodes
+d’échantillonnage le plus souvent utilisées dans le domaine des enquêtes agricoles sont les
+suivantes.
+Sondage aléatoire stratifié avec allocation proportionnelle à la taille :
+
+--- Page 10 ---
+Il s’agit d’abord de partitionner la population ciblée sur la base d’une ou plusieurs variables
+auxiliaires, par exemple la taille de l’exploitation, le type de production agricole ou la région, etc.
+L’objectif est de former des groupes le plus homogène possibles ;
+Au sein de chaque groupe (strate), un échantillon d’unités est sélectionné de manière aléatoire
+et indépendante ;
+Dans le cas de l’allocation proportionnelle à la taille, le poids de chacun des échantillons dans
+l’échantillon total est proportionnel au poids de la strate correspondante dans la population. Dis
+autrement, le taux de sondage dans les strates est identique. C’est ce que l’on entend dans le
+langage courant lorsque l’on parle d’échantillon représentatif.
+Les avantages de la stratification sont que: pour une erreur d’échantillonnage donnée, la taille de
+l’échantillon et le budget peuvent être réduits par rapport au plan d’échantillonnage aléatoire
+simple (inversement, avec un budget et une taille d’échantillon donnés, la stratification permet
+une réduction de la variance de l’échantillon).
+Sondage en plusieurs étapes (ou par grappes) :
+Il consiste à partitionner un ensemble géographique en différentes zones (unités primaires) et
+sous-zones (unités secondaires) et de procéder à des tirages aléatoires successifs afin de
+sélectionner un échantillon d’unités primaires, puis d’unités secondaires, et enfin d’unités finales
+(par exemple des segments, parcelles ou ménages) qui feront l’objet de la visite d’enquêteurs.
+Cette méthode permet de :
+• Garantir une représentativité statistique à différentes échelles (besoin de sécurité) ;
+• Réduire les coûts d’enquête car la base de sondage et les informations auxiliaires
+nécessaires pour la stratification ne sont requises qu’au niveau des unités présentes dans
+les grappes sélectionnées et non au niveau de la population cible dans son ensemble
+En revanche :
+• La taille de l’échantillon d’unités finales ne peut pas être connue à l’avance, ce qui pose
+des problèmes tant sur le plan opérationnel (définition du budget, répartition des
+enquêteurs) que technique (estimation de moyennes et calcul de la variance
+d’échantillonnage) ;
+• Les variances d’échantillonnage sont en générales accrues, mais cela peut être compensé
+par une bonne stratification préalable des unités primaires et par une structuration de la
+population en unités primaires nombreuses et de faible taille. L’utilisation d’un taux de
+sondage élevé au premier niveau et faible au second (permis par une bonne
+stratification) permet d’éviter une hausse trop forte de la variance tout en limitant la
+taille de l’échantillon.
+2.3.6 Mode de collecte des données
+Il dépend de la nature de la thématique et notamment de sa complexité, de l’unité d’observation
+choisie, de la capacité à répondre correctement aux questions de la part de l’enquêté et,
+évidemment, du budget disponible pour l’étude.
+Entretien en personne :
+
+--- Page 11 ---
+Si l’enquêté dispose d’information répertoriées à propos de la thématique étudiée, par exemple
+dans un carnet de compte pour ce qui concerne les coûts de production ou les prix de vente,
+l’enquête peut se réaliser par un entretien en personne.
+Si la thématique requiert une expertise spécifique, par exemple lorsqu’il s’agit d’estimations de
+rendement, ou lorsque l’enquêté n’est pas en capacité de répondre (données non disponibles
+pour l’unité d’observation choisie, complexité de la thématique, enquêté analphabète), il est
+nécessaire d’avoir recours à des enquêteurs expérimentés et à un questionnaire adapté afin de
+déterminer les paramètres/données demandées.
+En pratique, les questionnaires comportent souvent une partie qui est renseignée directement
+par l’agriculteur/exploitant (caractéristiques structurelles de l’exploitation, composition du
+ménage, etc.) et une autre qui fait plus appel à l’expertise de l’enquêteur (pose de carrés de
+rendement, mesure de la taille de l’exploitation, géo-localisation, etc.)
+Entretien à distance :
+Les entretiens par courrier, voie téléphonique ou par internet sont en général moins fiables et de
+toute façon très peu utilisés dans les pays en développement, hormis dans certains cas lorsqu’il
+s’agit de vérifier certaines informations après un premier passage de l’enquêteur.
+2.3.7 Période de l’enquête
+Elle doit être adaptée à la thématique étudiée afin que les données recueillies puissent être de
+qualité : la collecte des données doit donc intervenir le plus vite possible après l’événement
+que l’on cherche à mesurer (production, vente/prix de vente, achats d’intrants, etc.) afin que
+l’enquêté puisse être en capacité de répondre. Cette règle est d’autant plus importante que les
+exploitants ne disposent pas de carnets de comptes, ce qui est souvent le cas dans les pays en
+développement.
+En ce qui concerne les enquêtes de production, la procédure généralement adoptée est de
+réaliser 2 passages : un premier passage peu de temps après les semis, afin de collecter des
+informations de structure sur l’exploitation, de sélectionner la ou les parcelles et de placer le
+carré de rendement ; le second passage aura lieu peu avant la récolte (ou au moment de celle-ci)
+afin de prélever l’échantillon d’épis et de collecter certaines informations (intrants, etc.). Pour la
+mesure des prix de vente ou des stocks, les enquêtes ont en général lieu après la récolte, une fois
+que le produit a été vendu, stocké ou utilisé/consommé. On parle d’enquêtes post-récoltes.
+2.3.8 Période de référence des données
+C’est la période à laquelle se rapportent les données. Elle dépend des objectifs de l’enquête.
+Selon les cas c’est un intervalle de temps (semaine, mois, année, campagne agricole, etc.) ou une
+date précise. Il faut noter que dans une même enquête des variables peuvent avoir des périodes
+de référence différentes. La période de référence d’une enquête de production végétale est la
+campagne agricole.
+2.3.9 Fréquence de l’enquête
+Elle dépend d’une part des besoins des utilisateurs et d’autre part de la variabilité temporelle
+du phénomène étudié. Plus la variabilité temporelle est importante, plus la fréquence de
+
+--- Page 12 ---
+collecte doit être élevée, et réciproquement. Par exemple, des données annuelles sur la
+production (ex-post, mais également en prévision) et sur les prix sont nécessaires compte-tenu
+de la forte variabilité de ces variables. Les données sur les pratiques de production, en revanche,
+peuvent être collectées à une fréquence plus faible car la technologie de production change plus
+lentement.
+2.4. Registres administratifs
+2.4.2 Nature des données
+Les informations recueillies directement ou indirectement par les autorités locales ou nationales
+peuvent être mises à profit dans le système de statistiques agricoles. Elles peuvent provenir
+notamment :
+• De registres fiscaux : taxe foncière, professionnelle, impôts sur les sociétés, TVA, etc.
+• Du cadastre ;
+• De mesures ponctuelles ou régulières comme les politiques d’achat à prix minimum, les
+subventions aux intrants, etc.
+Ces informations de nature administrative offrent souvent l’avantage de l’exhaustivité (fiscalité,
+cadastre) et de la continuité ; par ailleurs, leur coût de collecte est souvent limité.
+Ces données portent souvent sur des caractéristiques structurelles de l’exploitation/ménage
+concerné, comme sa taille/chiffe d’affaire, sa localisation, son périmètre foncier, etc.
+2.4.3 Utilisation
+Construction de bases de sondage : par exemple une base d’exploitations identifiées par leur
+numéro d’entreprise, une base aréolaire fournit par le cadastre, etc.
+Information auxiliaire : permettant de stratifier la population cible (par exemple sur la base du
+chiffre d’affaire) et d’améliorer l’estimation de certains paramètres en utilisation des techniques
+appropriées.
+Information de contrôle : ces informations permettent parfois de contrôler la véracité des
+données collectées et des indicateurs de sortie en augmentant les possibilités de croisement
+entre variables. Par exemple, la mesure du chiffre d’affaire des exploitations de l’échantillon est-
+elle cohérente avec les montants payés d’impôts sur les sociétés ?
+Compte-tenu de leur caractère souvent sensible (fiscalité, foncier, etc.) et des questions de
+confidentialité qui en découlent, l’accès à ces données et leur croisement avec d’autres variables
+peut s’avérer délicat.
+2.5. Méthodes des exploitations typiques
+Plusieurs organisations ou réseaux ont adopté une stratégie qui consiste à construire des
+indicateurs agricoles sur la base d’une exploitation agricole fictive, dite «représentative»,
+«typique», « moyenne » ou « modale ».
+Cette méthode était plutôt réservée au secteur privé, à la recherche académique ou à des
+organisations sectorielles mais gagne de plus en plus de terrain auprès d’organismes publics, y
+
+--- Page 13 ---
+compris pour produire des statistiques de portée nationale. Elle dispose en effet d’un avantage
+certain en termes de coûts par rapport aux enquêtes traditionnelles.
+2.5.1 Construction de l’exploitation typique
+L’exploitation agricole typique est une exploitation fictive à laquelle sont attribuées les
+caractéristiques (spécialisation, taille, technologie de production, etc.) les plus fréquemment
+trouvées dans le groupe que l’exploitation est supposée représenter (exploitations laitières,
+exploitations d’une région précise, etc.). A ce titre, on parle également d’exploitation modale.
+La détermination des caractéristiques modales est basée sur une combinaison de :
+• Données «objectives», provenant généralement des recensements et des enquêtes ;
+• Entretiens avec les agriculteurs, les agents de vulgarisation, etc ;
+• Dires d’experts.
+Ce processus est mis en œuvre par un panel d’experts composé d’un large éventail de
+participants venus du secteur alimentaire et agricole
+2.5.2 Principaux avantages
+Budget : le budget alloué à l’estimation des données basées sur les exploitations typiques
+représente une faible part du budget nécessaire pour réaliser des enquêtes agricoles standards.
+Le niveau de détail dans la caractérisation de l’exploitation typique peut être plus important que
+celui proposé dans les enquêtes standards : il peut être consacré davantage de budget à l’analyse
+détaillée, les membres du panel sont des experts du domaine.
+Compte-tenu de leur niveau de détail et de fiabilité, ces données peuvent être mises à profit
+pour réaliser diverses analyses et simulations : impacts environnementaux des différentes
+pratiques agricoles, relation entre productivité et types de sols, impact d’une incitation fiscale sur
+la technologie de production, etc.
+Comparabilité : comme la collecte des données est généralement réalisée de manière uniforme,
+les données peuvent être comparées dans le temps et l’espace.
+2.5.3 Principales limites
+Absence de représentativité statistique : cette approche ne prend pas en compte toute la
+diversité des systèmes et conditions de production. Il s’ensuit que les résultats ne peuvent pas
+être extrapolés au niveau national ou régional sans une perte significative de précision, sauf dans
+des cas très spécifiques. La représentativité statistique peut être améliorée en multipliant le
+nombre d’exploitations typiques, mais au prix d’une hausse du budget.
+Impossibilité de calculer la précision/erreur des paramètres.
+Complexité : la détermination des exploitations typiques est un exercice compliqué étant donné
+la multiplicité des caractéristiques à considérer.
+Dose importante de subjectivité : la détermination des données pour les exploitations typiques
+est en partie le résultat de dires d’experts, par nature subjectifs.
+2.5.4 Complémentarité avec les enquêtes classiques
+
+--- Page 14 ---
+Pour les pays avec peu ou pas d’infrastructure statistique, elles représentent un moyen efficace
+et rentable de compiler une série préliminaire d’estimations, qui peuvent être ensuite
+améliorées et complétées par des enquêtes par sondage.
+Pour les cultures moins importantes pour lesquelles l’utilisation d’enquêtes n’est pas justifiée
+économiquement.
+Pour réaliser des estimations entre deux enquêtes.
+
+--- Page 15 ---
+3. Estimation de la production du secteur agricole
+3.1. Introduction et définition des principaux concepts
+3.1.1 Estimations et prévision de production
+On parle d’estimation de production lorsque l’estimation est réalisée pendant ou après la récolte
+et de prévision lorsque celle-ci est réalisée avant.
+3.1.2 Utilité des estimations de production
+Elles permettent d’établir les bilans alimentaires et ainsi d’identifier dans quelle mesure la
+production domestique est à même de couvrir la demande, et donc la nécessité de recourir aux
+importations. Elle constitue une information essentielle dans une perspective de suivi de la
+sécurité alimentaire d’un pays ou d’une région.
+Elles permettent de suivre les politiques de régulation sectorielles, par exemple lorsque des
+aides publiques sont associées à la réalisation d’objectifs de production.
+Elles fournissent des données de base utiles à la construction des comptes de l’agriculture,
+notamment des comptes de production et de la mesure de la valeur ajoutée.
+3.1.3 Quelques concepts clés
+Les méthodes utilisées pour estimer la production diffèrent suivant le type de produit, c’est
+pourquoi nous différencions cultures annuelles, cultures pérennes et produits issus de l’élevage.
+Surface de l’exploitation : elle comprend les terres agricoles ainsi que les zones sur lesquelles se
+trouvent bâtiments, infrastructures, canaux d’irrigation et de drainage, ainsi que les clôtures et
+autres éléments permettant de délimiter les parcelles.
+Surface agricole (terres arables ou terres cultivables) : elle comprend les surfaces plantées ou
+ensemencées ainsi que les terres en jachère, mais exclut les bois et forêts.
+Surface cultivée : elle comprend uniquement les terres ensemencées ou plantées.
+Surface récoltée : elle peut différer de la surface cultivée pour diverses raisons, par exemple
+quand une partie de la parcelle a été endommagée et n’est pas récoltée.
+3.2. Pour les cultures annuelles
+Il existe essentiellement deux méthodes : la comptabilisation directe, peu utilisée, et la méthode
+d’estimation.
+3.2.1 Comptabilisation directe de la production
+Elle consiste à comptabiliser l’ensemble de la production pour la population cible de l’enquête.
+Elle peut être envisagée lorsque au moins une de ces conditions est vérifiée :
+• La production est fortement concentrée sur quelques grandes exploitations ;
+
+--- Page 16 ---
+• Le nombre d’intermédiaires est faible (situation de monopsone) : il peut s’agir par
+exemple de grandes coopératives, d’industries agro-alimentaires ayant en charge la
+transformation ou le conditionnement du produit, ou même de certains grands
+exploitants disposants d’installation de transformation.
+Cette méthode est peu utilisée car peu de secteurs se trouvent dans cette configuration, hormis
+certains produits d’exportations achetés par de grandes coopératives publiques ou privées. Il
+peut s’agir par exemple du thé, café, cacao ou coton.
+Elle suppose aussi qu’une comptabilité précise soit tenue par le ou les producteurs et
+intermédiaires, ce qui n’est pas souvent le cas dans les pays en développement
+3.2.2 Estimation de la production par les rendements et les superficies
+Cette méthode propose d’estimer les quantités produites par l’estimation des rendements et
+des surfaces cultivées :
+̂𝑄
+𝑄̂ = ( ) .𝑆̂
+𝑆
+Où :
+• 𝑄̂ est la production estimée d’une culture ;
+• 𝑆̂ est l’estimation de la surface cultivée ;
+̂𝑄
+• ( ) est l’estimation du rendement moyen par unité de surface.
+𝑆
+3.2.2.1 Estimation du rendement
+Étape 1 : sélectionner un échantillon de parcelles à partir desquelles l’estimation sera réalisée.
+Un exemple de procédure souvent utilisée est l’échantillonnage stratifié à plusieurs degrés où :
+• Les strates correspondent à des divisions administratives du territoire ou à des zones
+agro-écologiques ;
+• Ces strates sont ensuite partitionnées en zones, souvent appelées zones de
+dénombrement (ou d’énumération), qui comprennent un nombre donné de ménages
+(ou exploitations agricoles). Ces zones constituent les unités primaires du plan de
+sondage et sont généralement tirées selon une procédure aléatoire avec une probabilité
+de sélection proportionnelle à la taille ;
+• Les unités secondaires sont les villages ou localités, sélectionnés parmi les unités
+primaires-échantillon selon une procédure aléatoire. La procédure peut être simple ou
+avec probabilité de sélection proportionnelle à la taille (exprimée en nombre de
+ménages ou d’exploitations, par exemple) s’il existe une corrélation entre la taille d’un
+village et son rendement moyen ;
+• Une fois les unités secondaires tirées, il s’agit de sélectionner l’ensemble des parcelles du
+village sur lesquelles est cultivé le produit ciblé ou, si le nombre de parcelles par village
+est trop important, d’en sélectionner un échantillon aléatoire.
+Étape 2 : déterminer les segments à l’intérieur des parcelles-échantillon à partir desquels
+l’estimation sera réalisée. Ces segments sont souvent des formes géométriques régulières,
+
+--- Page 17 ---
+comme des carrées ou rectangles. On parle d’ailleurs souvent de carré de rendement. Le carré
+est sélectionné de manière aléatoire : de nombreuses méthodes existent à ce sujet.
+Étape 3 : estimation du rendement moyen sur les segments. Elle s’effectue au moyen de la
+récolte des épis sur le segment de la parcelle et de la pesée des graines ainsi récoltées. Il est
+important que la récolte de la zone se fasse de la même manière que sur le reste de la parcelle,
+c’est-à-dire en utilisant les mêmes méthodes, outils et type de main d’œuvre. Ce que l’on
+cherche à mesurer est le rendement récolté, c’est-à-dire incluant les pertes éventuelles liées à la
+récolte, et non le rendement biologique ou théorique. Il est notamment important que la récolte
+sur le segment se fasse dans la mesure du possible au même moment que sur la parcelle et que
+le pesage s’effectue selon la méthode de l’exploitant, en général juste après la récolte. Il est
+important de fournir le poids du grain pour un degré d’humidité donné/standard.
+Étape 4 : calcul du rendement moyen obtenu sur les parcelles. Il est obtenu en extrapolant le
+rendement obtenu sur la surface couverte par le carré de rendement à la surface de la parcelle
+au moyen d’une « règle de trois ». Par exemple, si on mesure un rendement de 0.1 tonne sur un
+carré de rendement de 100m2 de surface, le rendement moyen pour une parcelle d’un hectare
+̂𝑄
+sera de 0.1 * 100 = 10 tonnes. On obtient donc, pour chaque parcelle enquêtée 𝑖, la valeur : ( ) .
+𝑆 𝑖
+Une des critiques de cette approche d’estimation est qu’elle peut conduire à une surestimation
+des rendements. C’est le cas par exemple si les carrés de rendement sont placés uniquement sur
+des parcelles productives. Or, il est fréquent qu’une parcelle ou au moins une partie de parcelle
+se trouve en mauvais état, par exemple parce que les épis qui s’y trouvent sont trop
+endommagés (aléas climatiques, dommages causés par des insectes, rongeurs, larves, etc.) ou
+que le cycle de croissance de la plante ait été affecté par des maladies. Il est important que les
+parcelles improductives ou sous-productives soient prises en compte dans la méthode
+d’estimation des rendements afin que les estimations ne soient pas biaisées.
+3.2.2.2 Estimation des surfaces
+Pour estimer la production annuelle, il faut maintenant déterminer la surface cultivée
+correspondante, c’est-à-dire le terme 𝑆̂ de l’équation d’estimation de la production.
+Les surfaces agricoles par culture ont tendance à être moins variables que les rendements d’une
+année sur l’autre. Il est donc envisageable d’adopter des méthodes non-statistiques, basées sur
+des registres administratifs, pour estimer les surfaces en culture.
+Quelque soit la méthode utilisée, il est important :
+• Qu’il y ait correspondance entre le premier niveau d’estimation des rendements
+(parcelle, exploitation, village ou autre) et celui pour lequel les surfaces correspondantes
+sont déterminées ;
+• Que l’estimation des rendements et celle des surfaces se basent sur un même concept
+de superficie, la superficie cultivée et non la superficie agricole brute et encore moins la
+superficie de l’exploitation.
+Utilisation des registres administratifs et/ou du cadastre :
+Cette méthode est envisageable dans le cas où le pays dispose d’un cadastre, complété par un
+système de suivi et de remontée de l’information sur les terres agricoles. Cela est parfois le cas, y
+
+--- Page 18 ---
+compris dans les pays en développement, notamment car les autorités au niveau local et
+national peuvent avoir besoin de ces informations pour des questions de gestion du foncier et de
+politique fiscale. Pour certaines cultures organisées en filières, comme certaines cultures
+d’exportation, il est également possible que la fédération de producteurs dispose d’information
+(parfois géo-référencées) sur les surfaces allouées à la culture en question. Quel que soit la
+nature du registre, il est nécessaire de s’assurer que :
+• La surface qui est reportée dans le registre concerne la surface agricole nette, ou surface
+cultivée, et non la surface brute qui contient des zones non utilisées pour la culture
+(bâtiments, haies, système d’irrigation, etc.) et les terres en jachère ;
+• Les parcelles recensées sont utilisées pour une seule culture ou si ce n’est pas le cas
+fournir la répartition entre les différentes cultures.
+L’information recueillie par l’intermédiaire de ces registres doit faire l’objet de croisements et de
+contrôles afin de s’assurer de la précision des informations :
+• Un premier contrôle consiste à croiser les données provenant du cadastre avec celles
+provenant des registres ;
+• Un second consiste à superposer les plans, images aériennes ou satellitaires
+éventuellement disponibles à la répartition des terres tel qu’indiqué par les registres
+et/ou le cadastre, pour vérifier la correspondance ;
+• Des contrôles sur le terrain auprès des autorités locales mais également sur les
+exploitations sont nécessaires.
+Il est important de s’assurer que les données font bien référence à la campagne agricole en
+cours, afin qu’il y ait correspondance avec les estimations de rendement. Le registre doit donc
+être mis à jour au moins sur une base annuelle.
+Imagerie aérienne et satellitaire :
+Cette méthode n’est pas encore généralisée, malgré les gains importants en matière de
+résolution et la baisse significative du coût des images satellitaires. En effet, même si la
+technologie existe, elle ne permet pas encore de déterminer avec un niveau de précision
+suffisant le type de produit cultivé sur les différentes parcelles, notamment quand il s’agit de
+différencier des cultures au sein d’un groupe donné (céréales, par exemple). Dans un futur
+relativement proche, cette technologie gagnera en précision et en accessibilité et pourra alors
+être utilisée de manière régulière pour estimer les surfaces agricoles.
+L’imagerie satellitaire permet déjà en revanche d’estimer avec une précision suffisante les
+surfaces associées aux différents modes d’occupation des sols, notamment les surfaces agricoles.
+Ces informations peuvent donc être utilisées pour vérifier la cohérence au niveau agrégé des
+informations remontant des registres, cadastres ou des enquêtes à propos des surfaces agricoles.
+Utilisation d’enquêtes statistiques :
+Cette méthode est souvent utilisée par les pays car peu disposent de cadastres à jour et de
+dispositifs fiscaux au niveau national nécessitant des informations sur les surfaces agricoles.
+En général, les informations portant sur les surfaces sont recueillies au sein du même dispositif
+d’enquêtes qui est prévu pour estimer les rendements. Nous avons vu que souvent ces enquêtes
+se réalisent sur deux passages : un premier au moment des semis permettant la pose des carrés
+
+--- Page 19 ---
+de rendement et un second au moment de la récolte au cours duquel est réalisé la récolte et le
+pesage du carré. Les informations sur les surfaces agricoles sont recueillies auprès de l’exploitant
+lors du premier passage. En général, la donnée qui est recueillie est la surface en hectares
+correspondant à une culture donnée sur chaque parcelle de l’exploitation.
+Il est parfois difficile pour l’agriculteur de fournir des informations fiables sur les superficies par
+culture. L’expérience de l’enquêteur est importante pour aboutir à des résultats fiables. Un
+certain nombre de contrôles peuvent également être réalisés, notamment :
+• Vérifier si les taux de semis par unité de surface correspondent aux données sur les
+quantités totales de semences utilisées ;
+• Vérifier si la somme des superficies déclarées correspond à la superficie agricole totale
+de l’exploitation.
+Souvent, les enquêteurs mesurent eux-mêmes la parcelle, de plus en plus au moyen de GPS.
+Dans le cas où une seule culture se trouve sur la parcelle, l’estimation de la surface pour cette
+culture peut donc se faire directement.
+Une fois les superficies par culture mesurées pour les exploitations appartenant à l’échantillon,
+l’extrapolation des surfaces moyennes aux strates/grappes supérieures (village, zones de
+dénombrement) se fait de la même manière que pour les rendements moyens.
+3.2.2.3 Estimation de la production
+Une fois rendements et surfaces par cultures estimés, la production se déduit par le produit de
+ces deux termes.
+Au niveau d’une parcelle :
+Pour une parcelle 𝑖, la production s’estime simplement par:
+̂𝑄
+𝑄̂ = ( ) .𝑆̂
+𝑖 𝑆 𝑖
+𝑖
+Au niveau de l’exploitation :
+Si l’estimation des rendements est réalisée sur toutes les parcelles 𝑖 de l’exploitation 𝑗 :
+𝑄̂ = ∑𝑄̂
+𝑗 𝑖
+𝑖 𝜖 𝑗
+Si l’estimation des rendements est réalisée seulement sur certaines parcelles de l’exploitation
+alors il faut faire l’hypothèse que, pour une même culture, le rendement estimé sur la parcelle
+échantillon est le même que celui sur les autres parcelles :
+̂𝑄
+𝑄̂ = ∑( ) .𝑆̂
+𝑗 𝑆 𝑖
+𝑖
+𝑖 𝜖 𝑗
+Au niveau des différentes strates :
+A chaque exploitation, et donc à chaque parcelle, est associé un poids de sondage qui reflète la
+procédure d’échantillonnage. En notant 𝜋−1 le poids de sondage associé à la parcelle dans la
+𝑖
+strate de niveau immédiatement supérieure ℎ (par exemple la section d’énumération),
+l’estimation de la production au niveau de cette dernière est donnée par :
+
+--- Page 20 ---
+𝑛(ℎ)
+𝑄̂ = ∑ 𝜋−1 .𝑄̂
+ℎ 𝑖 𝑖
+𝑖=1
+Dans une procédure d’échantillonnage en plusieurs étapes, les sections d’énumération sont
+choisies de manière aléatoire au sein d’une strate donnée 𝑐 (souvent une zone issue d’un
+découpage administratif, comme le département, le cercle, etc.). Un poids de sondage, 𝜋−1,
+ℎ
+peut donc également être associé à chaque zone d’énumération, de sorte que la production au
+niveau de la strate immédiatement supérieure 𝑐 est estimée par :
+𝑛(𝑐)
+𝑄̂ = ∑𝜋−1 .𝑄̂
+𝑐 ℎ ℎ
+ℎ=1
+On remarquera que :
+𝑛(𝑐) 𝑛(ℎ) 𝑛(𝑐) 𝑛(ℎ)
+𝑄̂ = ∑𝜋−1 . ∑ 𝜋−1 .𝑄̂ = ∑ ∑(𝜋 𝜋 )−1 .𝑄̂
+𝑐 ℎ 𝑖 𝑖 ℎ 𝑖 𝑖
+ℎ=1 𝑖=1 ℎ=1 𝑖=1
+(𝜋 𝜋 )−1 est le taux de sondage global associé à la parcelle : il représente le nombre de parcelles
+ℎ 𝑖
+que représente 𝑖 dans la première strate.
+Au niveau national :
+Enfin, la production pour une culture donnée au niveau national est simplement donnée par la
+sommation des productions estimées pour les différentes strates :
+𝐶
+𝑄̂ = ∑𝑄̂
+𝑐
+𝑐=1
+3.2.2.4 Cas des associations de cultures sur une même parcelle
+Souvent, plusieurs cultures sont mélangées sur une même parcelle, de sorte qu’il est difficile
+d’identifier directement la surface associée à chacune d’entre-elle. On parle alors de cultures en
+association. L’opération d’estimation des rendements et de la surface devient alors plus
+complexe.
+Estimation des surfaces:
+Méthode 1 : l’enquêteur demande directement la part de chacune des cultures sur la parcelle.
+Méthode 2 : l’enquêteur demande/observe combien de cultures sont réalisées sur la parcelle. Il
+estime ensuite la superficie allouée à chaque culture en supposant une répartition uniforme : s’il
+y a deux cultures, chacune occupe la moitié de la superficie de la parcelle ; s’il y en a 3, chacune
+occupe un tiers ; et ainsi de suite.
+Méthode 3 : l’enquêteur détermine la densité associée à chacune des cultures sur le carré de
+rendement, en comptant chacun des épis. Il extrapole ensuite la densité obtenue pour chaque
+culture à la superficie totale de la parcelle pour obtenir une estimation de la superficie allouée à
+chaque culture.
+
+--- Page 21 ---
+Estimation des rendements :
+Méthode 1 : l’enquêteur réalise la récolte du carré de rendement et la pesée du grain comme s’il
+s’agissait d’une seule culture. Il multiplie ensuite la quantité récoltée par la part occupée par
+chaque culture sur la parcelle pour obtenir le rendement de chaque culture sur la parcelle. Cela
+suppose que le poids en graines de chaque culture est le même.
+Méthode 2 : l’enquêteur réalise la récolte du carré de rendement et la pesée du grain de
+manière séparée pour chaque culture.
+3.3. Pour les cultures pérennes
+3.3.1 Comptabilisation directe de la production
+Même approche que pour les cultures annuelles.
+3.3.2 Méthode d’estimation
+Cette méthode propose d’estimer les quantités produites par l’estimation des rendements par
+arbre et de la densité de plantation :
+̂𝑄
+𝑄̂ = ( ) .𝐴̂
+𝑖 𝐴 𝑖
+𝑖
+Où :
+• 𝑄̂ est la production estimée d’une culture pérenne pour la parcelle 𝑖 ;
+𝑖
+• 𝐴̂ est l’estimation du nombre d’arbre ;
+𝑖
+̂𝑄
+• ( ) est l’estimation du rendement moyen par arbre.
+𝐴 𝑖
+3.3.2.1 Estimation du rendement
+La méthodologie est sensiblement la même que pour les cultures annuelles. Les principaux
+ajustements sont les suivants :
+• Les taux de rendement sont exprimés par arbre mature et non par unité de surface.
+L’unité de surface n’est pas pertinente pour les cultures permanentes car la densité des
+plantations peut varier de manière significative d’une exploitation à une autre et même
+au sein d’une même exploitation. L’unité de surface peut être utilisée pour des
+exploitations caractérisées par une densité uniforme, en général de grandes
+exploitations commerciales où l’usage des terres est optimisé et les arbres plantés à
+intervalles réguliers ;
+• Une fois les exploitations choisies, on réalise une stratification additionnelle des
+parcelles en fonction des classes d’âge des arbres afin d’identifier ceux qui sont porteurs
+de fruits et ceux qui n’ont pas encore atteint leur maturité. La sélection d’un échantillon
+de parcelles se fait uniquement à partir de l’ensemble des parcelles composées d’arbres
+porteurs de fruits ;
+• L’estimation du rendement est réalisée à partir d’un certain nombre d’arbres
+sélectionnés de manière aléatoire sur la parcelle et non à partir d’un segment comme
+
+--- Page 22 ---
+pour les cultures annuelles. Un exemple de procédure de sélection des arbres: on choisit
+de manière aléatoire un arbre au sein de la parcelle, puis on choisit 4 arbres adjacents. La
+récolte sera effectuée sur ces 5 arbres. On obtient ainsi une estimation du rendement
+̂𝑄
+par arbre sur la parcelle, soit ( ) .
+𝐴 𝑖
+3.3.2.2 Estimation du nombre d’arbres
+Le nombre d’arbre est déterminé à partir de l’échantillon de parcelles composées d’arbres
+matures. 2 méthodes peuvent être utilisées :
+• Le comptage exhaustif de tous les arbres sur la parcelle ;
+• L’identification d’un segment sur la parcelle au sein duquel au procédera au calcul de la
+densité de plantation. Cette densité estimée sera ensuite extrapolée à l’ensemble de la
+parcelle, en faisant l’hypothèse que la densité obtenue sur le segment est la même que
+celle prévalent sur le reste de la parcelle.
+On obtient ainsi une estimation du nombre d’arbre pour la parcelle, soit 𝐴̂ .
+𝑖
+Comme pour les cultures annuelles, la détermination du nombre d’arbre se fait souvent à partir
+du même échantillon que celui utilisé pour estimer le rendement.
+3.3.2.3 Estimation de la production
+Une fois rendements et nombre d’arbres par culture estimés, la production se déduit par le
+produit de ces deux termes.
+Au niveau d’une parcelle :
+Pour une parcelle 𝑖, la production s’estime simplement par:
+̂𝑄
+𝑄̂ = ( ) .𝐴̂
+𝑖 𝐴 𝑖
+𝑖
+Au niveau des strates supérieures :
+La production au niveau des parcelles est extrapolée aux niveaux supérieurs en utilisant les poids
+de sondage, comme indiqué plus haut.
+3.4. Production animale
+Pour la production animale, il est d’usage de s’intéresser d’une part à la taille du cheptel et à ses
+caractéristiques et d’autre part aux produits issus des animaux.
+L’estimation de ces variables est rendue difficile par le fait que la taille des élevages peut
+fluctuer de manière importante au sein d’une année et par la pratique du nomadisme et/ou de la
+transhumance pour les troupeaux de ruminants.
+3.4.1 Estimation de la taille et des caractéristiques du cheptel
+Les informations de base à collecter sur le cheptel sont :
+• Sa taille, par type d’espèce, en nombre de têtes par espèce ;
+
+--- Page 23 ---
+• Sa destination principale : production de viande ou engraissement, production laitière,
+mixte ou autre ;
+• Sa structure par âge.
+Plusieurs sources d’information peuvent être utilisées: registres administratifs, systèmes de suivi
+d’organisations ou de fédérations d’éleveurs, recensements classiques et enquêtes. Pour
+l’élevage transhumant ou nomade, seuls les recensements et enquêtes sont utilisés.
+3.4.1.1 Registres administratifs
+Des registres de différentes exploitations pratiquant l’élevage peuvent être disponibles au
+niveau local, national ou supranational (cf. par exemple les mesures d’aide dans le cadre de la
+PAC), en particulier pour des questions fiscales ou foncières.
+Les informations émanant de registres servent plutôt à constituer des listes d’exploitations qui
+peuvent servir de bases de sondage pour des enquêtes ciblées sur l’élevage.
+Les informations en provenance de registres administratifs risquent ne pas être mis à jour avec la
+périodicité requise pour la production de statistiques.
+3.4.1.2 Fédérations d’éleveurs
+Ces organismes sectoriels disposent souvent de leurs propres systèmes d’information leur
+permettant de suivre l’économie de la filière et d’avoir des informations chiffrées sur les
+variables de base, tel que la taille du cheptel, la production de produits de l’élevage et le chiffre
+d’affaire.
+Si ces organismes sectoriels sont très présents dans les pays développés, ils le sont moins dans
+les pays en développement, en particulier dans le domaine de l’élevage.
+Les données provenant de ces organismes peuvent manquer de représentativité statistique, en
+raison du fait que :
+• Les dispositifs ne couvrent en général qu’une partie des exploitations, souvent les plus
+grandes et celles dont la production est essentiellement destinée à la vente. A l’inverse,
+les exploitations collectives, familiales ou autres petits élevages sont rarement
+comptabilisées ;
+• Les chiffres fournis par ces dispositifs sont généralement basés sur des exploitations
+typiques (voir supra) et non sur des recensement et/ou enquêtes probabilistes.
+3.4.1.3 Recensements et enquêtes
+Ils sont utilisés aussi bien pour le cheptel sédentaire que pour le transhumant ou nomade.
+Recensements :
+Recenser le cheptel à intervalles réguliers permet d’obtenir des informations complètes et
+récentes sur la taille du cheptel et sa structure par âge et par espèce. Le recensement dans le
+domaine de l’élevage possède ses spécificités :
+• Il est nécessaire de différencier l’élevage sédentaire du transhumant/nomade. Pour le
+premier, on peut utiliser une procédure classique en plusieurs étapes en utilisant
+l’exploitation comme unité de sondage finale. Dans le second cas, il convient d’adopter
+
+--- Page 24 ---
+une procédure permettant de capter le plus grand nombre de bêtes : un des moyens le
+plus souvent utilisé est d’identifier les points d’abreuvement du bétail afin de réaliser un
+comptage des animaux. A la saison sèche, ces points d’abreuvement sont facilement
+identifiables ;
+• En raison de la forte variabilité infra-annuelle du cheptel, il est nécessaire de réaliser
+plusieurs visites de l’exploitation pour évaluer avec précision le nombre de bêtes ;
+• En ce qui concerne le cheptel transhumant/nomade, il est peu réaliste de demander aux
+enquêteurs d’aller plus loin que l’identification du type d’espèce. La structure par sexe et
+âge du cheptel est généralement disponible pour les élevages sédentaires ou modernes ;
+• Compte-tenu de la nature « mouvante » du cheptel, au sens propre pour le
+transhumant/nomade et au sens de la variabilité des effectifs, il est difficile de parler de
+recensement à proprement parler. Souvent, les recensements de l’élevage sont en fait
+des pseudo-recensements dans lesquels au moins une des composantes est estimée à
+partir d’un échantillon, par exemple d’un échantillon de points d’eau pour le cheptel
+nomade.
+Enquêtes :
+Dans l’hypothèse où il existe des données de références provenant d’un recensement, il est
+possible de réaliser des enquêtes afin d’une part de mettre à jour les effectifs et d’autre part de
+recueillir des informations plus détaillées sur l’activité de l’exploitation, par exemple sur les
+pratiques de production.
+En ce qui concerne la mise à jour des effectifs, des enquêtes intercensitaires à partir d’un
+échantillon aléatoire peuvent être réalisées afin d’estimer la variation de la taille du cheptel
+sédentaire. Ce taux de variation associé à l’effectif obtenu lors du dernier recensement comme
+point de référence permet d’obtenir une estimation de l’effectif courant. Par ailleurs, en
+supposant que la structure par sexe et âge du cheptel est stable sur le court-moyen terme, il
+devient également possible de projeter les effectifs par classe d’âge et sexe.
+Des enquêtes thématiques peuvent être réalisées dans différents domaines : enquêtes de
+revenus issus de l’élevage, enquête sur les pratiques et coûts de production, etc.
+Il est évident que la stratégie d’enquêtes et de recensement dépend de la nature du cheptel. Ce
+que nous avons dit jusqu’ici s’applique essentiellement aux ruminants.
+Pour les porcins, les recensements/enquêtes doivent également se faire sur une base
+d’exploitation, en utilisant des méthodes similaires à celles des ruminants. Le cycle de
+production étant plus court (de l’ordre de 36 mois), il convient de réaliser des enquêtes plus
+fréquentes, sur une base trimestrielle par exemple ;
+Pour les volailles, il faut adapter le dispositif au cycle de vie particulièrement court des
+animaux, de quelques dizaines de jours à quelques mois. Des enquêtes mensuelles peuvent
+s’avérer nécessaires. Si la structure du secteur le permet (faible nombre de gros producteurs), un
+dispositif de suivi en continu peut être mis en place.
+3.4.2 Estimation des produits issus de l’élevage
+
+--- Page 25 ---
+En ce qui concerne les ruminants, les principaux produits issus de l’élevage sont la viande, le lait
+et ses dérivés (crème, beurre, fromage, etc.), les graisses, les peaux et la laine. Pour les porcins, il
+s’agit essentiellement de la viande. Pour les volailles, il s’agit de la chair et des œufs.
+3.4.2.1 La viande
+Poids carcasse :
+La production de viande telle qu’on l’entend correspond au poids carcasse de l’animal.
+Poids carcasse = Poids de l’animal vif (ou sur pied) – sang – peau – tête – queue – abats –
+graisses d’abattage.
+Les abats, graisses et autres sous-produits de l’animal sont considérés comme des produits à part
+entière.
+Les données disponibles concernent en général le poids vif : pour passer à la production de
+viande, il est donc nécessaire de réaliser la conversion au poids carcasse. Les données en
+provenance des abattoirs modernes sont en général disponibles dans les deux concepts car
+l’animal est généralement pesé en entrant dans l’abattoir et une fois abattu.
+Pour réaliser la conversion poids vif – poids carcasse, il est nécessaire d’appliquer un coefficient
+technique. Ces coefficients proviennent d’enquêtes ou études spécifiques. Par exemple, dans le
+cas d’un bovin, le coefficient permettant de passer du poids vif au poids carcasse est de l’ordre
+de 50%. Pour les volailles, il est de l’ordre de 75%. C’est-à-dire qu’un bovin pesant 400kg
+produira généralement 200kg de « viande » (poids carcasse). La FAO a compilé ces coefficients
+techniques pour de nombreux pays (cf. Références).
+Recueil et compilation des informations :
+Au niveau des abattoirs autorisés, la méthode consiste à recueillir des informations sur le
+nombre d’animaux abattus, leur type et le poids respectif des bêtes.
+Cette méthode permet un suivi régulier et à une fréquence assez élevée des effectifs d’animaux
+abattus.
+Elle permet également de fournir un niveau de détail satisfaisant, car les abattoirs disposent
+souvent de livres de compte dans lesquels sont répertoriées des informations assez précises sur
+leur activité.
+L’utilisation de cette approche suppose l’existence d’un système de remontée de l’information
+efficace, structuré et répondant à des critères homogènes.
+Cette méthode ne permet pas de couvrir l’ensemble de la production de viande, une partie
+(souvent non négligeable dans les pays en développement) des abattages s’effectuant dans des
+abattoirs non-agrées ou directement sur l’exploitation et sont donc répartis de manière diffuse
+sur le territoire.
+Pour l’abattage informel, des enquêtes statistiques classiques peuvent être utilisées pour
+estimer le nombre de bêtes abattues et déterminer leurs caractéristiques (type, poids).
+De manière indirecte, le nombre de bêtes abattues peut également être déterminé à partir des
+peaux produites ou vendues. Dans ce cas de figure, quantifier la production de viande devient
+complexe car il faut alors utiliser un poids moyen.
+
+--- Page 26 ---
+3.4.2.2 Le lait
+Champ :
+La production de lait se réfère au lait provenant de la traite des ruminants.
+Elle concerne le lait destiné à la consommation humaine et animale et doit inclure
+l’autoconsommation sur la ferme et les pertes au niveau de l’exploitation.
+Le lait est produit sur l’exploitation mais également, et de manière significative dans les pays en
+développement, par des ménages urbains ou périurbains disposant d’un petit troupeau. Cette
+composante est particulièrement difficile à capter par des méthodes classiques. Pour garantir
+une couverture suffisamment exhaustive, il convient donc de compléter des approches directes
+basées sur des mesures objectives des quantités de lait produites et des approches indirectes, où
+la quantité de lait produite est estimée à partir de la consommation des ménages.
+Recueil et compilation des informations :
+Enquêtes et recensements auprès des éleveurs laitiers et application de paramètres de
+rendement moyen par animal. Le système de collecte de l’information doit être couplé à celui
+destiné à mesurer la taille du cheptel et à en déterminer ses principales caractéristiques. Ces
+enquêtes sont également l’occasion de poser des questions sur l’autoconsommation.
+Systèmes de suivi et registres permettant de capter les livraisons aux sites de transformations et
+de conditionnement, la vente directe aux consommateurs.
+Des mesures objectives de la consommation en lait des ménages peuvent être effectuées à
+partir des données des enquêtes ménages. Celles-ci cependant sont rarement réalisées tous les
+ans (en général tous les 5 ans, fréquence recommandée pour l’actualisation des pondérations
+des IPC), et des estimations doivent donc être réalisées entre deux enquêtes. Celles-ci peuvent
+être construites à partir de la taille de la population, sa structure par âge et par sexe et
+l’utilisation de coefficients de consommation par personne et par jour. Ces coefficients peuvent
+provenir des enquêtes ménages ou d’études spécifiques.
+A noter que si l’on se place au niveau de la consommation, il est également nécessaire de couvrir
+l’ensemble des produits laitiers et d’utiliser des coefficients techniques appropriés pour se
+ramener à un équivalent en litres de lait frais.
+3.4.2.3 Les œufs
+La détermination de la production d’œufs se fait en plusieurs étapes:
+Étape 1 : évaluation de la taille du cheptel de volailles, généralement sur la base d’un
+recensement combiné à des enquêtes répétées à fréquence élevée (cf. supra).
+Étape2 : identification dans ce cheptel de la part de poules pondeuses. Soit directement, en
+posant la question à l’exploitant au cours de l’enquête, ou indirectement, en appliquant des
+paramètres structurels provenant du recensement, étant donné que la part de poules pondeuses
+dans l’ensemble du cheptel de volailles est un paramètre structurel qui est peu susceptible de
+varier d’une année à l’autre.
+Étape3 : détermination de la production effective d’œufs en appliquant un ensemble de
+paramètres, comme le nombre d’œufs par poule / jour, le poids moyen d’un œuf ou les pertes
+
+--- Page 27 ---
+moyennes. Étant donné qu’il s’agit là de paramètres structurels, ceux-ci peuvent être déterminés
+à partir d’un recensement ou d’enquêtes spécifiques et actualisés de manière périodique.
+
+--- Page 28 ---
+4. Éléments sur la prévision des récoltes
+4.1. Introduction et définitions
+Nous traiterons ici que des prévisions concernant les cultures, annuelles ou pérennes.
+Définition : prévision de récoltes
+Cela consiste à fournir l’estimation la plus plausible des quantités produites pour une culture
+donnée, suffisamment avant la récolte. On parle de prévision lorsque l’estimation est réalisée au
+moment des semis, ainsi que pendant la période de croissance de la plante. Lorsque l’estimation
+intervient juste avant la récolte ou au moment de celle-ci, on ne parle plus de prévision mais
+d’estimation.
+Comme pour l’estimation de la production, le problème de prévision des récoltes peut être
+décomposé en deux composantes : la prévision des surfaces et la prévision des rendements.
+Prévision des surfaces : Les surfaces par cultures sont relativement stables d’une année à l’autre
+et posent donc relativement peu de problème à prévoir. Les surfaces par culture peuvent être
+déterminées au premier passage de l’enquête agricole, au moment de l’identification des
+superficies ensemencées.
+Prévision des rendements : les rendements sont plus volatiles et dépendent de facteurs eux-
+mêmes difficiles à prévoir et dont l’impact sur les rendements n’est connu que de manière
+incertaine. Les méthodes présentées ci-dessous se concentrent sur la prévision des rendements.
+4.2. Importance des prévisions de production
+Les prévisions de récoltes constituent des informations utiles pour de nombreux acteurs.
+Pour les autorités publiques :
+Pour avoir une information avancée sur la production agricole (notamment céréalière) en vue
+d’évaluer les éventuels besoins en importations.
+Dans le cas des cultures de rente ou d’exportation, disposer des prévisions de récoltes permet
+d’estimer les éventuelles rentrées fiscales et les revenus tirés des exportations.
+Pour les négociants en matière première agricoles :
+Disposer d’informations avancées sur la production leur permet d’estimer les quantités qui
+seront disponibles sur le marché et de se faire une idée sur leur prix de vente, en confrontant
+cette offre et demande prévisionnelles.
+L’existence et le développement de marchés à terme et l’apparition des matières premières
+agricoles comme une classe d’actif à part entière, utilisée notamment pour diversifier les
+portefeuilles des fonds de pension, a conduit à une augmentation importante des volumes de
+produits dérivés échangés. Il s’agit par exemple de put (droit de vendre une certaine quantité de
+produit à une échéance donnée et à un prix donné) et de call (droit d’acheter). Une des critiques
+émises à l’égard de ces activités et qu’elles amplifient les variations à la hausse et à la baisse des
+prix agricoles (elles augmentent la volatilité des marchés) et qu’elles conduisent à une
+
+--- Page 29 ---
+déconnexion entre la sphère financière et la sphère physique. En effet, les transactions
+financières réalisées correspondent à des volumes physiques plusieurs fois supérieurs aux
+quantités vraiment disponibles sur le marché physique.
+Les intermédiaires de la chaine de valeur agricole :
+Pour les entreprises proposant des services de stockage et de transformation, il est important de
+savoir quelles seront les tonnages produits afin d’adapter et de dimensionner leur offre de
+services.
+Cette information est également stratégique pour les sociétés financières qui peuvent octroyer
+des crédits aux agriculteurs sur la base des prévisions de ventes ou de revenus.
+Pour l’ensemble des acteurs :
+De manière générale, l’ensemble des acteurs ont intérêt à disposer d’informations avancées sur
+les quantités récoltées, et donc sur le prix des matières premières agricoles.
+4.3. Méthodes subjectives
+Elles comprennent un ensemble de méthodes basées sur des opinions ou jugements, plus ou
+moins informés, d’experts du secteur agricole ou des exploitants eux-mêmes. Ces méthodes
+peuvent gagner en précision en tirant parti des données historiques sur les mesures objectives
+effectivement réalisées et de leur corrélation avec ces dires d’experts.
+4.3.1. Méthode basée sur des dires d’experts
+Ce type de méthode est assez souvent utilisé et repose sur des dires et opinions d’experts au
+niveau local, par exemple en provenance des services d’assistance technique locaux, des
+chambres agricoles régionales, des services déconcentrés, etc.
+Ces experts anticipent l’évolution probable de la campagne agricole en cours en fonction des
+principales conditions de production, tel que les conditions météorologiques ou la prévalence de
+maladies ou de ravageurs, et des conditions observables des cultures en cours de croissance. Les
+rendements étant a priori bien corrélés aux caractéristiques observables des cultures, il s’agit
+d’une méthode à même de produire des résultats utilisables. Le principal problème est que ces
+observations se forment à partir d’un échantillon non-représentatif des parcelles, ne tenant
+souvent pas compte des parcelles les moins productives, et sont donc susceptibles d’être biaisés.
+Méthode de calcul :
+Ces jugements sont traduits en pourcentage de la récolte attendue en conditions « normales »,
+ou en pourcentage du rendement optimal, par exemple 80% ou 120% du rendement attendu en
+conditions normales.
+Ce pourcentage est ensuite multiplié par le rendement attendu pour obtenir le rendement
+prévu, lui-même multiplié par la surface ensemencée. Cette dernière peut être déterminée lors
+du premier passage de l’enquête.
+4.3.2. Méthode basée sur l’opinion des exploitants
+Cette méthode consiste à demander directement à l’exploitant son opinion sur la récolte à
+venir.
+
+--- Page 30 ---
+La question peut être de nature qualitative et porter sur une appréciation de l’exploitant par
+rapport à sa récolte future (bonne – moyenne – médiocre). A ce niveau de généralité, il est
+cependant difficile de passer de ce jugement qualitatif à une prévision quantitative, à moins
+d’associer des pourcentages à chaque modalité (bon=120 % du rendement « normal », etc.).
+La question peut être de nature quantitative est porter directement sur les quantités récoltées
+sur les parcelles (en tonnes, kg ou unité spécifique).
+Une fois le rendement prévisionnel déterminé sur la base d’une évaluation qualitative ou
+quantitative, il est multiplié par les surfaces ensemencées.
+Cette méthode souffre des mêmes limites que la précédente, à savoir la possibilité d’un biais
+systématique, même si l’échantillon à partir duquel les informations sont recueillies est
+représentatif. En effet, il est peu probable que l’exploitant ait toutes les informations en main
+pour former un jugement précis sur la récolte à venir. Par ailleurs, il est possible qu’il fournisse à
+dessein une information biaisée, majorée ou minorée, pour des raisons qui lui sont propres
+(fiscales ou autres).
+4.3.3. Méthodes subjectives « améliorées »
+Ces méthodes peuvent être améliorées en tirant parti de la corrélation des résultats provenant
+des opinions des experts et des exploitants avec les mesures historiques construites à partir de
+méthodes objectives.
+Par exemple, il est possible de régresser la quantité produite et/ou les rendements sur la
+quantité prévue par les méthodes subjectives pour corriger le biais inhérent à ces dernières.
+Ainsi, il est possible de prévoir les quantités récoltées à partir de nouvelles observations sur les
+récoltes escomptées par les experts/exploitants. Le modèle peut être augmenté en y intégrant
+d’autres variables explicatives.
+Par analogie avec la méthode qui consiste à prévoir le PIB trimestriel à partir des soldes
+d’enquêtes d’opinion dans l’industrie et les services, il est possible de construire un solde
+d’opinion des exploitants sur les récoltes futures (100* (% de réponses « Bon » - % de réponses
+« Médiocre »), utilisé dans un modèle de prévision comme variable explicative des quantités
+produites ou du rendement.
+4.4. Méthodes objectives
+4.4.1. Principes
+Cette méthode consiste à prévoir les rendements sur la base d’un échantillon représentatif de
+parcelles. Une fois les parcelles-échantillon sélectionnées au moyen d’une procédure en
+plusieurs étapes tel que décrit plus haut dans le cas de l’estimation des rendements, la
+procédure de prévision des rendements s’effectue en au moins 4 étapes.
+Étape1 : identification du segment de la parcelle à retenir pour l’estimation. C’est la phase de
+pose du carré de rendement, la même que celle requise pour l’estimation de la production.
+Étape 2 : estimation de la densité des épis/plantes. L’enquêteur procède à un comptage des
+épis présents dans le segment et rapporte cette quantité à la surface du segment.
+
+--- Page 31 ---
+Étape 3 : estimation du rendement relatif au segment sélectionné. Pour obtenir le rendement
+estimé, la densité est multipliée par le poids moyen d’un épi en graines. Le poids moyen d’un épi
+est souvent déterminé au moyen d’enquêtes spécifiques. Il est fortement variable suivant les
+régions, zones agro-climatiques et types d’exploitation.
+Étape 4 : prévision des quantités produites en multipliant les rendements prévus par les surfaces
+ensemencées.
+4.4.2. Limites
+Bien que relativement précise car elle se base sur des mesures objectives de densité, elle
+conduit souvent à une surestimation des récoltes : en effet, le fait d’estimer la densité sur les
+carrés de rendement bien avant la récolte et leur multiplication par un poids moyen des épis
+suppose la réalisation de conditions optimales de croissance des cultures et l’absence de pertes
+ou dommages causés par des aléas climatiques, des ravageurs, insectes, etc. Il faut donc
+appliquer aux prévisions brutes un facteur correctif, qu’il est éventuellement possible de
+calculer en rapportant surfaces ensemencées et surfaces récoltées à partir des données
+historiques.
+Ces méthodes permettent difficilement de disposer de prévisions dans les délais requis par les
+décideurs publics et privés.
+Elles sont en revanche parfaitement adaptées à l’estimation des rendements peu de temps avant
+les récoltes.
+4.5. Modèles
+4.5.1. Modèles de prévision de séries temporelles
+4.5.1.1 Exemples de modèles
+Modèles tendanciels purs
+Le rendement est fonction d’une tendance temporelle, qui peut être linéaire, quadratique,
+polynomiale, pour ne citer que les plus communes.
+Méthodes de lissage :
+Le rendement est fonction des rendements passés et/ou futurs. Le lissage exponentiel offre
+traditionnellement des résultats corrects en matière de prévision des récoltes.
+La fonction de lissage reflète l’existence d’un ou plusieurs paramètres de lissage (sur le niveau,
+sur la tendance, etc.) et de coefficients de pondérations associés aux observations présentes ou
+futures (poids décroissant avec l’éloignement par rapport au présent, par exemple, dans le cas
+du lissage exponentiel).
+Modèles ARIMA :
+Le rendement est fonction des rendements passés, avec erreurs auto-corrélées.
+4.5.1.2 Limites
+
+--- Page 32 ---
+Les modèles de séries temporels « purs » font abstraction de tous les phénomènes explicatifs
+(météorologiques ou autres) qui déterminent le niveau des récoltes. Ils sont donc de portée
+limitée.
+La précision de ces méthodes de prévision dépend fortement du nombre de points disponible,
+c’est-à-dire à la fois du recul historique et de la fréquence des données. Or, les données sur les
+récoltes sont en général disponibles sur une fréquence annuelle avec un historique rarement
+supérieur à 30-40 ans.
+4.5.2. Modèles agro-météorologiques
+Les rendements sont déterminés à partir d’une fonction mathématique les reliant à des
+caractéristiques agro-climatiques, telles que la pluviométrie, les radiations solaires, les quantités
+et le type d’intrants utilisés, etc.
+Ces modèles peuvent être déterministes, c’est-à-dire basés sur des relations mathématiques
+précises entre paramètres agro-météorologiques et rendements (du type coefficients
+techniques).
+Ils peuvent également être de nature statistique, c’est-à-dire des modèles de régression,
+intégrant d’autres variables explicatives, comme une tendance temporelle, et les corrélant aux
+rendements. On accepte l’existence d’erreurs (mesurables) dans la modélisation des
+rendements.
+Les variables décrivant les conditions agro-météorologiques peuvent avoir un effet immédiat ou
+décalé sur les rendements.
+En pratique, l’expérience a montré que l’utilisation des variables climatiques apporte peu à la
+précision des prévisions. Il s’agit d’un problème relatif aux données et à la modélisation de
+l’effet-climat, sans que cela ne remette en cause l’effet réel du climat sur les rendements.
+La qualité prédictive de ces modèles peut être améliorée par l’utilisation de données de
+télédétection, comme par exemple la mesure de l‘état végétatif ou la densité du couvert
+végétal. Ces informations peuvent être synthétisées par un indice de végétation normalisé
+(NDVI) et intégrées à un modèle agro-météorologique. Un modèle de régression basé sur le
+NDVI explique généralement le rendement d’une culture donnée comme une fonction linéaire
+de l’indice de végétation, pris aux différentes périodes de croissance de la plante.
+4.5.3. Modèles biophysiques
+Il s’agit d’un ensemble de méthodes de prévision basée sur la modélisation du processus de
+croissance de la plante, en fonction des principaux déterminants que sont le rayonnement
+solaire, l’évapotranspiration, la photosynthèse foliaire, la croissance racinaire, l’absorption
+minérale, etc. Ces éléments sont par ailleurs souvent reliés entre eux, et interagissent avec
+l’environnement (état hydrique des sols, etc.) et les pratiques culturales.
+Ces méthodes peuvent être appliquées de manière déterministe, si on dispose d’une
+connaissance précise des relations biophysiques, ou en corrélant ces paramètres avec les
+rendements au sein d’un modèle statistique intégrant éventuellement d’autres variables,
+météorologiques par exemple, etc.
+
+--- Page 33 ---
+Compte-tenu de leur sophistication et du niveau de détail requis pour les données, ces modèles
+sont adaptés à la modélisation/simulation de la croissance d’espèces végétales bien
+déterminées dans un environnement spécifique.
+Ces modèles sont peu adaptés à la prévision annuelle de récoltes pour des zones
+géographiques étendues, qui recouvrent nécessairement une multitude de milieux aux
+conditions biologiques et physiques différentes.
+
+--- Page 34 ---
+5. Autres statistiques et indicateurs en agriculture
+5.1. Les prix agricoles
+5.2. Les pratiques et coûts de la production agricole
+5.3. L’emploi rural et le revenu des ménages
+5.4. Les pertes post-récolte
+
+--- Page 35 ---
+6. Systèmes d’information agricoles et cadres d’analyse
+6.1. Les comptes économiques de l’agriculture
+Les comptes économiques de l’agriculture (CEA) consistent en un ensemble de tableaux qui
+retracent les flux économiques au sein du secteur agricole. Ils fournissent une mesure de la
+production totale et de sa destination : ventes, variations de stocks, formation de capital fixe ou
+autoconsommation, par exemple.
+Sa structure et les concepts utilisés sont très proches de celle de la comptabilité nationale, part
+exemple en ce qui concerne la définition et le calcul de la valeur ajoutée ou de la formation brute
+de capital fixe. Cependant, compte-tenu de la spécificité de la branche agricole, certains concepts
+et méthodes ont été adaptés. C’est pour cette raison que les CEA constituent un des comptes
+satellites (avec l’environnement, le tourisme, etc.) du système de comptabilité national.
+L’approche adoptée pour mesurer la production est celle de la branche ou secteur
+économique : la production totale de la branche agricole correspond donc à l’ensemble des
+produits agricoles ainsi qu’à l’ensemble des biens et services issus d’activités secondaires non-
+agricoles. Dans le cas de l’agriculture, ces activités secondaires sont souvent les services
+touristiques, mais également la production d’énergie pour les exploitations qui valorisent la
+biomasse ou qui disposent d’installations destinées à produire et vendre de l’énergie, comme par
+exemple des éoliennes. Lorsque le détail des flux entre secteurs économiques est suffisant, il est
+possible de passer d’une analyse branche/secteur à une analyse produit.
+Les CEA fournissent en quelque sorte un résumé, au niveau agrégé, des informations collectées
+au niveau individuel sur la production, les prix, etc. La qualité des CEA et son niveau de détail
+dépend donc intrinsèquement de la qualité des données de base, provenant en partie
+d’enquêtes et de recensements.
+6.2. Les bilans alimentaires
+Les bilans alimentaires fournissent pour chaque produit agricole de base une description des
+quantités disponibles et de leur utilisation. Les données sont regroupées de sorte à former un
+équilibre entre l’offre d’une part et la demande d’autre part :
+𝑄⏟+ 𝑀 = 𝐶⏟ + 𝑁 𝐶 + 𝐹 + 𝑆 𝑑 + 𝑋 + 𝐿 + ∆ 𝑆
+𝑂𝑓𝑓𝑟𝑒 𝑈𝑡𝑖𝑙𝑖𝑠𝑎𝑡𝑖𝑜𝑛
+Où:
+• Q : Quantité produite
+• M : Quantité importée
+• C: Quantité disponible pour la consommation humaine
+• NC: Quantité disponible pour des usages industriels et autres usages non-alimentaires
+• F: Quantité utilisée comme aliment pour le bétail
+• Sd: Quantité utilisée comme semences
+• X: Quantités exportées
+
+--- Page 36 ---
+• L: Quantités perdues lors du stockage et du transport au niveau de l’exploitation et des
+marches de gros
+• ∆S: Variations des stocks.
+Les bilans alimentaires fournissent une description synthétique de l’ensemble des flux
+sectoriels au niveau de l’agriculture. Les manques ou problème de qualité en matière de
+statistiques agricoles peuvent être identifiés au moment de regrouper les données disponibles
+sous forme de bilans alimentaires.
+Certaines de ces variables sont mesurées de manière plus ou moins précise à partir de
+différentes sources de données (enquêtes ou autres). D’autres, en revanche, sont obtenues par
+différence ou résidu. C’est souvent le cas de la variable 𝐶, qui est pourtant une variable clé pour
+l’analyse de la sécurité alimentaire. Cela souligne la nécessité d’une part d’apporter des
+améliorations méthodologiques et surtout, d’autre part, de collecter de manière plus régulière
+des informations sur les quantités effectivement consommées.
+6.3. Les systèmes d’alerte précoce
+Les systèmes d’alerte précoce (early warning systems) en agriculture visent à détecter des
+signaux sur les marches agricoles et alimentaires leur permettant d’anticiper les évolutions de
+variables clés comme l’approvisionnement ou les prix.
+A ce titre, ces systèmes sont le plus souvent utilisés dans le domaine de la sécurité alimentaire
+avec le but de fournir des éléments pour prévoir l’impact de certaines variables économiques,
+géopolitiques, climatiques ou purement liées à la campagne agricole sur l’approvisionnement
+alimentaire.
+Compte-tenu de la visée prévisionnelle de ces systèmes et de leur objectif de suivi en continu, les
+informations sont généralement recueillies sur une fréquence infra-annuelle.
+Les domaines couverts peuvent être :
+• Les marchés de gros et de détail, notamment pour mesurer le niveau
+d’approvisionnement et les prix en vigueur ;
+• Les prévisions et estimations de production, compte-tenu de leur impact direct sur le
+niveau d’approvisionnement ;
+• Les importations de denrées alimentaires, tant sur le plan des quantités que des prix ;
+• Les prix internationaux des produits agricoles de base, car ils déterminent pour une
+grande part le prix des importations et, également, le prix des produits domestiques
+équivalents ;
+• D’autres variables, non directement liées à l’agriculture et aux marchés alimentaires,
+peuvent également être suivies : le taux de change (qui joue sur le prix des importations
+en monnaie nationale), le contexte politique et sécuritaire (qui peut jouer sur
+l’approvisionnement des marchés) ou le niveau de l’aide alimentaire nationale et
+internationale, par exemple.
+
+--- Page 37 ---
+Références
+FAO, Les statistiques de l’alimentation et de l’agriculture dans le cadre d’un système national
+d’information, Collection FAO Développement Statistique 1, Rome, 1986.
+FAO, Méthode de sondage pour les enquêtes statistiques agricoles, Collection FAO Développement
+Statistique 3, Rome, 1994.
+FAO, Facteurs de conversion techniques pour les produits agricoles, Rome, 1994.
+Stratégie globale pour l’amélioration des statistiques agricoles et rurales (FAO), Manuel de
+formation de courte durée en statistiques agricoles, Rome, 2016.
+N. M. Idaikkadar, Agricultural Statistics: A Handbook for Developing Countries, 1979.
+Stratégie globale pour l’amélioration des statistiques agricoles et rurales (FAO), Un plan d’action
+pour l’Afrique, Banque Africaine de Développement.

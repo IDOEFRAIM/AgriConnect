@@ -1,0 +1,29 @@
+"""
+A2A (Agent-to-Agent) — Protocole de communication inter-agents AgriConnect 2.0
+================================================================================
+
+PHILOSOPHIE : Les agents ne sont plus "soudés" à l'orchestrateur.
+Ils peuvent communiquer entre eux (et avec des agents externes) via
+un protocole standardisé de discovery, messaging et handshake.
+
+Cas d'usage :
+  - Marketplace : matching offre/demande entre agents producteurs et acheteurs
+  - Scoring : l'agent de scoring interroge l'agent de profil
+  - Partenaires : agents bancaires, transporteurs, coopératives, SONAGESS
+"""
+
+from .registry import A2ARegistry, AgentCard, AgentDomain, AgentStatus
+from .messaging import A2AMessage, A2AChannel, MessageType, HandshakeStatus
+from .discovery import A2ADiscovery
+
+__all__ = [
+    "A2ARegistry",
+    "AgentCard",
+    "AgentDomain",
+    "AgentStatus",
+    "A2AMessage",
+    "A2AChannel",
+    "MessageType",
+    "HandshakeStatus",
+    "A2ADiscovery",
+]

@@ -1,140 +1,92 @@
+# 🌾 Agribot-AI - Assistant Agricole Intelligent
 
-# 🌿 Assistant IA Contextuel – Agriculture Burkinabè (Mil)
+<div align="center">
 
-## 🎯 Sujet choisi et justification
+[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109-green.svg)](https://fastapi.tiangolo.com)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](https://docker.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://postgresql.org)
 
-Nous avons choisi le **mil** comme sujet burkinabè pour son importance stratégique dans l’agriculture locale, la sécurité alimentaire et les pratiques culturales traditionnelles. Ce choix garantit :
+**Plateforme d'intelligence agricole pour assister les agriculteurs via la voix, l'IA et une equipe determine a faire changer les lignes.**
 
-- Une **documentation accessible** (rapports FAO, publications locales)  
-- Une **pertinence directe** pour les utilisateurs burkinabè  
-- Une **valeur éducative** pour les agriculteurs, étudiants et décideurs
+[Documentation Architecture](docs/ARCHITECTURE.md) • [Guide de Déploiement](docs/DEPLOYMENT.md) • [Contribuer](CONTRIBUTING.md)
 
----
-
-## 🧠 Architecture technique
-
-Notre système repose sur une architecture **RAG 100% open source**, conçue pour fonctionner localement sans dépendance propriétaire :
-
-```
-Question utilisateur
-      ↓
-Embeddings (Gemma:2b via OllamaEmbedding)
-      ↓
-Recherche vectorielle (ChromaDB)
-      ↓
-Documents pertinents (Chromadb.as_retriever())
-      ↓
-LLM (Gemma:2b via Ollama)
-      ↓
-Réponse + Sources
-```
+</div>
 
 ---
 
-## 🛠️ Technologies open source utilisées
+## 🎯 Vue d'Ensemble
 
-- 🧠 **LangChain** (Framework IA)  
-  Licence : MIT  
-  [Voir la licence](https://github.com/langchain-ai/langchain/blob/master/LICENSE)
-
-- 🧠 **Gemma:2b via Ollama** (Embeddings & LLM)  
-  Licence : Apache 2.0  
-  [Voir la licence](https://www.apache.org/licenses/LICENSE-2.0)
-
-- 📦 **ChromaDB** (Vectorstore)  
-  Licence : Apache 2.0  
-  [Voir la licence](https://github.com/chroma-core/chroma/blob/main/LICENSE)
-
-- 🔧 **Flask** (Backend API)  
-  Licence : BSD-3-Clause  
-  [Voir la licence](https://github.com/pallets/flask/blob/main/LICENSE.rst)
-
-- 🎛️ **Gradio** (Frontend)  
-  Licence : Apache 2.0  
-  [Voir la licence](https://github.com/gradio-app/gradio/blob/main/LICENSE)
-
-- 🧹 **BeautifulSoup, LangDetect, PDFMiner** (Scraping & Traitement)  
-  Licence : MIT / BSD  
-  [Voir la licence](https://github.com/wention/BeautifulSoup4/blob/master/LICENSE)
-# 1. Cloner le projet
-git clone https://github.com/IDOEFRAIM/Agribot-Ai.git
-cd Agribot-Ai
-
-# 2. Installer les dépendances
-pip install -r requirements.txt
-
-# 3. Lancer l’API backend
-python src/api.py
-
-# 4. Lancer l’interface utilisateur
-python frontend/main.py
-```
+Agribot-AI est un système modulaire conçu pour aider les agriculteurs dans leur quotidien :
+- 🌦️ **Météo & Risques** : Alertes localisées et prévisions.
+- 🌱 **Diagnostic Plantes** : Identification de maladies par photo/description.
+- 💰 **Marché** : Suivi des prix et opportunités de vente.
+- 🚜 **Formation** : Conseils techniques et bonnes pratiques.
+- 🎙️ **Interface Vocale** : Accessible via la voix (STT/TTS Azure & OpenAI).
 
 ---
 
-## 📊 Résultats de l’évaluation
+## 📚 Documentation Officielle
 
-## 📊 Performances du système
+La documentation a été consolidée pour plus de clarté :
 
-| Critère                  | Score         |
-|--------------------------|---------------|
-| Précision Retrieval      | 85%           |
-| Pertinence des Réponses       | 4.2 / 5       |
-| Temps moyen de réponse   | 1.8 sec       |
----
+### 1. [Architecture Technique](docs/ARCHITECTURE.md) 🏗️
+- **Vue d'ensemble 3-Tiers** (Ingestion, Orchestration, Action).
+- **Agents Proactifs** : Comment les agents (Market, Soil, Plant) interagissent directement avec la base de données.
+- **Flux de Données** : Explication des flux synchrones et asynchrones.
+- **Stack Technique** : Détails sur FastAPI, LangGraph, Celery, et PostgreSQL.
 
-## 📁 Structure du projet
-
-```
-agribot/
-├── data/
-│   ├── corpus.json
-│   └── sources.txt
-├── src/
-    ├──__init__.py
-│   ├── data_extraction.py
-│   ├── data_processing.py
-│   ├── data_vectordb.py
-│   └── api.py
-├── frontend/
-│   └── main.py
-├── evaluation/
-│   ├── questions.json
-│   ├── resultats.json
-│   └── test.py 
-├── requirements.txt
-├── LICENCE.md
-└── README.md
-```
+### 2. [Guide de Déploiement](docs/DEPLOYMENT.md) 🚀
+- **Installation Docker** : Déployer la stack complète en une commande.
+- **Infrastructure Cloud** : Guide pour DigitalOcean (ou tout VPS).
+- **Configuration** : Variables d'environnement et secrets.
+- **Maintenance** : Backups et mises à jour.
 
 ---
 
-## ✅ Bonus intégrés
+## ⚡ Démarrage Rapide (Local)
 
-- ✅ Déploiement en ligne via Gradio Tunnel (Cloudflared)
+1. **Cloner le projet**
+   ```bash
+   git clone https://github.com/votre-org/Agribot-AI.git
+   cd Agribot-AI
+   ```
+
+2. **Configurer l'environnement**
+   ```bash
+   cp .env.example .env
+   # Éditer .env avec vos clés API (OpenAI, Azure Speech, etc.)
+   ```
+
+3. **Lancer avec Docker Compose**
+   ```bash
+   docker compose up -d --build
+   ```
+
+4. **Accéder à l'API**
+   - API Docs : `http://localhost:8000/docs`
+   - Monitoring Flower : `http://localhost:5555`
 
 ---
 
-## 📜 Licence
+## 🛠️ Stack Technique Simplifiée
 
-Ce projet est sous licence **MIT**, garantissant liberté d’utilisation, modification et redistribution.
-
-
-
-## 🙌 Remerciements
-
-Merci à **MTDPCE** pour cette initiative visionnaire. Ce projet vise à promouvoir l’autonomie technologique, l’apprentissage collectif et l’impact local à travers l’open source. Nous croyons en une innovation accessible, éthique et adaptée aux réalités du Burkina Faso.
+- **Backend** : Python 3.12, FastAPI.
+- **IA & Agents** : LangChain, LangGraph.
+- **Base de Données** : PostgreSQL 16 (avec pgvector pour le RAG).
+- **Cache & Message Broker** : Redis.
+- **Tâches de fond** : Celery.
+- **Voix** : Azure Speech Services.
 
 ---
 
-## 🚀 Fonctionnalités prévues dans les prochaines versions
+## 👥 Équipe & Contribution
 
-Par manque de temps et de moyens, nous n’avons pu implémenter qu’une partie des fonctionnalités envisagées. Dans un futur proche, nous souhaitons :
+Ce projet est open-source. Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour participer.
 
-- 🧠 **Intégrer un système de détection des maladies des plantes** à partir d’images, grâce à des modèles légers comme **EfficientNet**, capables de tourner sur des téléphones tout en conservant une excellente précision.
-- 🤖 **Transformer AGRIBOT en un véritable agent IA** autonome et interactif, en exploitant des frameworks comme **LangGraph** pour gérer les dialogues, les actions et les états de manière dynamique.
-- 📱 **Optimiser l’accessibilité mobile**, afin que les agriculteurs puissent bénéficier de conseils intelligents directement depuis leur smartphone, même en zone rurale.
 
-Osons rêver. Osons rendre l’impossible possible au **Burkina Faso**.After all ,Sky is the limit.
+
+
+
 
 

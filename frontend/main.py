@@ -1,112 +1,121 @@
-import os
-import sys
-import json
-import logging
-import uuid
 import gradio as gr
-from pathlib import Path
 import requests
+import os
+from pathlib import Path
 
-# Vu que main.py est dans frontend , on ajoute cette ligne pour permettre a main.py de se retrouver
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# --- CONFIGURATION DES CHEMINS ---
+# Path(__file__) est frontend/main.py
+# .parent est frontend/
+# .parent.parent est la racine du projet Agribot-AI/
+BASE_DIR = Path(__file__).resolve().parent.parent
+AUDIO_DIR = BASE_DIR / "audio_output"
 
-# Les modules du project
-from src.data_extraction import run_extraction
-from src.data_processing import split_corpus_data
-from src.data_vectordb import run_vectorstore
+# S'assurer que le dossier audio existe pour éviter des erreurs au lancement
+AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
-# Le setup du logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(stream=sys.stdout)]
-)
-logger = logging.getLogger(__name__)
+API_URL = "http://127.0.0.1:8000/api/v1/ask"
 
+def query_backend(user_query, user_id, zone_id, crop, mode, user_level):
+    """Envoie la requête au backend FastAPI et retourne la réponse."""
+    flow_type = "REPORT" if mode == "Daily Report" else "MESSAGE"
 
+    payload = {
+        "user_id": user_id or "cmludrpen00009s93aw0316t2",
+        "zone_id": zone_id or "ouaga",
+        "crop": crop or "Inconnue",
+        "query": user_query or "Generate Report",
+        "flow_type": flow_type,
+        "user_level": user_level or "debutant",
+    }
 
-# Session management
-
-SESSIONS_DIR = Path("sessions")
-SESSIONS_DIR.mkdir(exist_ok=True)
-
-# Ollama tunnel check
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "https://made-tanks-tissue-accuracy.trycloudflare.com")
-
-def is_ollama_available(url: str) -> bool:
     try:
-        response = requests.get(url, timeout=3)
-        return response.status_code == 200
-    except Exception:
-        return False
+        # Timeout de 60s car la génération audio/IA peut être longue
+        response = requests.post(API_URL, json=payload, timeout=600)
+        response.raise_for_status()
+        data = response.json()
 
-def _save_session_history(session_id: str, chat_history):
-    try:
-        path = SESSIONS_DIR / f"{session_id}.json"
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(chat_history, f, ensure_ascii=False, indent=2)
+        # Récupération de la trace
+        trace = data.get("trace", [])
+        trace_str = " → ".join(trace) if isinstance(trace, list) else str(trace)
+
+        # --- GESTION DE L'AUDIO ---
+        audio_url_raw = data.get("audio_url")
+        full_audio_path = None
+
+        if audio_url_raw:
+            # On ne garde que le nom du fichier (ex: 'output.wav') 
+            # pour éviter les conflits de chemins absolus entre backend et frontend
+            file_name = os.path.basename(audio_url_raw)
+            temp_path = AUDIO_DIR / file_name
+            
+            if temp_path.exists():
+                full_audio_path = str(temp_path)
+            else:
+                print(f"⚠️ Fichier audio introuvable physiquement : {temp_path}")
+
+        return data.get("response", "No Content"), trace_str, full_audio_path
+
+    except requests.exceptions.ConnectionError:
+        return "❌ Backend non accessible. Vérifiez qu'il tourne sur le port 8000.", "", None
     except Exception as e:
-        logger.warning(f"Failed to save session {session_id}: {e}")
-
-def _load_session_history(session_id: str):
-    path = SESSIONS_DIR / f"{session_id}.json"
-    if path.exists():
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception as e:
-            logger.warning(f"Failed to load session history {session_id}: {e}")
-    return []
+        return f"❌ Erreur: {e}", "", None
 
 
+# ── INTERFACE GRADIO ─────────────────────────────────────────
+with gr.Blocks(title="AgConnect - Assistant Agricole") as demo:
+    gr.Markdown("# 🌾 AgConnect — Assistant Agricole IA")
 
+    with gr.Row():
+        with gr.Column(scale=1):
+            user_id = gr.Textbox(label="User ID", value="cmludrpen00009s93aw0316t2")
+            zone_id = gr.Dropdown(
+                choices=["gaoua", "ziniare", "ouaga", "banfora"],
+                value="banfora", label="Zone",
+            )
+            crop = gr.Dropdown(
+                choices=["Maïs", "Coton", "Sésame", "Sorgho", "Riz"],
+                value="Maïs", label="Culture",
+            )
+            mode = gr.Radio(
+                choices=["Conversation", "Daily Report"],
+                value="Conversation", label="Mode",
+            )
+            user_level = gr.Dropdown(
+                choices=[
+                    ("Débutant (réponse rapide)", "debutant"),
+                    ("Intermédiaire", "intermediaire"),
+                    ("Expert / Agronome", "expert"),
+                ],
+                value="debutant",
+                label="🎓 Niveau",
+                info="Adapte la précision et le détail de la réponse",
+            )
 
-def chat_with_profile(user_query, chat_history):
-    if not user_query or not str(user_query).strip():
-        return chat_history or []
+        with gr.Column(scale=2):
+            output_msg = gr.Markdown(label="Réponse")
+            # Utilisation de type="filepath" pour que Gradio lise le fichier sur le disque
+            audio_player = gr.Audio(label="Réponse Audio", type="filepath")
 
-    try:
-        payload = {"query": user_query, "history": chat_history or []}
-        response = requests.post(os.getenv("API_URL","http://localhost:8000/chat"), json=payload)
-        updated_history = response.json()
-        return updated_history
-    except Exception as e:
-        logger.exception("Error in chat_with_profile")
-        return (chat_history or []) + [{"role": "assistant", "content": f"Error: {e}"}]
-    
-def create_gradio_interface():
-    with gr.Blocks(title="Agri Bot") as demo:
-        gr.Markdown("# 🌾 Agri Bot")
-        gr.Markdown("Pose une question a propos de l'agriculture et notre agent IA repo")
+    with gr.Row():
+        query = gr.Textbox(label="Votre question", lines=2, placeholder="Ex: Quel temps fait-il à Bobo ?")
+        submit_btn = gr.Button("🚀 Envoyer", variant="primary")
 
-        with gr.Tab("Chat"):
-            chatbot = gr.Chatbot(height=500, type="messages")
-            chat_input = gr.Textbox(label="Ask a question", placeholder="E.g., How can they increase production?")
-            chat_btn = gr.Button("Send")
+    with gr.Accordion("🛠️ Trace d'exécution", open=False):
+        trace_output = gr.Textbox(label="Chemin d'exécution")
 
-            chat_btn.click(fn=chat_with_profile, inputs=[chat_input, chatbot], outputs=[chatbot])
-            chat_input.submit(fn=chat_with_profile, inputs=[chat_input, chatbot], outputs=[chatbot])
-
-    return demo
+    # Liaison du bouton à la fonction
+    submit_btn.click(
+        fn=query_backend,
+        inputs=[query, user_id, zone_id, crop, mode, user_level],
+        outputs=[output_msg, trace_output, audio_player],
+        show_progress="full",
+    )
 
 if __name__ == "__main__":
-    CORPUS_DIR = os.getenv("CORPUS_DIR","data/corpus.json")
-    CHROMA_DB = os.getenv("CHROMA_DB_PATH","./chroma_db")
-    OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "https://made-tanks-tissue-accuracy.trycloudflare.com")
-
-    # Si le fichier corpus n existe pas on lance run_extraction pour creer le fichier corpus.json
-    if not os.path.exists(CORPUS_DIR):
-        run_extraction()
-
-    # Si la base vectorielle de chroma n exista pas on la creee
-    if not os.path.exists(CHROMA_DB):
-        run_vectorstore()
-
-    # On cherche a savoir si nous avons pu nous connecter au tunel de cloudfared
-    if is_ollama_available(OLLAMA_BASE_URL):
-        logging.info(f"Ollama tunnel is reachable at {OLLAMA_BASE_URL}")
-    else:
-        logging.warning(f"Ollama tunnel unreachable at {OLLAMA_BASE_URL}. You may need to restart it.")
-
-    demo = create_gradio_interface()
-    demo.launch(server_name="localhost", server_port=8000, share=True)
+    # Lancement avec les autorisations de chemin
+    # allowed_paths permet à Gradio d'accéder au dossier audio_output en dehors de /frontend
+    demo.launch(
+        server_name="127.0.0.1", 
+        server_port=7860,
+        allowed_paths=[str(AUDIO_DIR)]
+    )
