@@ -2,13 +2,6 @@
 MCP Database Server — Accès standardisé aux profils agriculteurs.
 =================================================================
 
-AVANT (couplage direct) :
-    session = SessionLocal()
-    profile = session.query(UserFarmProfileModel).filter_by(user_id=uid).first()
-
-APRÈS (découplé via MCP) :
-    result = mcp_db.read_resource("agri://profile/{user_id}")
-
 AVANTAGE : Si on migre de PostgreSQL vers CockroachDB ou Neon,
 on ne touche QUE ce fichier. Les agents ne changent pas.
 """

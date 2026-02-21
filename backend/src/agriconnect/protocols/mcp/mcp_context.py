@@ -2,19 +2,13 @@
 MCP Context Server — ContextOptimizer exposé comme MCP Host.
 ==============================================================
 
-C'est le POINT D'ENTRÉE UNIVERSEL pour tout protocole (A2A, ACP, AG-UI)
+C'est le POINT D'ENTRÉE UNIVERSEL pour tout protocole (A2A, AG-UI)
 qui a besoin du contexte utilisateur standardisé.
 
 AVANT (couplage) :
-    optimizer = ContextOptimizer(...)
-    context = optimizer.build_context(user_id, query)
 
-APRÈS (standardisé MCP) :
-    result = mcp_context.call_tool("build_context", {
-        "user_id": "...", "query": "...", "zone": "bobo"
-    })
 
-Tout agent (interne ou externe via A2A/ACP) peut consommer
+Tout agent (interne ou externe via A2A) peut consommer
 les mêmes données de contexte de manière standardisée.
 """
 

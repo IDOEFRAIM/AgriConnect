@@ -2,14 +2,6 @@
 MCP Weather Server — Accès standardisé aux données météo et alertes.
 =====================================================================
 
-AVANT (couplage direct) :
-    from backend.tools.sentinelle import SentinelleTool
-    tool = SentinelleTool()
-    weather = tool.get_current_conditions("bobo-dioulasso")
-
-APRÈS (découplé via MCP) :
-    result = mcp_weather.call_tool("get_weather", {"location": "bobo-dioulasso"})
-
 AVANTAGE : Si on change de fournisseur météo (OpenWeather → ANAM → Météo-France),
 on ne touche QUE ce fichier. Les agents ne changent pas.
 """

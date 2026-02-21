@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from abc import ABC, abstractmethod
 
-# On suppose que les composants corrigés sont dans .components
+
 from .components import (
     AGUIComponent, ComponentType, AgriResponse,
     TextBlock, Card, ActionButton, ListPicker, FormField, ChartData, AlertBanner,

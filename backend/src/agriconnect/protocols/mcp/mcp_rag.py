@@ -2,19 +2,8 @@
 MCP RAG Server — Accès standardisé à la base de connaissances agronomiques.
 ===========================================================================
 
-AVANT (couplage direct) :
-    retriever = AgileRetriever()
-    nodes = retriever.search(query, profile="debutant")
-
-APRÈS (découplé via MCP) :
-    result = mcp_rag.call_tool("search_agronomy_docs", {
-        "query": "traitement rouille blé",
-        "region": "Burkina",
-        "level": "debutant"
-    })
-
-AVANTAGE : Si on migre de FAISS vers Pinecone, Chroma, ou Weaviate,
-on ne touche QUE ce fichier. Les agents ne changent pas.
+AVANTAGE : Si on migre de FAISS vers Pinecone, ou Weaviate,
+on ne touche QUE ce fichier. Le system RA ne changent pas.
 """
 
 import json
