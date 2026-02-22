@@ -112,6 +112,9 @@ class Settings(BaseSettings):
         "extra": "ignore",
     }
 
+    # --- Sentry (observabilité erreurs) ---
+    SENTRY_DSN: str = ""
+    SENTRY_ENVIRONMENT: str = "development"
 
 # Singleton — importable partout
 settings = Settings()
