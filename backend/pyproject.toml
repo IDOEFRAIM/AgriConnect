@@ -30,7 +30,6 @@ aiofiles = "^23.1"
 pdfminer-six = "^20221105"
 pytest = "^7.0"
 # Additional dependencies requested for Agri-OS
-fastapi = "^0.104"
 gtts = "^2.4"
 openai-whisper = "*"
 pydub = "^0.25"

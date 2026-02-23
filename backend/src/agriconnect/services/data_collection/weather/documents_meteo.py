@@ -1,4 +1,5 @@
-﻿import requests
+# coding: utf-8
+import requests
 from bs4 import BeautifulSoup
 import io
 import json
@@ -74,33 +75,32 @@ class DocumentScraper:
         
         for a in soup.find_all("a", href=True):
             href = self._normalize_url(a["href"])
+            if not href or href.endswith("#"):
+                continue
             href_lower = href.lower()
-            
-            is_relevant = False
-            
-            # 1. Lien vers un fichier PDF/DOC/etc.
-            if href_lower.endswith((".pdf", ".doc", ".docx", ".xls", ".xlsx")):
-                is_relevant = True
-            
-            # 2. Lien contenant un mot-clé pertinent dans le chemin d'URL
-            elif any(keyword in href_lower for keyword in keywords):
-                # Éviter les liens de navigation de base ou les ancres internes
-                # On vérifie si le lien est sur le même domaine et a une profondeur suffisante
-                parsed_href = urlparse(href)
-                parsed_index = urlparse(self.index_url)
-                
-                if parsed_href.netloc == parsed_index.netloc:
-                     # Exclure les liens qui sont juste des ancres ou la page elle-même
-                     if parsed_href.path != parsed_index.path and len(parsed_href.path.split('/')) > 2:
-                        is_relevant = True
 
-            if is_relevant:
-                # Filtrer les liens qui ne sont que des ancres (#)
-                if href and not href.endswith("#"):
-                    links.add(href)
+            if self._link_is_relevant(href, href_lower, keywords):
+                links.add(href)
 
         logger.info("%d liens de documents uniques trouvés.", len(links))
         return list(links)
+
+    def _link_is_relevant(self, href: str, href_lower: str, keywords: List[str]) -> bool:
+        """Détermine si un lien d'ancre est pertinent pour le scraping de documents."""
+        # Vérifie extension explicite
+        if href_lower.endswith((".pdf", ".doc", ".docx", ".xls", ".xlsx")):
+            return True
+
+        # Check keywords in path
+        if any(keyword in href_lower for keyword in keywords):
+            parsed_href = urlparse(href)
+            parsed_index = urlparse(self.index_url)
+            if parsed_href.netloc == parsed_index.netloc:
+                # Exclure la page d'index elle-même et les chemins très courts
+                if parsed_href.path != parsed_index.path and len([p for p in parsed_href.path.split('/') if p]) > 1:
+                    return True
+
+        return False
 
     def _scrape_document_content(self, url: str) -> Dict[str, Any]:
         """Télécharge un document (HTML ou PDF) et extrait un résumé de son contenu."""
@@ -111,60 +111,18 @@ class DocumentScraper:
             content_type = response.headers.get("Content-Type", "").lower()
 
             if "application/pdf" in content_type:
-                if HAS_PYPDF2:
-                    # Traitement PDF
-                    try:
-                        pdf_file = io.BytesIO(response.content)
-                        reader = PdfReader(pdf_file)
-                        text = ""
-                        # Extraire le texte des 3 premières pages
-                        for page in reader.pages[:3]:
-                            extracted = page.extract_text()
-                            if extracted:
-                                text += extracted + "\n"
-                        
-                        title = url.split("/")[-1].replace(".pdf", "").replace("-", " ").strip()
-                        return {
-                            "url": url,
-                            "type": "pdf",
-                            "title": title or "PDF sans titre",
-                            "content": text.strip()
-                        }
-                    except Exception as e:
-                        logger.warning(f"Erreur lecture PDF {url}: {e}")
-                        return {"url": url, "type": "pdf", "title": "Erreur PDF", "content": "Lecture impossible"}
-                else:
-                    return {
-                        "url": url,
-                        "type": "pdf",
-                        "title": "PDF (Non lu)",
-                        "content": "PyPDF2 manquant - Contenu non extrait"
-                    }
+                return self._handle_pdf_response(response, url)
 
-            elif "text/html" in content_type:
-                # Traitement HTML
-                soup = BeautifulSoup(response.text, "html.parser")
-                title = soup.title.string if soup.title else "HTML Sans titre"
-                # Extraire le texte des paragraphes significatifs
-                content_elements = soup.find_all(["p", "div", "article"], limit=10)
-                paragraphs = [p.get_text(strip=True) for p in content_elements if len(p.get_text(strip=True)) > 20]
-                content_summary = " ".join(paragraphs)
-                
-                return {
-                    "url": url,
-                    "type": "html",
-                    "title": title,
-                    "content": content_summary
-                }
+            if "text/html" in content_type:
+                return self._handle_html_response(response, url)
 
-            else:
-                # Type non géré
-                return {
-                    "url": url,
-                    "type": "unknown",
-                    "title": "N/A",
-                    "content": f"Type non pris en charge : {content_type[:50]}"
-                }
+            # Type non géré
+            return {
+                "url": url,
+                "type": "unknown",
+                "title": "N/A",
+                "content": f"Type non pris en charge : {content_type[:50]}"
+            }
 
         except requests.exceptions.RequestException as e:
             logger.error("Erreur de requête pour %s: %s", url, e)
@@ -172,6 +130,50 @@ class DocumentScraper:
         except Exception as e:
             logger.error("Erreur d'extraction pour %s: %s", url, e)
             return {"url": url, "type": "error", "title": "Erreur d'extraction", "content": str(e)}
+
+    def _handle_pdf_response(self, response: requests.Response, url: str) -> Dict[str, Any]:
+        """Traite une réponse PDF et extrait du texte si possible."""
+        if not HAS_PYPDF2:
+            return {
+                "url": url,
+                "type": "pdf",
+                "title": "PDF (Non lu)",
+                "content": "PyPDF2 manquant - Contenu non extrait"
+            }
+
+        try:
+            pdf_file = io.BytesIO(response.content)
+            reader = PdfReader(pdf_file)
+            text_parts = []
+            for page in reader.pages[:3]:
+                extracted = page.extract_text()
+                if extracted:
+                    text_parts.append(extracted)
+
+            title = url.split("/")[-1].replace(".pdf", "").replace("-", " ").strip()
+            return {
+                "url": url,
+                "type": "pdf",
+                "title": title or "PDF sans titre",
+                "content": "\n".join(text_parts).strip()
+            }
+        except Exception as e:
+            logger.warning(f"Erreur lecture PDF {url}: {e}")
+            return {"url": url, "type": "pdf", "title": "Erreur PDF", "content": "Lecture impossible"}
+
+    def _handle_html_response(self, response: requests.Response, url: str) -> Dict[str, Any]:
+        """Traite une réponse HTML et construit un résumé de contenu."""
+        soup = BeautifulSoup(response.text, "html.parser")
+        title = soup.title.string if soup.title else "HTML Sans titre"
+        content_elements = soup.find_all(["p", "div", "article"], limit=10)
+        paragraphs = [p.get_text(strip=True) for p in content_elements if len(p.get_text(strip=True)) > 20]
+        content_summary = " ".join(paragraphs)
+        return {
+            "url": url,
+            "type": "html",
+            "title": title,
+            "content": content_summary
+        }
 
     def scrape_bulletins(self) -> Dict[str, Any]:
         """

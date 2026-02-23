@@ -115,42 +115,19 @@ class ResourceManager:
             logger.info(f"\n{'='*60}")
             logger.info(f"Catégorie: {category.upper()} ({len(urls)} sources)")
             logger.info(f"{'='*60}")
-            
+
             if category not in scrapers_map:
                 logger.warning(f"Aucun scraper défini pour: {category}. Ignoré.")
                 self.session_stats['skipped'] += len(urls)
                 continue
-            
-            scraper_or_class = scrapers_map[category]
-            # Gérer les instances déjà créées ou les classes
-            if callable(scraper_or_class) and not hasattr(scraper_or_class, 'scrape'):
-                scraper = scraper_or_class(output_dir=str(self.output_dir / category))
-            else:
-                scraper = scraper_or_class
-            
+
+            scraper = self._get_scraper_instance(scrapers_map[category], category)
+
             # Traitement parallèle des URLs de cette catégorie
             self.session_stats['total_sources'] += len(urls)
             self.session_stats['by_type'][category] = {"total": len(urls), "success": 0, "failed": 0}
-            
-            with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-                futures = {executor.submit(self._process_single_source, url, scraper, category): url 
-                          for url in urls}
-                
-                for future in as_completed(futures):
-                    url = futures[future]
-                    try:
-                        result = future.result(timeout=REQUEST_TIMEOUT * 2)
-                        if result and result.get('status') == 'success':
-                            self.add_to_catalog(result)
-                            self.session_stats['successful'] += 1
-                            self.session_stats['by_type'][category]['success'] += 1
-                        else:
-                            self.session_stats['failed'] += 1
-                            self.session_stats['by_type'][category]['failed'] += 1
-                    except Exception as e:
-                        logger.error(f"Erreur traitement {url}: {e}")
-                        self.session_stats['failed'] += 1
-                        self.session_stats['by_type'][category]['failed'] += 1
+
+            self._process_category_urls(urls, scraper, category)
         
         # Sauvegarde finale
         self._save_catalog()
@@ -190,6 +167,39 @@ class ResourceManager:
             'error': f'Échec après {RETRY_ATTEMPTS} tentatives',
             'scraped_at': datetime.now().isoformat()
         }
+
+    def _get_scraper_instance(self, scraper_or_class: Any, category: str) -> Any:
+        """Return a scraper instance: if a class is provided, instantiate it with category output_dir."""
+        # If a class (type) is provided, instantiate it. If an instance is provided, return it.
+        try:
+            is_type = isinstance(scraper_or_class, type)
+        except Exception:
+            is_type = False
+
+        if is_type:
+            return scraper_or_class(output_dir=str(self.output_dir / category))
+        return scraper_or_class
+
+    def _process_category_urls(self, urls: List[str], scraper: Any, category: str) -> None:
+        """Process a list of URLs for a given category using a ThreadPoolExecutor and collect results."""
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = {executor.submit(self._process_single_source, url, scraper, category): url for url in urls}
+
+            for future in as_completed(futures):
+                url = futures[future]
+                try:
+                    result = future.result(timeout=REQUEST_TIMEOUT * 2)
+                    if result and result.get('status') == 'success':
+                        self.add_to_catalog(result)
+                        self.session_stats['successful'] += 1
+                        self.session_stats['by_type'][category]['success'] += 1
+                    else:
+                        self.session_stats['failed'] += 1
+                        self.session_stats['by_type'][category]['failed'] += 1
+                except Exception as e:
+                    logger.error(f"Erreur traitement {url}: {e}")
+                    self.session_stats['failed'] += 1
+                    self.session_stats['by_type'][category]['failed'] += 1
 
     def generate_report(self, output_path: Optional[str] = None) -> str:
         """Génère un rapport HTML détaillé de la session."""

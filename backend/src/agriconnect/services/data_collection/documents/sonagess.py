@@ -1,4 +1,4 @@
-﻿import os
+import os
 import time
 import json
 import logging
@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from pypdf import PdfReader
+
 # Configuration du logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("SonagessScraper")
@@ -193,12 +194,11 @@ class SonagessScraper:
         """Parcourt le site pour trouver des liens PDF."""
         queue: List[Dict] = [{"url": self.start_url, "depth": 0}]
         pages_visited = 0
-
         while queue and pages_visited < self.max_pages:
             node = queue.pop(0)
             page_url = node["url"]
             depth = node["depth"]
-            
+
             if page_url in self._visited:
                 continue
             self._visited.add(page_url)
@@ -211,58 +211,67 @@ class SonagessScraper:
                 continue
 
             soup = BeautifulSoup(html, "html.parser")
-            
-            # Recherche de liens
+
+            # Process anchors using a helper to keep logic small
             for a in soup.find_all("a", href=True):
-                raw = a.get("href")
-                norm = self._normalize_url(raw, page_url)
-                if not norm:
-                    continue
-
-                # Si c'est un PDF
-                if self._is_likely_pdf(norm):
-                    key = norm.split("?")[0]
-                    if key not in self._found:
-                        self._found[key] = {
-                            "url": norm,
-                            "source_page": page_url,
-                            "title": (a.get_text(strip=True) or "Document SONAGESS"),
-                            "type": "pdf",
-                            "downloaded_path": None,
-                            "content": ""
-                        }
-                        if key not in self._seen_printed:
-                            logger.info("[PDF trouvé] %s", norm)
-                            self._seen_printed.add(key)
-                    continue
-
-                # Si c'est une page interne à explorer
-                if depth < self.max_depth and self._is_same_domain(self.start_url, norm):
-                    if norm not in self._visited:
-                        queue.append({"url": norm, "depth": depth + 1})
+                self._process_anchor_in_crawl(a, page_url, depth, queue)
 
             # Checkpoint périodique
             if pages_visited % 5 == 0:
                 self._save_checkpoint()
 
+    def _process_anchor_in_crawl(self, a_tag, page_url: str, depth: int, queue: List[Dict]):
+        raw = a_tag.get("href")
+        norm = self._normalize_url(raw, page_url)
+        if not norm:
+            return
+
+        # If it's a PDF, register it
+        if self._is_likely_pdf(norm):
+            key = norm.split("?")[0]
+            if key in self._found:
+                return
+            self._found[key] = {
+                "url": norm,
+                "source_page": page_url,
+                "title": (a_tag.get_text(strip=True) or "Document SONAGESS"),
+                "type": "pdf",
+                "downloaded_path": None,
+                "content": ""
+            }
+            if key not in self._seen_printed:
+                logger.info("[PDF trouvé] %s", norm)
+                self._seen_printed.add(key)
+            return
+
+        # Otherwise, consider queuing the internal link
+        if depth < self.max_depth and self._is_same_domain(self.start_url, norm):
+            if norm not in self._visited:
+                queue.append({"url": norm, "depth": depth + 1})
+
     def _process_downloads_and_extraction(self):
         """Télécharge les PDFs trouvés et extrait leur contenu."""
         to_process = [k for k, v in self._found.items() if not v.get("downloaded_path") or not v.get("content")]
-        
+
         if not to_process:
             logger.info("Tous les documents trouvés ont déjà été traités.")
             return
 
         logger.info("Traitement de %d documents...", len(to_process))
-        
-        # Téléchargement
+
+        # Schedule and run downloads via helper
+        self._schedule_downloads(to_process)
+
+        # Extract contents
+        self._extract_contents_for_keys(to_process)
+
+    def _schedule_downloads(self, keys: List[str]):
+        to_download = [key for key in keys if not self._found[key].get("downloaded_path")]
+        if not to_download:
+            return
+
         with ThreadPoolExecutor(max_workers=self.download_workers) as ex:
-            future_to_key = {
-                ex.submit(self._download_pdf, self._found[key]["url"]): key 
-                for key in to_process 
-                if not self._found[key].get("downloaded_path")
-            }
-            
+            future_to_key = {ex.submit(self._download_pdf, self._found[key]["url"]): key for key in to_download}
             for future in as_completed(future_to_key):
                 key = future_to_key[future]
                 try:
@@ -272,14 +281,15 @@ class SonagessScraper:
                 except Exception as e:
                     logger.error("Erreur process download %s: %s", key, e)
 
-        # Extraction (séquentielle ou parallèle, ici séquentielle pour simplicité/CPU)
-        for key in to_process:
+    def _extract_contents_for_keys(self, keys: List[str]):
+        for key in keys:
             info = self._found[key]
             path = info.get("downloaded_path")
-            if path and os.path.exists(path) and not info.get("content"):
-                logger.info("Extraction texte: %s", path)
-                content = self._extract_text_from_pdf(path)
-                self._found[key]["content"] = content
+            if not path or not os.path.exists(path) or info.get("content"):
+                continue
+            logger.info("Extraction texte: %s", path)
+            content = self._extract_text_from_pdf(path)
+            self._found[key]["content"] = content
 
     def run(self) -> Dict[str, Any]:
         """Exécute le scraping complet."""
@@ -306,6 +316,6 @@ class SonagessScraper:
         }
 
 if __name__ == "__main__":
-    scraper = SonagessScraper(max_pages=10) # Limite pour test rapide
+    scraper = SonagessScraper(max_pages=10)  # Limite pour test rapide
     result = scraper.run()
     print(json.dumps(result, indent=2, ensure_ascii=False))

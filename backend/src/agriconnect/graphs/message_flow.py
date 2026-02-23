@@ -326,75 +326,71 @@ class MessageResponseFlow:
         inputs = {
             "user_query": query,
             "user_level": user_level,
-            "location_profile": {
-                "village": zone,
-                "zone": "Hauts-Bassins",
-                "country": "Burkina Faso",
-            },
+            "location_profile": {"village": zone, "zone": "Hauts-Bassins", "country": "Burkina Faso"},
         }
-        try:
-            config = get_tracing_config(
-                run_name="agent.sentinelle",
-                tags=["sentinelle", "weather", zone],
-                metadata={"user_level": user_level, "zone": zone},
-            )
-            return self.wf_sentinelle.invoke(inputs, config)
-        except Exception as e:
-            logger.warning("Sentinelle Error: %s", e)
-            return {"final_response": "Données Sentinel indisponibles."}
+        return self._invoke_workflow(
+            wf=self.wf_sentinelle,
+            run_name="agent.sentinelle",
+            tags=["sentinelle", "weather", zone],
+            metadata={"user_level": user_level, "zone": zone},
+            inputs=inputs,
+            fallback_message="Données Sentinel indisponibles.",
+        )
 
     def _call_formation(self, query: str, crop: str, user_level: str = "debutant") -> Dict[str, Any]:
-        inputs = {
-            "user_query": query,
-            "learner_profile": {"culture_actuelle": crop, "niveau": user_level},
-        }
-        try:
-            config = get_tracing_config(
-                run_name="agent.formation",
-                tags=["formation", "pedagogy", crop],
-                metadata={"user_level": user_level, "crop": crop},
-            )
-            return self.wf_formation.invoke(inputs, config)
-        except Exception as e:
-            logger.warning("Formation Error: %s", e)
-            return {"final_response": "Conseils techniques indisponibles."}
+        inputs = {"user_query": query, "learner_profile": {"culture_actuelle": crop, "niveau": user_level}}
+        return self._invoke_workflow(
+            wf=self.wf_formation,
+            run_name="agent.formation",
+            tags=["formation", "pedagogy", crop],
+            metadata={"user_level": user_level, "crop": crop},
+            inputs=inputs,
+            fallback_message="Conseils techniques indisponibles.",
+        )
 
     def _call_market(self, query: str, zone: str, user_level: str = "debutant") -> Dict[str, Any]:
-        inputs = {
-            "user_query": query,
-            "user_level": user_level,
-            "user_profile": {"zone": zone},
-        }
-        try:
-            config = get_tracing_config(
-                run_name="agent.market",
-                tags=["market", "prices", zone],
-                metadata={"user_level": user_level, "zone": zone},
-            )
-            return self.wf_market.invoke(inputs, config)
-        except Exception as e:
-            logger.warning("Market Error: %s", e)
-            return {"final_response": "Infos marché indisponibles."}
+        inputs = {"user_query": query, "user_level": user_level, "user_profile": {"zone": zone}}
+        return self._invoke_workflow(
+            wf=self.wf_market,
+            run_name="agent.market",
+            tags=["market", "prices", zone],
+            metadata={"user_level": user_level, "zone": zone},
+            inputs=inputs,
+            fallback_message="Infos marché indisponibles.",
+        )
 
     def _call_marketplace(
         self, query: str, zone: str, phone: str = ""
     ) -> Dict[str, Any]:
-        inputs = {
-            "user_query": query,
-            "user_phone": phone,
-            "zone_id": zone if zone else None,
-            "warnings": [],
-        }
+        inputs = {"user_query": query, "user_phone": phone, "zone_id": zone if zone else None, "warnings": []}
+        return self._invoke_workflow(
+            wf=self.wf_marketplace,
+            run_name="agent.marketplace",
+            tags=["marketplace", "transactions", zone],
+            metadata={"zone": zone, "phone": phone},
+            inputs=inputs,
+            fallback_message="Service marketplace indisponible.",
+        )
+
+    def _invoke_workflow(
+        self,
+        wf,
+        run_name: str,
+        tags: List[str],
+        metadata: Dict[str, Any],
+        inputs: Dict[str, Any],
+        fallback_message: str = "Service indisponible.",
+    ) -> Dict[str, Any]:
+        """Helper: build tracing config, invoke a workflow and handle errors uniformly.
+
+        This reduces duplicated try/except + tracing setup in each expert call.
+        """
         try:
-            config = get_tracing_config(
-                run_name="agent.marketplace",
-                tags=["marketplace", "transactions", zone],
-                metadata={"zone": zone, "phone": phone},
-            )
-            return self.wf_marketplace.invoke(inputs, config)
+            config = get_tracing_config(run_name=run_name, tags=tags, metadata=metadata)
+            return wf.invoke(inputs, config)
         except Exception as e:
-            logger.warning("Marketplace Error: %s", e)
-            return {"final_response": "Service marketplace indisponible."}
+            logger.warning("%s Error: %s", run_name, e)
+            return {"final_response": fallback_message}
 
     # ==================================================================
     # 4. NŒUDS DU GRAPHE
@@ -690,15 +686,23 @@ class MessageResponseFlow:
         self, expert: str, state: GlobalAgriState,
         user_id: str, zone_id: str,
     ) -> None:
-        """Persiste les actions proactives d'un expert spécifique."""
+        """Dispatch to specialized persisters for each expert to reduce nesting."""
         if not self.db:
             return
 
         if expert in ("market", "marketplace"):
-            # Sauvegarder surplus si détecté dans le market_data
-            market_data = state.get("market_data", {})
-            surplus = market_data.get("surplus_detected")
-            if surplus and isinstance(surplus, dict):
+            return self._persist_market_action(expert, state, user_id, zone_id)
+        if expert == "formation":
+            return self._persist_formation_action(state, user_id)
+        if expert == "sentinelle":
+            return self._persist_sentinelle_action(state, user_id, zone_id)
+
+    def _persist_market_action(self, expert: str, state: GlobalAgriState, user_id: str, zone_id: str) -> None:
+        """Persist market/marketplace specific actions (surplus, audit)."""
+        market_data = state.get("market_data", {})
+        surplus = market_data.get("surplus_detected")
+        if surplus and isinstance(surplus, dict):
+            try:
                 self.db.save_surplus_offer(
                     product_name=surplus.get("product", "Inconnu"),
                     quantity_kg=surplus.get("quantity_kg", 0),
@@ -707,11 +711,13 @@ class MessageResponseFlow:
                     user_id=user_id,
                     channel="agent",
                 )
-            # Audit Trail
-            resp_text = next(
-                (r["response"] for r in state.get("expert_responses", []) if r["expert"] == expert), ""
-            )
-            if resp_text:
+            except Exception as e:
+                logger.warning("DB save_surplus_offer error: %s", e)
+
+        # Audit Trail
+        resp_text = next((r["response"] for r in state.get("expert_responses", []) if r["expert"] == expert), "")
+        if resp_text:
+            try:
                 self.db.log_audit_action(
                     agent_name="MarketCoach" if expert == "market" else "MarketplaceAgent",
                     action_type="MARKET_ADVICE" if expert == "market" else "MARKETPLACE_ACTION",
@@ -721,11 +727,14 @@ class MessageResponseFlow:
                     payload={"query": state.get("requete_utilisateur"), "advice": resp_text[:500]},
                     confidence=0.9,
                 )
-            
-        elif expert == "formation":
-            # Audit Trail pour le conseil technique
-            resp_text = next((r["response"] for r in state.get("expert_responses", []) if r["expert"] == "formation"), "")
-            if resp_text and self.db:
+            except Exception as e:
+                logger.warning("DB log_audit_action error (market): %s", e)
+
+    def _persist_formation_action(self, state: GlobalAgriState, user_id: str) -> None:
+        """Persist formation-specific audit actions."""
+        resp_text = next((r["response"] for r in state.get("expert_responses", []) if r["expert"] == "formation"), "")
+        if resp_text and self.db:
+            try:
                 self.db.log_audit_action(
                     agent_name="FormationCoach",
                     action_type="ADVICE_GIVEN",
@@ -733,13 +742,16 @@ class MessageResponseFlow:
                     protocol="MCP_RAG",
                     resource="docs_vector_store",
                     payload={"query": state.get("requete_utilisateur"), "advice": resp_text[:500]},
-                    confidence=0.95
+                    confidence=0.95,
                 )
+            except Exception as e:
+                logger.warning("DB log_audit_action error (formation): %s", e)
 
-        elif expert == "sentinelle":
-            # Sauvegarder alertes critiques
-            hazards = state.get("meteo_data", {}).get("hazards", [])
-            for h in hazards:
+    def _persist_sentinelle_action(self, state: GlobalAgriState, user_id: str, zone_id: str) -> None:
+        """Persist sentinel alerts and audit trail."""
+        hazards = state.get("meteo_data", {}).get("hazards", [])
+        for h in hazards:
+            try:
                 if h.get("severity") in ("HAUT", "CRITIQUE"):
                     self.db.create_alert(
                         alert_type=h.get("type", "WEATHER"),
@@ -747,17 +759,18 @@ class MessageResponseFlow:
                         message=h.get("description", "Alerte météo"),
                         zone_id=zone_id or "unknown",
                     )
-                    # Audit Trail pour l'alerte
-                    if self.db:
-                        self.db.log_audit_action(
-                            agent_name="ClimateSentinel",
-                            action_type="ALERT_SENT",
-                            user_id=user_id,
-                            protocol="MCP_WEATHER",
-                            resource="openmeteo_api",
-                            payload={"alert": h},
-                            confidence=1.0
-                        )
+                    # Audit Trail for the alert
+                    self.db.log_audit_action(
+                        agent_name="ClimateSentinel",
+                        action_type="ALERT_SENT",
+                        user_id=user_id,
+                        protocol="MCP_WEATHER",
+                        resource="openmeteo_api",
+                        payload={"alert": h},
+                        confidence=1.0,
+                    )
+            except Exception as e:
+                logger.warning("DB persist error (sentinelle alert): %s", e)
 
     # ==================================================================
     # BUILDER — Graphe LangGraph

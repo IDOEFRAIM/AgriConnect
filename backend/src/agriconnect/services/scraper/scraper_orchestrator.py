@@ -126,6 +126,50 @@ class ScraperOrchestrator:
             logger.exception("Exception inattendue lors de l'exécution de %s: %s", task_name, e)
             return {"status": "ERROR", "results": [], "error": str(e)}
 
+    def _timed_call(self, fn: Callable, *args, **kwargs) -> Dict[str, Any]:
+        """Wrapper to call a function with retries and measure duration."""
+        t0 = time.time()
+        out = _safe_call_retryable(fn, *args, **kwargs)
+        t1 = time.time()
+        return {"out": out, "duration": round(t1 - t0, 2)}
+
+    def _prepare_tasks(self) -> Dict[str, Any]:
+        """Return the mapping of task name -> (callable, args) to execute."""
+        return {
+            "weather_service": (self.weather_service.scrape_forecast, ()),
+            "meteo_burkina": (self.bulletin_anam.run, ()),
+            "sonagess_scraper": (self.sonagess_scraper.run, ()),
+        }
+
+    def _collect_results(self, futures_map: Dict[Any, str]) -> (Dict[str, Dict[str, Any]], Dict[str, float]):
+        """Collect results from futures_map and persist intermediate caches."""
+        results: Dict[str, Dict[str, Any]] = {}
+        durations: Dict[str, float] = {}
+        for fut in as_completed(futures_map):
+            name = futures_map[fut]
+            try:
+                res_wrapper = fut.result(timeout=TASK_TIMEOUT_S)
+                out = res_wrapper.get("out", {"status": "ERROR", "results": [], "error": "No output"})
+                dur = res_wrapper.get("duration", 0.0)
+                results[name] = _normalize_result(out)
+                durations[name] = dur
+
+                # Persist intermediate results
+                self._save_local_cache(name, results[name])
+
+                logger.info("Tâche %s terminée en %.2fs (status=%s)", name, dur, results[name].get("status"))
+            except TimeoutError:
+                logger.error("Timeout global pour la tâche %s", name)
+                results[name] = {"status": "ERROR", "results": [], "error": f"Timeout after {TASK_TIMEOUT_S}s"}
+                durations[name] = TASK_TIMEOUT_S
+            except Exception as e:
+                logger.exception("Erreur lors de la récupération du résultat de %s: %s", name, e)
+                results[name] = {"status": "ERROR", "results": [], "error": str(e)}
+            if self._stop_requested:
+                logger.warning("Arrêt demandé : on arrête la collecte des résultats restants.")
+                break
+        return results, durations
+
     def _save_local_cache(self, task_name: str, data: Dict[str, Any]):
         """Persiste les données brutes pour les Agents (Offline-First)."""
         try:
@@ -146,12 +190,8 @@ class ScraperOrchestrator:
         """
         logger.info("=== DÉMARRAGE ORCHESTRATEUR ===")
         start_time = time.time()
-        tasks = {
-            "weather_service": (self.weather_service.scrape_forecast, ()),
-            "meteo_burkina": (self.bulletin_anam.run, ()),
-            "sonagess_scraper": (self.sonagess_scraper.run, ()),
-        }
 
+        tasks = self._prepare_tasks()
         results: Dict[str, Dict[str, Any]] = {}
         durations: Dict[str, float] = {}
 
@@ -164,38 +204,12 @@ class ScraperOrchestrator:
                     results[name] = {"status": "ERROR", "results": [], "error": "Stopped before start"}
                     continue
                 logger.info("Soumission de la tâche %s", name)
-                # on encapsule l'appel pour mesurer la durée
-                def _timed_call(f, *a, **kw):
-                    t0 = time.time()
-                    out = _safe_call_retryable(f, *a, **kw)
-                    t1 = time.time()
-                    return {"out": out, "duration": round(t1 - t0, 2)}
-                futures_map[ex.submit(_timed_call, fn, *fn_args)] = name
+                futures_map[ex.submit(self._timed_call, fn, *fn_args)] = name
 
-            # récupérer les résultats au fur et à mesure
-            for fut in as_completed(futures_map):
-                name = futures_map[fut]
-                try:
-                    res_wrapper = fut.result(timeout=TASK_TIMEOUT_S)
-                    out = res_wrapper.get("out", {"status": "ERROR", "results": [], "error": "No output"})
-                    dur = res_wrapper.get("duration", 0.0)
-                    results[name] = _normalize_result(out)
-                    durations[name] = dur
-                    
-                    # --- NOUVEAU : SAUVEGARDE SYSTÉMATIQUE ---
-                    self._save_local_cache(name, results[name])
-                    
-                    logger.info("Tâche %s terminée en %.2fs (status=%s)", name, dur, results[name].get("status"))
-                except TimeoutError:
-                    logger.error("Timeout global pour la tâche %s", name)
-                    results[name] = {"status": "ERROR", "results": [], "error": f"Timeout after {TASK_TIMEOUT_S}s"}
-                    durations[name] = TASK_TIMEOUT_S
-                except Exception as e:
-                    logger.exception("Erreur lors de la récupération du résultat de %s: %s", name, e)
-                    results[name] = {"status": "ERROR", "results": [], "error": str(e)}
-                if self._stop_requested:
-                    logger.warning("Arrêt demandé : on arrête la collecte des résultats restants.")
-                    break
+            # collecter les résultats
+            res, durs = self._collect_results(futures_map)
+            results.update(res)
+            durations.update(durs)
 
         total_time = round(time.time() - start_time, 2)
 

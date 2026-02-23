@@ -1,4 +1,4 @@
-﻿
+
 import logging
 import json
 import os
@@ -117,78 +117,73 @@ class WeatherForecastService:
         """
         Scrape les données pour chaque ville disponible dans le menu déroulant.
         """
-        forecasts = []
+        # Guard: ensure selector exists
+        select_selector = self.config["SELECTOR_CITY"]
         try:
-            # 1. Attendre et localiser le menu déroulant des villes
-            select_selector = self.config["SELECTOR_CITY"]
-            try:
-                page.wait_for_selector(select_selector, state="attached", timeout=self.config["WAIT_CITY_SELECTOR"])
-            except PlaywrightTimeoutError:
-                self.logger.error(f"Sélecteur {select_selector} introuvable. La structure de la page a peut-être changé.")
-                return []
-            # Récupérer toutes les options de villes
-            options = page.locator(f"{select_selector} option").all()
-            cities_to_scrape = []
-            for opt in options:
-                val = opt.get_attribute("value")
-                label = opt.inner_text().strip()
-                if val: 
-                    cities_to_scrape.append((val, label))
-            self.logger.info(f"Villes trouvées dans le menu : {len(cities_to_scrape)}")
-
-            # Limiter le nombre de villes pour le test/démo si nécessaire, sinon tout scraper
-            # cities_to_scrape = cities_to_scrape[:3] 
-
-            # 2. Itérer sur chaque ville
-            for city_val, city_name in cities_to_scrape:
-                try:
-                    self.logger.info(f"Scraping pour : {city_name}")
-                    # Sélectionner la ville
-                    page.select_option(select_selector, city_val)
-                    
-                    # Attendre que le contenu se mette à jour (AJAX)
-                    # On attend un peu pour laisser le temps au JS de mettre à jour le graphique
-                    page.wait_for_timeout(self.config["WAIT_GRAPH_UPDATE"]) 
-                    
-                    # Extraction des données Highcharts
-                    charts_data = self._extract_highcharts_data(page)
-                    
-                    # Construction du résumé textuel
-                    content_summary = f"Données climatiques pour {city_name}.\n"
-                    if charts_data:
-                        for chart in charts_data:
-                            content_summary += f"Graphique: {chart.get('title', 'N/A')}\n"
-                            for serie in chart.get('series', []):
-                                content_summary += f"- {serie.get('name', 'Série')}: {len(serie.get('data', []))} points de données.\n"
-                    else:
-                        content_summary += "Aucune donnée graphique extraite.\n"
-
-                    # Création de l'objet résultat standardisé
-                    forecast_entry = {
-                        "url": self.config["BASE_URL"],
-                        "type": "weather_data",
-                        "title": f"Climat - {city_name}",
-                        "content": content_summary,
-                        "metadata": {
-                            "city": city_name,
-                            "raw_data": charts_data
-                        }
-                    }
-                    
-                    forecasts.append(forecast_entry)
-                    
-                except Exception as e:
-                    self.logger.error(f"Erreur lors du traitement de {city_name}: {e}")
-                    continue
-
-            if not forecasts:
-                self.logger.warning("Aucune donnée extraite via le menu déroulant.")
-                
-            return forecasts
-
-        except Exception as e:
-            self.logger.error(f"Erreur inattendue lors du scraping des prévisions: {e}")
+            page.wait_for_selector(select_selector, state="attached", timeout=self.config["WAIT_CITY_SELECTOR"])
+        except PlaywrightTimeoutError:
+            self.logger.error(f"Sélecteur {select_selector} introuvable. La structure de la page a peut-être changé.")
             return []
+
+        cities_to_scrape = self._get_city_options(page, select_selector)
+        self.logger.info(f"Villes trouvées dans le menu : {len(cities_to_scrape)}")
+
+        forecasts: List[Dict[str, Any]] = []
+        for city_val, city_name in cities_to_scrape:
+            try:
+                entry = self._process_city(page, select_selector, city_val, city_name)
+                if entry:
+                    forecasts.append(entry)
+            except Exception as e:
+                self.logger.error(f"Erreur lors du traitement de {city_name}: {e}")
+                # continue with next city
+
+        if not forecasts:
+            self.logger.warning("Aucune donnée extraite via le menu déroulant.")
+
+        return forecasts
+
+    def _get_city_options(self, page: Page, select_selector: str) -> List[tuple]:
+        options = page.locator(f"{select_selector} option").all()
+        cities = []
+        for opt in options:
+            val = opt.get_attribute("value")
+            label = opt.inner_text().strip()
+            if val:
+                cities.append((val, label))
+        return cities
+
+    def _build_content_summary(self, city_name: str, charts_data: List[Dict[str, Any]]) -> str:
+        content_summary = f"Données climatiques pour {city_name}.\n"
+        if charts_data:
+            for chart in charts_data:
+                content_summary += f"Graphique: {chart.get('title', 'N/A')}\n"
+                for serie in chart.get('series', []):
+                    content_summary += f"- {serie.get('name', 'Série')}: {len(serie.get('data', []))} points de données.\n"
+        else:
+            content_summary += "Aucune donnée graphique extraite.\n"
+        return content_summary
+
+    def _process_city(self, page: Page, select_selector: str, city_val: str, city_name: str) -> Optional[Dict[str, Any]]:
+        # Select the city and wait for graph update
+        self.logger.info(f"Scraping pour : {city_name}")
+        page.select_option(select_selector, city_val)
+        page.wait_for_timeout(self.config["WAIT_GRAPH_UPDATE"])
+
+        charts_data = self._extract_highcharts_data(page)
+        content_summary = self._build_content_summary(city_name, charts_data)
+
+        forecast_entry = {
+            "url": self.config["BASE_URL"],
+            "type": "weather_data",
+            "title": f"Climat - {city_name}",
+            "content": content_summary,
+            "metadata": {
+                "city": city_name,
+                "raw_data": charts_data
+            }
+        }
+        return forecast_entry
 
     def scrape_forecast(self) -> Dict[str, Any]:
         """

@@ -53,6 +53,17 @@ def get_chat_client(
         )
 
     # Default: Groq
+    # If no API key configured, return a lightweight dummy client for tests/local
+    if not getattr(settings, "llm_api_key", None):
+        class DummyChat:
+            def __init__(self, *a, **k):
+                pass
+            def chat(self, *args, **kwargs):
+                return {"content": "dummy response"}
+            def __call__(self, *args, **kwargs):
+                return self.chat(*args, **kwargs)
+        return DummyChat()
+
     from langchain_groq import ChatGroq
     return ChatGroq(
         api_key=settings.llm_api_key,

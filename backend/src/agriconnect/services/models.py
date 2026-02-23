@@ -10,7 +10,7 @@ from sqlalchemy import (
     Column, String, DateTime, Boolean, Integer, Float,
     JSON, ForeignKey, Text,
 )
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
 
 Base = declarative_base()

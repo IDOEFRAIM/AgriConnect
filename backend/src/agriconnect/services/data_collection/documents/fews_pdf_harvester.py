@@ -43,43 +43,49 @@ class AnamBulletinScraper:
     # 1. LISTE DES RAPPORTS
     # --------------------------------------------------
     def get_report_pages(self):
-        """Récupère les liens PDF directs ET les pages de rapports depuis la page de recherche."""
+        """Récupère les liens PDF directs ET les pages de rapports depuis la page de recherche.
+
+        This method delegates parsing work to small helpers to reduce nesting
+        and make the logic easier to test and maintain.
+        """
         print("🔍 Scan de la page FEWS NET Burkina Faso…")
         try:
             res = requests.get(self.search_url, headers=self.headers, timeout=20)
             res.raise_for_status()
             soup = BeautifulSoup(res.text, "html.parser")
 
-            reports = []
-            for a in soup.find_all("a", href=True):
-                href = a["href"]
-                text = a.get_text(strip=True)
-
-                # 1) Lien direct vers un PDF (Download the report)
-                if ".pdf" in href.lower():
-                    full_url = urljoin(self.base_url, href)
-                    reports.append({"title": text or "PDF Report", "url": full_url, "direct_pdf": True})
-                    continue
-
-                # 2) Lien vers une page de rapport en texte
-                if "/burkina-faso/" in href and len(text) > 10:
-                    clean_href = href.split("?")[0]
-                    full_url = urljoin(self.base_url, clean_href)
-                    reports.append({"title": text, "url": full_url, "direct_pdf": False})
-
-            # Éviter doublons
-            unique = []
-            seen = set()
-            for r in reports:
-                if r["url"] not in seen:
-                    seen.add(r["url"])
-                    unique.append(r)
-
-            return unique
+            reports = [self._parse_anchor_for_report(a) for a in soup.find_all("a", href=True)]
+            # filter None and deduplicate
+            reports = [r for r in reports if r]
+            return self._unique_reports(reports)
 
         except Exception as e:
             print(f"❌ Erreur listing : {e}")
             return []
+
+    def _parse_anchor_for_report(self, a_tag):
+        href = a_tag["href"]
+        text = a_tag.get_text(strip=True)
+
+        if ".pdf" in href.lower():
+            full_url = urljoin(self.base_url, href)
+            return {"title": text or "PDF Report", "url": full_url, "direct_pdf": True}
+
+        if "/burkina-faso/" in href and len(text) > 10:
+            clean_href = href.split("?")[0]
+            full_url = urljoin(self.base_url, clean_href)
+            return {"title": text, "url": full_url, "direct_pdf": False}
+
+        return None
+
+    def _unique_reports(self, reports):
+        unique = []
+        seen = set()
+        for r in reports:
+            if r["url"] not in seen:
+                seen.add(r["url"])
+                unique.append(r)
+        return unique
 
     # --------------------------------------------------
     # 2. TROUVER LE PDF VIA /print
@@ -107,6 +113,24 @@ class AnamBulletinScraper:
 
         except Exception:
             return None
+
+    def _find_download_button(self, report_url):
+        """Search the report page for an obvious 'download' link pointing to a PDF."""
+        try:
+            r = requests.get(report_url, headers=self.headers, timeout=20)
+            r.raise_for_status()
+            soup = BeautifulSoup(r.text, "html.parser")
+
+            for a in soup.find_all("a", href=True):
+                label = a.get_text(strip=True).lower()
+                href = a["href"].lower()
+                if "download" in label and ".pdf" in href:
+                    return urljoin(self.base_url, a["href"])
+
+        except Exception:
+            return None
+
+        return None
 
     # --------------------------------------------------
     # 3. TÉLÉCHARGEMENT DU PDF
@@ -169,48 +193,17 @@ class AnamBulletinScraper:
         for i, report in enumerate(reports, start=1):
             print(f"[{i}/{len(reports)}] 📄 Analyse : {report['title'][:80]}")
 
-            pdf_url = None
-
-            # --------------------------------------------------
-            # 1️⃣ CAS : lien PDF direct (Download the report)
-            # --------------------------------------------------
+            # Resolve PDF URL using small, focused helpers (guard clauses keep nesting low)
             if report.get("direct_pdf"):
                 pdf_url = report["url"]
-
             else:
-                # --------------------------------------------------
-                # 2️⃣ CAS : tentative via /print
-                # --------------------------------------------------
-                pdf_url = self.find_pdf_on_print_page(report["url"])
+                pdf_url = self.find_pdf_on_print_page(report["url"]) or self._find_download_button(report["url"]) 
 
-                # --------------------------------------------------
-                # 3️⃣ CAS : bouton "Download the report" sur la page
-                # --------------------------------------------------
-                if not pdf_url:
-                    try:
-                        r = requests.get(report["url"], headers=self.headers, timeout=20)
-                        r.raise_for_status()
-                        soup = BeautifulSoup(r.text, "html.parser")
-
-                        for a in soup.find_all("a", href=True):
-                            if "download" in a.get_text(strip=True).lower() and ".pdf" in a["href"].lower():
-                                pdf_url = urljoin(self.base_url, a["href"])
-                                break
-                    except Exception:
-                        pdf_url = None
-
-            # --------------------------------------------------
-            # PDF introuvable
-            # --------------------------------------------------
             if not pdf_url:
                 print("   ⚠️ PDF introuvable")
                 continue
 
-            # --------------------------------------------------
-            # Téléchargement
-            # --------------------------------------------------
             pdf_path, skipped = self.download_file(pdf_url, report["title"])
-
             if not pdf_path:
                 print("   ❌ Échec téléchargement")
                 continue
@@ -218,54 +211,44 @@ class AnamBulletinScraper:
             status = "DÉJÀ PRÉSENT" if skipped else "TÉLÉCHARGÉ"
             print(f"   ✅ PDF {status}")
 
-            # --------------------------------------------------
-            # Extraction texte PDF
-            # --------------------------------------------------
             pdf_text = self.extract_text_from_pdf(pdf_path)
-
             if len(pdf_text) < 200:
                 print("   ⚠️ PDF très court (Key Message / Update) — conservé")
             else:
                 print(f"   🧠 Texte extrait : {len(pdf_text)} caractères")
 
-            # --------------------------------------------------
-            # Sauvegarde texte
-            # --------------------------------------------------
-            text_path = os.path.join(
-                TEXT_DIR, os.path.basename(pdf_path).replace(".pdf", ".txt")
-            )
-            with open(text_path, "w", encoding="utf-8") as f:
-                f.write(pdf_text)
-
-            # --------------------------------------------------
-            # Sauvegarde métadonnées
-            # --------------------------------------------------
-            meta_path = os.path.join(
-                METADATA_DIR, os.path.basename(pdf_path).replace(".pdf", ".json")
-            )
-
-            with open(meta_path, "w", encoding="utf-8") as f:
-                json.dump(
-                    {
-                        "title": report["title"],
-                        "source_page": report.get("source_page", report["url"]),
-                        "pdf_url": pdf_url,
-                        "pdf_path": pdf_path,
-                        "text_path": text_path,
-                        "extracted_text_length": len(pdf_text),
-                        "harvested_at": datetime.now().isoformat(),
-                    },
-                    f,
-                    indent=4,
-                    ensure_ascii=False,
-                )
-
+            text_path = self._write_text_file(pdf_path, pdf_text)
+            self._write_metadata(report, pdf_url, pdf_path, text_path, len(pdf_text))
             print("   💾 Métadonnées et texte sauvegardés\n")
+
+    def _write_text_file(self, pdf_path, pdf_text):
+        text_path = os.path.join(TEXT_DIR, os.path.basename(pdf_path).replace(".pdf", ".txt"))
+        with open(text_path, "w", encoding="utf-8") as f:
+            f.write(pdf_text)
+        return text_path
+
+    def _write_metadata(self, report, pdf_url, pdf_path, text_path, extracted_len):
+        meta_path = os.path.join(METADATA_DIR, os.path.basename(pdf_path).replace(".pdf", ".json"))
+        with open(meta_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "title": report["title"],
+                    "source_page": report.get("source_page", report["url"]),
+                    "pdf_url": pdf_url,
+                    "pdf_path": pdf_path,
+                    "text_path": text_path,
+                    "extracted_text_length": extracted_len,
+                    "harvested_at": datetime.now().isoformat(),
+                },
+                f,
+                indent=4,
+                ensure_ascii=False,
+            )
 
     
 # --------------------------------------------------
 # MAIN
 # --------------------------------------------------
 if __name__ == "__main__":
-    harvester = FewsPdfHarvester()
+    harvester = AnamBulletinScraper()
     harvester.run()
