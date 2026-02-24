@@ -44,7 +44,7 @@ class SentinelleTool:
             return {"temp_c": 30.0, "precip_mm": 0.0, "et0": 5.0, "source": "Fallback (Error)"}
 
 
-    def _resolve_coords(self, region_name: str) -> (float, float):
+    def _resolve_coords(self, region_name: str) -> tuple[float, float]:
         """Map a region name to coordinates; falls back to Bobo-Dioulasso."""
         default = (11.1772, -4.2979)
         if not region_name:
@@ -149,8 +149,6 @@ class SentinelleTool:
 
 
     def _compute_metrics(self, weather: Dict[str, Any], satellite: Dict[str, Any]) -> Dict[str, Any]:
-        math_tool = SahelAgroMath()
-
         parsed = self._parse_weather_sat_inputs(weather, satellite)
         t_min = parsed["t_min"]
         t_max = parsed["t_max"]
@@ -165,7 +163,7 @@ class SentinelleTool:
         temp_avg = (t_min + t_max) / 2
 
         # Utilisation de la mathématique partagée pour ET0
-        et0 = self._compute_et0(math_tool, t_min, t_max, lat, doy)
+        et0 = self._compute_et0(t_min, t_max, lat, doy)
 
         # Calcul Indice Humidité Sol simplifié
         soil_moisture_idx = self._compute_soil_moisture_idx(precip, humidity, et0)
@@ -258,8 +256,12 @@ class SentinelleTool:
         return {"doy": doy, "lat": lat}
 
 
-    def _compute_et0(self, math_tool: SahelAgroMath, t_min: float, t_max: float, lat: float, doy: int) -> float:
+    def _compute_et0(self, t_min: float, t_max: float, lat: float, doy: int) -> float:
+        """Compute ET0 using SahelAgroMath; instantiate the math tool internally to
+        reduce the number of arguments and improve cohesion.
+        """
         try:
+            math_tool = SahelAgroMath()
             return math_tool.calculate_hargreaves_et0(t_min, t_max, lat, doy)
         except Exception:
             return 0.0
@@ -330,7 +332,7 @@ class SentinelleTool:
         return 1.0 if soil >= 0.7 else 0.0
 
 
-    def _flood_level_from_score(self, score: float) -> (str, str):
+    def _flood_level_from_score(self, score: float) -> tuple[str, str]:
         if score >= 4:
             return (
                 "CRITIQUE",

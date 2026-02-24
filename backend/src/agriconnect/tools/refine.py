@@ -50,8 +50,33 @@ class RefineTool:
         answer = state.get("final_response", "")
         context = state.get("retrieved_context", "")
         count = state.get("critique_retry_count", 0)
-        
-        prompt = (
+
+        prompt = self._build_critique_prompt(answer, context)
+
+        try:
+            completion = self.llm.chat.completions.create(
+                model=self.model_planner,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=10,
+            )
+        except Exception as exc:
+            logger.warning("Critique LLM call failed: %s", exc)
+            return {"status": "REJECTED", "warnings": ["Critique indisponible."]}
+
+        verdict = self._extract_verdict_from_completion(completion)
+        if not verdict:
+            return {"status": "REJECTED"}
+
+        if verdict == "FAILED":
+            return self._handle_failed_verdict(count)
+
+        if verdict == "PASSED":
+            return self._handle_passed_verdict(state)
+
+        return {"status": "REJECTED"}
+
+    def _build_critique_prompt(self, answer: str, context: str) -> str:
+        return (
             "RÔLE : Vérificateur de sécurité agricole.\n"
             "TACHE : Compare la RÉPONSE avec le CONTEXTE technique.\n"
             "Si la réponse donne un chiffre (dose, date, pH) qui n'est PAS dans le contexte, ou si elle propose une reponse qui n'est pas en accord avec le contexte, "
@@ -59,36 +84,34 @@ class RefineTool:
             f"CONTEXTE : {context}\n"
             f"RÉPONSE : {answer}"
         )
-        
-        completion = self.llm.chat.completions.create(
-            model=self.model_planner,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=10
-        )
-        
-        verdict = completion.choices[0].message.content.strip()
-        if "FAILED" in verdict:
-            if count < 2:  # On autorise 2 tentatives de correction
-                return {
-                    "status": "REJECTED", 
-                    "critique_retry_count": count + 1,  # CRUCIAL : On incrémente ici
-                    "warnings": ["Alerte : Hallucination détectée. Tentative de correction."]
-                }
-            else:
-                # Sécurité : Si on a trop échoué, on valide quand même avec un gros warning 
-                # ou on redirige vers un fallback pour casser la boucle.
-                return {
-                    "status": "VALIDATED", 
-                    "warnings": ["Attention : Réponse non validée techniquement après plusieurs essais."]
-                }
-        
-        if "PASSED" in verdict:
-            updates = {"status": "VALIDATED"}
-            if state.get("answer_draft"):
-                 updates["final_response"] = state.get("answer_draft")
-            return updates
-        else:
-            return {"status": "REJECTED"} # On repart à compose sans toucher à final_response
+
+    def _extract_verdict_from_completion(self, completion: Any) -> str:
+        try:
+            content = completion.choices[0].message.content
+            return (content or "").strip().upper()
+        except Exception:
+            return ""
+
+    def _handle_failed_verdict(self, count: int) -> Dict[str, Any]:
+        # On autorise 2 tentatives de correction
+        if count < 2:
+            return {
+                "status": "REJECTED",
+                "critique_retry_count": count + 1,
+                "warnings": ["Alerte : Hallucination détectée. Tentative de correction."],
+            }
+
+        # Sécurité : trop d'échecs, on valide quand même avec un fort warning
+        return {
+            "status": "VALIDATED",
+            "warnings": ["Attention : Réponse non validée techniquement après plusieurs essais."],
+        }
+
+    def _handle_passed_verdict(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        updates: Dict[str, Any] = {"status": "VALIDATED"}
+        if state.get("answer_draft"):
+            updates["final_response"] = state.get("answer_draft")
+        return updates
 
 
     # ------------------------------------------------------------------ #

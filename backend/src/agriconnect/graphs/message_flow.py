@@ -28,7 +28,7 @@ from backend.src.agriconnect.rag.components import get_groq_sdk
 from backend.src.agriconnect.core.tracing import get_tracing_config, init_tracing, trace_span
 
 # Imports de vos structures et graphs.nodes
-from .state import GlobalAgriState, ExpertResponse
+from .state import GlobalAgriState
 from backend.src.agriconnect.graphs.nodes.sentinelle import ClimateSentinel
 from backend.src.agriconnect.graphs.nodes.formation import FormationCoach
 from backend.src.agriconnect.graphs.nodes.market import MarketCoach
@@ -47,6 +47,9 @@ from backend.src.agriconnect.services.memory import (
     EpisodicMemory,
     ContextOptimizer,
 )
+from backend.src.agriconnect.graphs.message_flow_helpers import ExpertInvoker
+from backend.src.agriconnect.graphs.message_flow_router import MessageRouter
+from backend.src.agriconnect.graphs.message_flow_parallel import ParallelExecutor
 
 # ═══ Protocoles AgriConnect 2.0 (MCP + A2A + AG-UI) ═══
 from backend.src.agriconnect.protocols.mcp import MCPDatabaseServer, MCPRagServer, MCPWeatherServer, MCPContextServer
@@ -70,7 +73,14 @@ class MessageResponseFlow:
 
     def __init__(self, llm_client=None):
         self.llm = llm_client if llm_client is not None else get_groq_sdk()
+        self._init_db_and_memory()
+        self._init_protocols()
+        self._init_experts()
+        self._init_services()
+        self._init_tracing()
+        self.graph = self.build_graph()
 
+    def _init_db_and_memory(self):
         # ── DB & Mémoire 3 niveaux ────────────────────────────────────
         # (Nécessaire avant MCP car MCP dépend de la DB)
         if _core_db._engine and _core_db._SessionLocal:
@@ -95,8 +105,8 @@ class MessageResponseFlow:
             except Exception as e:
                 logger.warning("⚠️  Mémoire désactivée: %s", e)
 
+    def _init_protocols(self):
         # ═══ Protocoles AgriConnect 2.0 (MCP + A2A + AG-UI) ═══
-        
         # 1. MCP Servers (Système Nerveux)
         self.mcp_db = None
         self.mcp_rag = None
@@ -105,15 +115,12 @@ class MessageResponseFlow:
         try:
             if self.session_factory:
                 self.mcp_db = MCPDatabaseServer(self.session_factory)
-            
             self.mcp_rag = MCPRagServer()
             self.mcp_weather = MCPWeatherServer(llm_client=self.llm)
-            
             if self.memory:
                 self.mcp_context = MCPContextServer(context_optimizer=self.memory)
             elif self.session_factory:
                 self.mcp_context = MCPContextServer(session_factory=self.session_factory, llm_client=self.llm)
-                
             logger.info("🔌 MCP Servers activés")
         except Exception as e:
             logger.warning("⚠️  MCP Servers error: %s", e)
@@ -133,31 +140,39 @@ class MessageResponseFlow:
             "sms": SMSRenderer(),
         }
 
+    def _init_experts(self):
         # ── Le Conseil des Experts (Injection de dépendances Protocolaires) ──
         self.sentinelle = ClimateSentinel(llm_client=self.llm)
-        
         # Formation utilise MCP RAG + Context
         self.formation = FormationCoach(
             llm_client=self.llm,
             mcp_rag=self.mcp_rag,
             mcp_context=self.mcp_context
         )
-        
         self.market = MarketCoach(llm_client=self.llm)
-        
         # Marketplace injecte A2A et MCP DB
         self.marketplace = MarketplaceAgent(
             llm_client=self.llm,
             mcp_db=self.mcp_db,
             a2a=self.a2a
         )
-
         # Workflows compilés
         self.wf_sentinelle = self.sentinelle.build()
         self.wf_formation = self.formation.build()
         self.wf_market = self.market.build()
         self.wf_marketplace = self.marketplace.build()
 
+        # Small helper to move invocation boilerplate out of this file
+        self.invoker = ExpertInvoker({
+            "sentinelle": self.wf_sentinelle,
+            "formation": self.wf_formation,
+            "market": self.wf_market,
+            "marketplace": self.wf_marketplace,
+        })
+        # Encapsulated parallel executor to reduce complexity in this class
+        self.parallel_executor = ParallelExecutor(self.invoker)
+
+    def _init_services(self):
         # ── Services ──────────────────────────────────────────────────
         azure_key = settings.AZURE_SPEECH_KEY
         azure_fallback = settings.AZURE_SPEECH_KEY_2 or None
@@ -169,14 +184,11 @@ class MessageResponseFlow:
             storage_dir=settings.AUDIO_OUTPUT_DIR,
         ) if azure_key else None
 
-        # ═══════════════════════════════════════════════════════════
-
+    def _init_tracing(self):
         # ── LangSmith tracing (auto si .env configuré) ────────────
         self._tracing_ok = init_tracing()
         if self._tracing_ok:
             logger.info("🔭 LangSmith tracing actif pour l'orchestrateur")
-
-        self.graph = self.build_graph()
 
     # ==================================================================
     # 1. ANALYSE DES BESOINS (The Chairman)
@@ -284,113 +296,13 @@ class MessageResponseFlow:
         Route vers PARALLEL_EXPERTS dès que ≥ 2 experts sont requis.
         Sinon SOLO ou CHAT.
         """
-        analysis = state.get("needs", {})
-        intent = analysis.get("intent", "COUNCIL")
-
-        if intent == "REJECT":
-            return "REJECT"
-        
-        if intent == "CHAT":
-            return "EXECUTE_CHAT"
-
-        s = analysis.get("needs_sentinelle", False)
-        f = analysis.get("needs_formation", False)
-        m = analysis.get("needs_market", False)
-        mp = analysis.get("needs_marketplace", False)
-
-        active = sum(1 for x in [s, f, m, mp] if x)
-
-        # Marketplace est prioritaire (action transactionnelle directe)
-        if mp and active == 1:
-            return "SOLO_MARKETPLACE"
-
-        # ≥ 2 experts OU intent COUNCIL → parallèle
-        if intent == "COUNCIL" or active > 1:
-            return "PARALLEL_EXPERTS"
-
-        # 1 seul expert → solo
-        if s:
-            return "SOLO_SENTINELLE"
-        if f:
-            return "SOLO_FORMATION"
-        if m:
-            return "SOLO_MARKET"
-
-        return "PARALLEL_EXPERTS"  # fallback
+        return MessageRouter.route_flow(state)
 
     # ==================================================================
     # 3. APPELS EXPERTS (Wrappers thread-safe)
     # ==================================================================
 
-    def _call_sentinelle(self, query: str, zone: str, user_level: str = "debutant") -> Dict[str, Any]:
-        inputs = {
-            "user_query": query,
-            "user_level": user_level,
-            "location_profile": {"village": zone, "zone": "Hauts-Bassins", "country": "Burkina Faso"},
-        }
-        return self._invoke_workflow(
-            wf=self.wf_sentinelle,
-            run_name="agent.sentinelle",
-            tags=["sentinelle", "weather", zone],
-            metadata={"user_level": user_level, "zone": zone},
-            inputs=inputs,
-            fallback_message="Données Sentinel indisponibles.",
-        )
-
-    def _call_formation(self, query: str, crop: str, user_level: str = "debutant") -> Dict[str, Any]:
-        inputs = {"user_query": query, "learner_profile": {"culture_actuelle": crop, "niveau": user_level}}
-        return self._invoke_workflow(
-            wf=self.wf_formation,
-            run_name="agent.formation",
-            tags=["formation", "pedagogy", crop],
-            metadata={"user_level": user_level, "crop": crop},
-            inputs=inputs,
-            fallback_message="Conseils techniques indisponibles.",
-        )
-
-    def _call_market(self, query: str, zone: str, user_level: str = "debutant") -> Dict[str, Any]:
-        inputs = {"user_query": query, "user_level": user_level, "user_profile": {"zone": zone}}
-        return self._invoke_workflow(
-            wf=self.wf_market,
-            run_name="agent.market",
-            tags=["market", "prices", zone],
-            metadata={"user_level": user_level, "zone": zone},
-            inputs=inputs,
-            fallback_message="Infos marché indisponibles.",
-        )
-
-    def _call_marketplace(
-        self, query: str, zone: str, phone: str = ""
-    ) -> Dict[str, Any]:
-        inputs = {"user_query": query, "user_phone": phone, "zone_id": zone if zone else None, "warnings": []}
-        return self._invoke_workflow(
-            wf=self.wf_marketplace,
-            run_name="agent.marketplace",
-            tags=["marketplace", "transactions", zone],
-            metadata={"zone": zone, "phone": phone},
-            inputs=inputs,
-            fallback_message="Service marketplace indisponible.",
-        )
-
-    def _invoke_workflow(
-        self,
-        wf,
-        run_name: str,
-        tags: List[str],
-        metadata: Dict[str, Any],
-        inputs: Dict[str, Any],
-        fallback_message: str = "Service indisponible.",
-    ) -> Dict[str, Any]:
-        """Helper: build tracing config, invoke a workflow and handle errors uniformly.
-
-        This reduces duplicated try/except + tracing setup in each expert call.
-        """
-        try:
-            config = get_tracing_config(run_name=run_name, tags=tags, metadata=metadata)
-            return wf.invoke(inputs, config)
-        except Exception as e:
-            logger.warning("%s Error: %s", run_name, e)
-            return {"final_response": fallback_message}
+    # Expert invocation helpers moved to message_flow_helpers.ExpertInvoker
 
     # ==================================================================
     # 4. NŒUDS DU GRAPHE
@@ -452,7 +364,7 @@ class MessageResponseFlow:
 
     def execute_solo_marketplace(self, state: GlobalAgriState) -> Dict[str, Any]:
         """Exécute l'agent Marketplace seul (stock, vente, commande)."""
-        res = self._call_marketplace(
+        res = self.invoker.call_marketplace(
             state["requete_utilisateur"],
             state.get("zone_id", "Bobo-Dioulasso"),
             state.get("user_phone", ""),
@@ -479,61 +391,11 @@ class MessageResponseFlow:
         crop = state.get("crop", "Céréales")
         user_level = state.get("user_level", "debutant")
 
-        # Déterminer l'expert LEADER (celui dont la réponse sera la base)
-        if needs.get("needs_formation"):
-            lead = "formation"
-        elif needs.get("needs_market"):
-            lead = "market"
-        else:
-            lead = "sentinelle"
-
-        # Construire les tâches à exécuter en parallèle
-        tasks = {}
-        if needs.get("needs_sentinelle", True):
-            tasks["sentinelle"] = lambda: self._call_sentinelle(query, zone, user_level)
-        if needs.get("needs_formation"):
-            tasks["formation"] = lambda: self._call_formation(query, crop, user_level)
-        if needs.get("needs_market"):
-            tasks["market"] = lambda: self._call_market(query, zone, user_level)
-
-        if not tasks:
-            tasks["sentinelle"] = lambda: self._call_sentinelle(query, zone, user_level)
-
-        # ── Exécution parallèle ──────────────────────────────────────
-        expert_responses: List[ExpertResponse] = []
-        with ThreadPoolExecutor(max_workers=len(tasks)) as executor:
-            future_to_name = {
-                executor.submit(fn): name for name, fn in tasks.items()
-            }
-            for future in as_completed(future_to_name):
-                name = future_to_name[future]
-                try:
-                    result = future.result(timeout=30)
-                    resp_text = result.get("final_response", "")
-                    has_alerts = bool(result.get("hazards"))
-                    expert_responses.append(
-                        ExpertResponse(
-                            expert=name,
-                            response=resp_text,
-                            is_lead=(name == lead),
-                            has_alerts=has_alerts,
-                        )
-                    )
-                except Exception as e:
-                    logger.warning("Expert %s failed: %s", name, e)
-                    expert_responses.append(
-                        ExpertResponse(
-                            expert=name,
-                            response=f"[{name}] Données indisponibles.",
-                            is_lead=(name == lead),
-                            has_alerts=False,
-                        )
-                    )
+        expert_responses = self.parallel_executor.run(needs, query, zone, crop, user_level)
 
         logger.info(
-            "⚡ Fan-out terminé : %d experts en parallèle (%s)",
+            "⚡ Fan-out terminé : %d experts en parallèle",
             len(expert_responses),
-            ", ".join(r["expert"] for r in expert_responses),
         )
 
         return {

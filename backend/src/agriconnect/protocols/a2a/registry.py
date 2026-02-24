@@ -1,3 +1,14 @@
+"""
+A2A Registry 2.0 — Agent registration with optional DB persistence.
+====================================================================
+
+Agents are indexed in-memory for O(1) discovery and optionally
+persisted to ``protocol_agent_registry`` for cross-instance consistency.
+"""
+
+from __future__ import annotations
+
+import json
 import logging
 import uuid
 from dataclasses import dataclass, field, asdict
@@ -35,6 +46,8 @@ class AgentCard:
     domain: AgentDomain = AgentDomain.EXTERNAL
     intents: List[str] = field(default_factory=list)
     capabilities: List[str] = field(default_factory=list)
+    # Optional JSON Schema or lightweight contract describing expected payload
+    input_schema: Optional[Dict[str, Any]] = None
     zones: List[str] = field(default_factory=list)
     crops: List[str] = field(default_factory=list)
     endpoint: str = ""
@@ -67,24 +80,25 @@ class AgentCard:
 # ═══════════════════════════════════════════════════════════
 
 class A2ARegistry:
-    def __init__(self):
+    def __init__(self, session_factory=None):
         self._agents: Dict[str, AgentCard] = {}
-        # Doubles index pour une recherche O(1)
         self._intent_index: Dict[str, Set[str]] = {}
         self._zone_index: Dict[str, Set[str]] = {}
-        logger.info("🔌 A2A Registry initialisé")
+        self._session_factory = session_factory
+        logger.info("🔌 A2A Registry initialisé (db=%s)", "yes" if session_factory else "no")
 
     def register(self, card: AgentCard) -> str:
         """Enregistre un agent et met à jour les index de recherche rapide."""
         self._agents[card.agent_id] = card
 
-        # Indexation Intentions
         for intent in card.intents:
             self._intent_index.setdefault(intent.upper(), set()).add(card.agent_id)
-        
-        # Indexation Zones
+
         for zone in card.zones:
             self._zone_index.setdefault(zone.upper(), set()).add(card.agent_id)
+
+        # Persist to DB (best-effort)
+        self._persist_agent(card)
 
         logger.info("✅ Agent [%s] enregistré (%s)", card.name, card.agent_id)
         return card.agent_id
@@ -151,3 +165,75 @@ class A2ARegistry:
             "intents": len(self._intent_index),
             "zones": len(self._zone_index)
         }
+
+    def discover_scored(
+        self,
+        intent: Optional[str] = None,
+        zone: Optional[str] = None,
+        crop: Optional[str] = None,
+        domain: Optional[AgentDomain] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Like ``discover()`` but returns scored dicts for trace recording.
+        Each dict: {"agent_id", "name", "score", "reason"}
+        """
+        candidates = self.discover(intent=intent, zone=zone, crop=crop, domain=domain)
+        scored = []
+        for i, agent in enumerate(candidates):
+            score = max(0, 100 - agent.avg_response_ms // 10)
+            reason_parts = []
+            if intent and intent.upper() in agent.intents:
+                reason_parts.append(f"matches intent {intent}")
+            if zone and agent.supports_zone(zone):
+                reason_parts.append(f"covers zone {zone}")
+            if crop and agent.supports_crop(crop):
+                reason_parts.append(f"handles crop {crop}")
+            reason_parts.append(f"avg_ms={agent.avg_response_ms}")
+            scored.append({
+                "agent_id": agent.agent_id,
+                "name": agent.name,
+                "rank": i + 1,
+                "score": score,
+                "reason": ", ".join(reason_parts),
+            })
+        return scored
+
+    # ── DB persistence ────────────────────────────────────
+
+    def _persist_agent(self, card: AgentCard) -> None:
+        """Best-effort persist to ``protocol_agent_registry``."""
+        if not self._session_factory:
+            return
+        try:
+            from sqlalchemy import text
+            session = self._session_factory()
+            try:
+                session.execute(
+                    text("""
+                        INSERT INTO protocol_agent_registry
+                            (agent_id, name, domain, intents, zones, crops,
+                             endpoint, protocol, version, status, avg_response_ms)
+                        VALUES
+                            (:aid, :name, :domain, :intents::jsonb, :zones::jsonb,
+                             :crops::jsonb, :endpoint, :protocol, :version, :status, :avg)
+                        ON CONFLICT (agent_id) DO UPDATE SET
+                            status = EXCLUDED.status,
+                            avg_response_ms = EXCLUDED.avg_response_ms,
+                            last_heartbeat = NOW()
+                    """),
+                    {
+                        "aid": card.agent_id, "name": card.name,
+                        "domain": card.domain.value, "intents": json.dumps(card.intents),
+                        "zones": json.dumps(card.zones), "crops": json.dumps(card.crops),
+                        "endpoint": card.endpoint, "protocol": card.protocol,
+                        "version": card.version, "status": card.status.value,
+                        "avg": card.avg_response_ms,
+                    },
+                )
+                session.commit()
+            except Exception:
+                session.rollback()
+            finally:
+                session.close()
+        except Exception as exc:
+            logger.debug("Agent registry persist skipped: %s", exc)

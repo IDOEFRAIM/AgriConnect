@@ -1,14 +1,25 @@
 """
-MCP RAG Server — Accès standardisé à la base de connaissances agronomiques.
-===========================================================================
+MCP RAG Server 2.0 — Observable HyDE + Reranking Pipeline.
+============================================================
 
-AVANTAGE : Si on migre de FAISS vers Pinecone, ou Weaviate,
-on ne touche QUE ce fichier. Le system RA ne changent pas.
+Upgrades from v1:
+  - Records HyDE query generation in TraceEnvelope
+  - Records similarity scores per document
+  - Records reranking decisions and final selection
+  - Full provenance chain: query → HyDE → vector search → rerank → result
 """
+
+from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional
+
+from backend.src.agriconnect.protocols.core import (
+    TraceCategory,
+    TraceEnvelope,
+)
 
 logger = logging.getLogger("MCP.RAG")
 
@@ -152,8 +163,9 @@ class MCPRagServer:
     # HANDLERS
     # ═══════════════════════════════════════════════════════════
 
-    def _search_docs(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        """Recherche agronomique via HyDe + reranking."""
+    def _search_docs(self, arguments: Dict[str, Any], trace_envelope: Optional[TraceEnvelope] = None) -> Dict[str, Any]:
+        """Recherche agronomique via HyDe + reranking with trace recording."""
+        t0 = time.monotonic()
         retriever = self._lazy_retriever()
         if not retriever:
             return {"context": "", "sources": [], "error": "RAG indisponible"}
@@ -162,15 +174,28 @@ class MCPRagServer:
         level = arguments.get("level", "debutant")
         top_k = arguments.get("top_k", 3)
 
-        # Adapter le ton HyDe au niveau utilisateur
         tone_map = {"debutant": "simple", "intermediaire": "standard", "expert": "technique"}
         tone = tone_map.get(level, "standard")
 
         try:
             # 1. HyDe : génère un document hypothétique
+            t_hyde = time.monotonic()
             hyde_doc = retriever.generate_hyde_doc(query, tone=tone)
+            hyde_ms = (time.monotonic() - t_hyde) * 1000
+
+            if trace_envelope:
+                trace_envelope.record(
+                    TraceCategory.MCP_RAG,
+                    "MCPRagServer",
+                    "hyde_generate",
+                    input_summary={"query": query[:100], "tone": tone},
+                    output_summary={"hyde_doc_len": len(hyde_doc)},
+                    reasoning=f"HyDE doc generated ({len(hyde_doc)} chars, tone={tone})",
+                    duration_ms=hyde_ms,
+                )
 
             # 2. Recherche vectorielle
+            t_vec = time.monotonic()
             from llama_index.core import QueryBundle
             query_bundle = QueryBundle(query_str=hyde_doc)
 
@@ -178,23 +203,60 @@ class MCPRagServer:
                 nodes = retriever.vector_retriever.retrieve(query_bundle)
             else:
                 nodes = []
+            vec_ms = (time.monotonic() - t_vec) * 1000
+
+            raw_scores = [
+                {"rank": i + 1, "score": round(n.score, 4) if n.score else None}
+                for i, n in enumerate(nodes[:10])
+            ]
+            if trace_envelope:
+                trace_envelope.record(
+                    TraceCategory.MCP_RAG,
+                    "MCPRagServer",
+                    "vector_search",
+                    input_summary={"hyde_doc_len": len(hyde_doc)},
+                    output_summary={"raw_results": len(nodes), "scores": raw_scores},
+                    reasoning=f"Vector search returned {len(nodes)} candidates",
+                    duration_ms=vec_ms,
+                )
 
             # 3. Reranking
+            t_rerank = time.monotonic()
             nodes = retriever.rerank(query, nodes, top_k=top_k)
+            rerank_ms = (time.monotonic() - t_rerank) * 1000
 
             # 4. Formatage des résultats
             context_parts = []
             sources = []
+            reranked_scores = []
             for i, node in enumerate(nodes):
                 text = node.node.get_content() if hasattr(node, "node") else str(node)
                 meta = node.node.metadata if hasattr(node, "node") else {}
                 context_parts.append(f"[Doc {i+1}] {text[:500]}")
+                score_val = round(node.score, 4) if node.score else None
                 sources.append({
                     "rank": i + 1,
                     "source": meta.get("source", "Inconnu"),
                     "type": meta.get("type", "Document"),
-                    "score": round(node.score, 4) if node.score else None,
+                    "score": score_val,
                 })
+                reranked_scores.append({"rank": i + 1, "score": score_val, "source": meta.get("source", "?")})
+
+            total_ms = (time.monotonic() - t0) * 1000
+
+            if trace_envelope:
+                trace_envelope.record(
+                    TraceCategory.MCP_RAG,
+                    "MCPRagServer",
+                    "rerank_and_format",
+                    input_summary={"top_k": top_k, "pre_rerank_count": len(nodes)},
+                    output_summary={"final_count": len(sources), "reranked": reranked_scores},
+                    reasoning=(
+                        f"Reranked to top-{top_k}: "
+                        + ", ".join(f"{s['source']}({s['score']})" for s in reranked_scores)
+                    ),
+                    duration_ms=rerank_ms,
+                )
 
             return {
                 "context": "\n\n".join(context_parts),
@@ -202,10 +264,21 @@ class MCPRagServer:
                 "query_used": query,
                 "hyde_active": True,
                 "results_count": len(nodes),
+                "pipeline_ms": round(total_ms, 1),
             }
 
         except Exception as e:
             logger.error("RAG search error: %s", e)
+            if trace_envelope:
+                trace_envelope.record(
+                    TraceCategory.MCP_RAG,
+                    "MCPRagServer",
+                    "search_error",
+                    input_summary={"query": query[:100]},
+                    output_summary={"error": str(e)},
+                    reasoning=f"RAG search failed: {e}",
+                    duration_ms=(time.monotonic() - t0) * 1000,
+                )
             return {"context": "", "sources": [], "error": str(e)}
 
     def _get_sources(self, arguments: Dict[str, Any]) -> Dict[str, Any]:

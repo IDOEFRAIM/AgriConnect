@@ -1,5 +1,6 @@
 import json
 import logging
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, TypedDict
 
 from langgraph.graph import StateGraph, END
@@ -79,6 +80,7 @@ class PlantHealthDoctor:
         
         # Base de données produits locaux (à remplacer par vraie DB)
         self.product_database = self._load_product_database()
+        self.practical = PracticalInfoHelper(self.product_database)
 
     def _load_product_database(self) -> Dict[str, Dict]:
         """
@@ -141,6 +143,109 @@ class PlantHealthDoctor:
             }
         }
 
+
+@dataclass
+class LLMPromptContext:
+    query: str
+    profile: Dict[str, Any]
+    diagnosis: Dict[str, Any]
+    risk_flags: List[str]
+    context: str
+    treatment_costs: Dict[str, float]
+    alternative_products: Dict[str, List[str]]
+    local_availability: Dict[str, str]
+
+
+class PracticalInfoHelper:
+    """Encapsulates product database lookups and formatting of practical info."""
+    def __init__(self, product_database: Dict[str, Dict]):
+        self.product_database = product_database or {}
+
+    def estimate_treatment_cost(self, diagnosis: Dict[str, Any], surface_ha: float = 1.0) -> Dict[str, float]:
+        costs: Dict[str, float] = {}
+        treatment = diagnosis.get("traitement_recommande", {})
+        if isinstance(treatment, str):
+            treatment = {"bio": treatment}
+
+        bio_product = treatment.get("bio", "")
+        if "neem" in str(bio_product).lower():
+            product_info = self.product_database.get("neem_oil", {})
+            quantity_needed = 15 * surface_ha
+            costs["Traitement Bio (Neem)"] = product_info.get("prix_moyen", 2500) * quantity_needed
+        elif "savon" in str(bio_product).lower():
+            product_info = self.product_database.get("savon_noir", {})
+            quantity_needed = 15 * surface_ha
+            costs["Traitement Bio (Savon)"] = product_info.get("prix_moyen", 500) * quantity_needed
+
+        chem_product = treatment.get("chimique", "")
+        if "karate" in str(chem_product).lower() or "lambda" in str(chem_product).lower():
+            product_info = self.product_database.get("lambda_cyhalothrine", {})
+            quantity_needed = 0.5 * surface_ha
+            costs["Traitement Chimique (Karate)"] = product_info.get("prix_moyen", 4500) * quantity_needed
+
+        costs["TOTAL ESTIMÉ"] = sum(costs.values())
+        return costs
+
+    def get_alternative_products(self, recommended_product: str) -> List[str]:
+        alternatives = []
+        for product_key, product_info in self.product_database.items():
+            if recommended_product and recommended_product.lower() in product_info.get("nom_local", "").lower():
+                alternatives = product_info.get("alternatives", [])
+                break
+        alternative_names = [self.product_database[k]["nom_local"] for k in alternatives if k in self.product_database]
+        return alternative_names or ["Consulter un revendeur local"]
+
+    def find_local_availability(self, recommended_product: str) -> Dict[str, str]:
+        availability: Dict[str, str] = {}
+        if not recommended_product:
+            return availability
+        for product_key, product_info in self.product_database.items():
+            if product_info.get("nom_local", "").lower() in recommended_product.lower():
+                availability[product_info["nom_local"]] = ", ".join(product_info.get("points_vente", []))
+        return availability
+
+    def format_practical_info(self, costs: Dict[str, float], alternatives: Dict[str, List[str]], availability: Dict[str, str]) -> str:
+        info = "\n\n" + "="*50 + "\n"
+        info += "💡 INFORMATIONS PRATIQUES\n"
+        info += "="*50 + "\n\n"
+        info += self._format_costs(costs)
+        info += self._format_alternatives(alternatives)
+        info += self._format_availability(availability)
+        info += "📞 Besoin d'aide? Appelez le +22601479800 ou visitez votre coopérative.\n"
+        return info
+
+    def _format_costs(self, costs: Dict[str, float]) -> str:
+        if not costs:
+            return ""
+        info = "💰 COÛTS ESTIMÉS (par hectare):\n"
+        for treatment, cost in costs.items():
+            if treatment != "TOTAL ESTIMÉ":
+                info += f"   • {treatment}: {cost:,.0f} FCFA\n"
+        if "TOTAL ESTIMÉ" in costs:
+            info += f"   📊 TOTAL: {costs['TOTAL ESTIMÉ']:,.0f} FCFA\n"
+        info += "\n"
+        return info
+
+    def _format_alternatives(self, alternatives: Dict[str, List[str]]) -> str:
+        if not alternatives or not any(alternatives.values()):
+            return ""
+        info = "🔄 PRODUITS ALTERNATIFS (si indisponible):\n"
+        for category, products in alternatives.items():
+            if products:
+                info += f"   • {', '.join(products)}\n"
+        info += "\n"
+        return info
+
+    def _format_availability(self, availability: Dict[str, str]) -> str:
+        if not availability:
+            return ""
+        info = "📍 OÙ ACHETER:\n"
+        for product, locations in availability.items():
+            info += f"   • {product}: {locations}\n"
+        info += "\n"
+        return info
+
+
     def _analyze_photo_symptoms(self, photo_path: str) -> Dict[str, Any]:
         """
         Analyse une photo de symptômes (placeholder pour vision AI).
@@ -163,7 +268,6 @@ class PlantHealthDoctor:
                 "Virose"
             ]
         }
-
     def _ask_guided_questions(self, initial_query: str, crop: str) -> List[str]:
         """
         Génère des questions guidées si la description est floue.
@@ -201,81 +305,6 @@ class PlantHealthDoctor:
             questions.extend(crop_specific[crop_lower])
         
         return questions
-
-    def _estimate_treatment_cost(self, diagnosis: Dict[str, Any], surface_ha: float = 1.0) -> Dict[str, float]:
-        """
-        Estime le coût des traitements recommandés.
-        """
-        logger.info("💰 Estimation coûts traitements")
-        
-        treatment = diagnosis.get("traitement_recommande", {})
-        if isinstance(treatment, str):
-            # Parsing basique si c'est du texte
-            treatment = {"bio": treatment}
-        
-        costs = {}
-        
-        # Traitement bio
-        bio_product = treatment.get("bio", "")
-        if "neem" in bio_product.lower():
-            product_info = self.product_database.get("neem_oil", {})
-            # Calcul: 30ml/L, environ 500L/ha, donc 15L neem/ha
-            quantity_needed = 15 * surface_ha
-            costs["Traitement Bio (Neem)"] = product_info.get("prix_moyen", 2500) * quantity_needed
-        elif "savon" in bio_product.lower():
-            product_info = self.product_database.get("savon_noir", {})
-            # Calcul: 30g/L, 500L/ha, donc 15kg savon/ha
-            quantity_needed = 15 * surface_ha
-            costs["Traitement Bio (Savon)"] = product_info.get("prix_moyen", 500) * quantity_needed
-        
-        # Traitement chimique
-        chem_product = treatment.get("chimique", "")
-        if "karate" in chem_product.lower() or "lambda" in chem_product.lower():
-            product_info = self.product_database.get("lambda_cyhalothrine", {})
-            # 1ml/L, 500L/ha, donc 0.5L/ha
-            quantity_needed = 0.5 * surface_ha
-            costs["Traitement Chimique (Karate)"] = product_info.get("prix_moyen", 4500) * quantity_needed
-        
-        # Coût total estimé
-        costs["TOTAL ESTIMÉ"] = sum(costs.values())
-        
-        return costs
-
-    def _get_alternative_products(self, recommended_product: str) -> List[str]:
-        """
-        Trouve des produits alternatifs si le recommandé n'est pas disponible.
-        """
-        logger.info(f"🔄 Recherche alternatives pour: {recommended_product}")
-        
-        alternatives = []
-        
-        for product_key, product_info in self.product_database.items():
-            if recommended_product.lower() in product_info.get("nom_local", "").lower():
-                alternatives = product_info.get("alternatives", [])
-                break
-        
-        # Conversion des clés en noms locaux
-        alternative_names = []
-        for alt_key in alternatives:
-            if alt_key in self.product_database:
-                alternative_names.append(self.product_database[alt_key]["nom_local"])
-        
-        return alternative_names or ["Consulter un revendeur local"]
-
-    def _find_local_sellers(self, product_name: str, zone: str = "Koutiala") -> List[str]:
-        """
-        Localise les points de vente du produit.
-        """
-        logger.info(f"📍 Localisation points de vente: {product_name}")
-        
-        sellers = []
-        
-        for product_key, product_info in self.product_database.items():
-            if product_name.lower() in product_info.get("nom_local", "").lower():
-                sellers = product_info.get("points_vente", [])
-                break
-        
-        return sellers or ["Boutique Intrants (Centre-ville)", "Coopérative Agricole"]
 
     def diagnose_node(self, state: PlantDoctorState) -> PlantDoctorState:
         """
@@ -337,23 +366,17 @@ class PlantHealthDoctor:
                 risk_flags.append(f"{key}: {value}")
 
         # NOUVELLE FEATURE 3: Estimation coûts traitement
-        treatment_costs = self._estimate_treatment_cost(diagnosis, surface_ha=1.0)
-        
+        treatment_costs = self.practical.estimate_treatment_cost(diagnosis, surface_ha=1.0)
+
         # NOUVELLE FEATURE 4: Alternatives produits
         recommended = diagnosis.get("traitement_recommande", {})
         bio_product = recommended.get("bio", "") if isinstance(recommended, dict) else recommended
         alternative_products = {
-            "bio": self._get_alternative_products(bio_product)
+            "bio": self.practical.get_alternative_products(bio_product)
         }
-        
+
         # NOUVELLE FEATURE 5: Points de vente locaux
-        local_availability = {}
-        if bio_product:
-            for product_key, product_info in self.product_database.items():
-                if product_info["nom_local"].lower() in bio_product.lower():
-                    local_availability[product_info["nom_local"]] = ", ".join(
-                        product_info.get("points_vente", [])
-                    )
+        local_availability = self.practical.find_local_availability(bio_product) if bio_product else {}
 
         return {
             "user_query": query,
@@ -415,6 +438,7 @@ class PlantHealthDoctor:
     def compose_node(self, state: PlantDoctorState) -> PlantDoctorState:
         """
         Composition ENRICHIE de la réponse finale avec infos pratiques.
+        Refactored for clarity and reduced complexity.
         """
         warnings = list(state.get("warnings", []))
         diagnosis = state.get("diagnosis_raw", {})
@@ -423,69 +447,106 @@ class PlantHealthDoctor:
         sources = state.get("sources", [])
         profile = state.get("culture_config", {})
         query = state.get("user_query", "")
-        
-        # Nouvelles données pratiques
         treatment_costs = state.get("treatment_costs", {})
         alternative_products = state.get("alternative_products", {})
         local_availability = state.get("local_availability", {})
         guided_questions = state.get("guided_questions", [])
 
-        # Si questions guidées envoyées, réponse intermédiaire
-        if guided_questions:
-            questions_text = "\n".join(f"{i+1}. {q}" for i, q in enumerate(guided_questions))
-            response = (
-                f"Pour mieux vous aider, répondez à ces questions:\n\n"
-                f"{questions_text}\n\n"
-                f"Envoyez vos réponses ou prenez une photo des symptômes (📷)."
-            )
-            return {
-                "final_response": response,
-                "warnings": warnings,
-                "status": "AWAITING_INFO",
-            }
+        # Refactored logic into smaller methods for clarity and maintainability
+        if self._should_ask_guided_questions(guided_questions):
+            return self._compose_guided_questions_response(guided_questions, warnings)
 
         fallback = self._fallback_response(query, diagnosis, risk_flags, sources)
 
-        if not diagnosis or not diagnosis.get("diagnostique"):
-            warnings.append("Diagnostic impossible à confirmer.")
-            return {
-                "final_response": fallback,
-                "warnings": warnings,
-                "status": "NO_DIAGNOSIS",
-            }
+        if self._should_return_no_diagnosis(diagnosis):
+            return self._compose_no_diagnosis_response(fallback, warnings)
 
-        if not context:
+        if self._should_warn_no_context(context):
             warnings.append("Réponse formulée sans contexte validé.")
-            # Mais on continue avec les infos pratiques!
 
-        if not self.llm:
-            warnings.append("LLM indisponible, passage en mode secours.")
-            return {
-                "final_response": fallback + self._format_practical_info(
-                    treatment_costs, alternative_products, local_availability
-                ),
-                "warnings": warnings,
-                "status": "LLM_DOWN",
-            }
-
-        try:
-        # Préparation des contenus pour l'agent Guérisseur des Plantes
-            system_content = PLANT_DOCTOR_SYSTEM_TEMPLATE
-
-            user_content = PLANT_DOCTOR_USER_TEMPLATE.format(
-                query=query,
-                profile_culture=self._format_profile(profile),
-                diagnosis_json=json.dumps(diagnosis, ensure_ascii=False),
-                risk_flags=', '.join(risk_flags) or 'Aucune',
-                context=context,
-                practical_info=self._format_practical_info(
-                    treatment_costs, 
-                    alternative_products, 
-                    local_availability
-                )
+        if self._should_return_llm_down(self.llm):
+            return self._compose_llm_down_response(
+                fallback, treatment_costs, alternative_products, local_availability, warnings
             )
 
-            # Appel au LLM
+        return self._compose_success_response(
+            query, profile, diagnosis, risk_flags, context,
+            treatment_costs, alternative_products, local_availability, fallback, warnings
+        )
+
+    def _compose_success_response(
+        self, query, profile, diagnosis, risk_flags, context,
+        treatment_costs, alternative_products, local_availability, fallback, warnings
+    ) -> PlantDoctorState:
+        response = self._compose_llm_response(
+            query, profile, diagnosis, risk_flags, context,
+            treatment_costs, alternative_products, local_availability, fallback, warnings
+        )
+        return {
+            "final_response": response,
+            "warnings": warnings,
+            "status": "SUCCESS",
+        }
+
+    def _should_ask_guided_questions(self, guided_questions) -> bool:
+        return bool(guided_questions)
+
+    def _should_return_no_diagnosis(self, diagnosis) -> bool:
+        return not diagnosis or not diagnosis.get("diagnostique")
+
+    def _should_warn_no_context(self, context) -> bool:
+        return not context
+
+    def _should_return_llm_down(self, llm) -> bool:
+        return not llm
+
+    def _compose_guided_questions_response(self, guided_questions, warnings):
+        questions_text = "\n".join(f"{i+1}. {q}" for i, q in enumerate(guided_questions))
+        response = (
+            f"Pour mieux vous aider, répondez à ces questions:\n\n"
+            f"{questions_text}\n\n"
+            f"Envoyez vos réponses ou prenez une photo des symptômes (📷)."
+        )
+        return {
+            "final_response": response,
+            "warnings": warnings,
+            "status": "AWAITING_INFO",
+        }
+
+    def _compose_no_diagnosis_response(self, fallback, warnings):
+        warnings.append("Diagnostic impossible à confirmer.")
+        return {
+            "final_response": fallback,
+            "warnings": warnings,
+            "status": "NO_DIAGNOSIS",
+        }
+
+    def _compose_llm_down_response(self, fallback, treatment_costs, alternative_products, local_availability, warnings):
+        warnings.append("LLM indisponible, passage en mode secours.")
+        return {
+            "final_response": fallback + self._format_practical_info(
+                treatment_costs, alternative_products, local_availability
+            ),
+            "warnings": warnings,
+            "status": "LLM_DOWN",
+        }
+
+    def _compose_llm_response(
+        self, query, profile, diagnosis, risk_flags, context,
+        treatment_costs, alternative_products, local_availability, fallback, warnings
+    ):
+        try:
+            ctx = LLMPromptContext(
+                query=query,
+                profile=profile,
+                diagnosis=diagnosis,
+                risk_flags=risk_flags,
+                context=context,
+                treatment_costs=treatment_costs,
+                alternative_products=alternative_products,
+                local_availability=local_availability,
+            )
+            system_content, user_content = self._build_llm_prompt(ctx)
             completion = self.llm.chat.completions.create(
                 model=self.model_answer,
                 messages=[
@@ -495,24 +556,34 @@ class PlantHealthDoctor:
                 temperature=0.4
             )
             response = completion.choices[0].message.content.strip()
-            
-            # Ajout automatique des infos pratiques si LLM les a oubliées
             if "💰" not in response and treatment_costs:
-                response += "\n\n" + self._format_practical_info(
+                response += "\n\n" + self.practical.format_practical_info(
                     treatment_costs, alternative_products, local_availability
                 )
-            
         except Exception as exc:
             logger.error(f"Échec génération LLM: {exc}")
-            response = fallback + self._format_practical_info(
+            response = fallback + self.practical.format_practical_info(
                 treatment_costs, alternative_products, local_availability
             )
+        return response
 
-        return {
-            "final_response": response,
-            "warnings": warnings,
-            "status": "SUCCESS",
-        }
+    def _build_llm_prompt(
+        self, ctx: 'LLMPromptContext'
+    ):
+        system_content = PLANT_DOCTOR_SYSTEM_TEMPLATE
+        user_content = PLANT_DOCTOR_USER_TEMPLATE.format(
+            query=ctx.query,
+            profile_culture=self._format_profile(ctx.profile),
+            diagnosis_json=json.dumps(ctx.diagnosis, ensure_ascii=False),
+            risk_flags=', '.join(ctx.risk_flags) or 'Aucune',
+            context=ctx.context,
+            practical_info=self.practical.format_practical_info(
+                ctx.treatment_costs,
+                ctx.alternative_products,
+                ctx.local_availability,
+            ),
+        )
+        return system_content, user_content
 
     def _format_practical_info(
         self,
@@ -526,34 +597,41 @@ class PlantHealthDoctor:
         info = "\n\n" + "="*50 + "\n"
         info += "💡 INFORMATIONS PRATIQUES\n"
         info += "="*50 + "\n\n"
-        
-        # Coûts
-        if costs:
-            info += "💰 COÛTS ESTIMÉS (par hectare):\n"
-            for treatment, cost in costs.items():
-                if treatment != "TOTAL ESTIMÉ":
-                    info += f"   • {treatment}: {cost:,.0f} FCFA\n"
-            if "TOTAL ESTIMÉ" in costs:
-                info += f"   📊 TOTAL: {costs['TOTAL ESTIMÉ']:,.0f} FCFA\n"
-            info += "\n"
-        
-        # Alternatives
-        if alternatives and any(alternatives.values()):
-            info += "🔄 PRODUITS ALTERNATIFS (si indisponible):\n"
-            for category, products in alternatives.items():
-                if products:
-                    info += f"   • {', '.join(products)}\n"
-            info += "\n"
-        
-        # Points de vente
-        if availability:
-            info += "📍 OÙ ACHETER:\n"
-            for product, locations in availability.items():
-                info += f"   • {product}: {locations}\n"
-            info += "\n"
-        
+        info += self._format_costs(costs)
+        info += self._format_alternatives(alternatives)
+        info += self._format_availability(availability)
         info += "📞 Besoin d'aide? Appelez le +22601479800 ou visitez votre coopérative.\n"
-        
+        return info
+
+    def _format_costs(self, costs: Dict[str, float]) -> str:
+        if not costs:
+            return ""
+        info = "💰 COÛTS ESTIMÉS (par hectare):\n"
+        for treatment, cost in costs.items():
+            if treatment != "TOTAL ESTIMÉ":
+                info += f"   • {treatment}: {cost:,.0f} FCFA\n"
+        if "TOTAL ESTIMÉ" in costs:
+            info += f"   📊 TOTAL: {costs['TOTAL ESTIMÉ']:,.0f} FCFA\n"
+        info += "\n"
+        return info
+
+    def _format_alternatives(self, alternatives: Dict[str, List[str]]) -> str:
+        if not alternatives or not any(alternatives.values()):
+            return ""
+        info = "🔄 PRODUITS ALTERNATIFS (si indisponible):\n"
+        for category, products in alternatives.items():
+            if products:
+                info += f"   • {', '.join(products)}\n"
+        info += "\n"
+        return info
+
+    def _format_availability(self, availability: Dict[str, str]) -> str:
+        if not availability:
+            return ""
+        info = "📍 OÙ ACHETER:\n"
+        for product, locations in availability.items():
+            info += f"   • {product}: {locations}\n"
+        info += "\n"
         return info
 
     def evaluate_node(self, state: PlantDoctorState) -> PlantDoctorState:
@@ -566,7 +644,7 @@ class PlantHealthDoctor:
         context = state.get("retrieved_context", "")
         answer = state.get("final_response", "")
 
-        if not query or not context or not answer:
+        if self._should_skip_evaluation(query, context, answer):
             return {"warnings": warnings}
 
         try:
@@ -575,28 +653,35 @@ class PlantHealthDoctor:
         except Exception as exc:
             warnings.append(f"Évaluation échouée: {exc}")
             return {"warnings": warnings}
+
+    def _should_skip_evaluation(self, query: str, context: str, answer: str) -> bool:
+        """Encapsulate the decision to skip automatic evaluation.
+
+        Skip when any of the required inputs are missing or empty.
+        """
+        return not query or not context or not answer
         
     def _augment_symptoms(self, text: str) -> str:
-            if not text or not self.llm:
-                return text
+        if not text or not self.llm:
+            return text
 
-            try:
-                completion = self.llm.chat.completions.create(
-                    model=self.model_planner,
-                    messages=[
-                        {"role": "system", "content": DOCTOR_AUGMENT_PROMPT},
-                        {"role": "user", "content": text},
-                    ],
-                    temperature=0.2,
-                    max_tokens=200,
-                )
-                content = completion.choices[0].message.content
-                if not content:
-                    return text
-                keywords = content.strip()
-                return f"{text}\nMots-clés: {keywords}"
-            except Exception:
+        try:
+            completion = self.llm.chat.completions.create(
+                model=self.model_planner,
+                messages=[
+                    {"role": "system", "content": DOCTOR_AUGMENT_PROMPT},
+                    {"role": "user", "content": text},
+                ],
+                temperature=0.2,
+                max_tokens=200,
+            )
+            content = completion.choices[0].message.content
+            if not content:
                 return text
+            keywords = content.strip()
+            return f"{text}\nMots-clés: {keywords}"
+        except Exception:
+            return text
 
 
     def _plan_retrieval(

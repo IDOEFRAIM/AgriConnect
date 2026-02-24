@@ -17,6 +17,7 @@ Il fournit le contexte complet optimisé en un seul appel.
 """
 
 import logging
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger("Memory.ContextOptimizer")
@@ -30,6 +31,18 @@ TOKEN_BUDGETS = {
     "user_query": 100,    # Question de l'agriculteur
     "total_target": 1500, # Objectif total
 }
+
+
+@dataclass
+class InteractionRecord:
+    user_id: str
+    query: str
+    response: str
+    agent_type: str
+    crop: Optional[str] = None
+    zone: Optional[str] = None
+    severity: Optional[str] = None
+    intent: Optional[str] = None
 
 
 class ContextOptimizer:
@@ -61,100 +74,6 @@ class ContextOptimizer:
         self._episodic = episodic_memory
         self._extractor = profile_extractor
 
-    def build_context(
-        self,
-        user_id: str,
-        query: str,
-        zone: str = None,
-        crop: str = None,
-    ) -> Dict[str, Any]:
-        """
-        Construit le contexte complet optimisé pour un message.
-        
-        Returns:
-            {
-                "profile_snippet": "PROFIL: Zone=Bobo, 10ha Maïs...",
-                "episodic_snippet": "HISTORIQUE: - 12/03: Rouille...",
-                "combined_context": "Le tout assemblé pour injection",
-                "token_estimate": 350,
-                "savings_pct": 60.0,
-            }
-        """
-        # 1. Extraction en arrière-plan (enrichit le profil)
-        if self._extractor and query:
-            try:
-                self._extractor.extract_and_update(user_id, query)
-            except Exception as e:
-                logger.debug("Extraction silencieuse échouée: %s", e)
-
-        # 2. Charger le profil structuré (~80 tokens)
-        profile_snippet = ""
-        try:
-            profile_snippet = self._profile.to_context(user_id)
-        except Exception as e:
-            logger.warning("Profil indisponible: %s", e)
-
-        # 3. Charger les épisodes pertinents (~120 tokens)
-        episodic_snippet = ""
-        try:
-            episodic_snippet = self._episodic.to_context(
-                user_id, crop=crop, zone=zone, limit=3
-            )
-        except Exception as e:
-            logger.warning("Épisodes indisponibles: %s", e)
-
-        # 4. Assembler le contexte combiné
-        combined = self._assemble(profile_snippet, episodic_snippet)
-        token_estimate = self._estimate_tokens(combined)
-
-        # 5. Calcul des économies
-        naive_estimate = 5000  # Estimation du coût "tout charger"
-        savings_pct = max(0, (1 - token_estimate / naive_estimate) * 100)
-
-        logger.info(
-            "🧠 Contexte optimisé: ~%d tokens (économie ~%.0f%%)",
-            token_estimate, savings_pct,
-        )
-
-        return {
-            "profile_snippet": profile_snippet,
-            "episodic_snippet": episodic_snippet,
-            "combined_context": combined,
-            "token_estimate": token_estimate,
-            "savings_pct": round(savings_pct, 1),
-        }
-
-    def enrich_state(
-        self,
-        state: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        """
-        Enrichit un GlobalAgriState avec le contexte mémoire.
-        
-        Injecte les snippets dans le state pour que les agents
-        les trouvent automatiquement dans leur prompt.
-        
-        C'est LE point d'intégration avec l'orchestrateur.
-        """
-        user_id = state.get("user_id", "anonymous")
-        query = state.get("requete_utilisateur", "")
-        zone = state.get("zone_id", "")
-        crop = state.get("crop", "")
-
-        # Skip pour anonymous / pas de query
-        if user_id == "anonymous" or not query:
-            return state
-
-        context = self.build_context(user_id, query, zone, crop)
-
-        # Injection dans le state (les agents lisent ces champs)
-        state["memory_profile"] = context["profile_snippet"]
-        state["memory_episodes"] = context["episodic_snippet"]
-        state["memory_context"] = context["combined_context"]
-        state["memory_token_estimate"] = context["token_estimate"]
-
-        return state
-
     def record_interaction(
         self,
         user_id: str,
@@ -167,22 +86,43 @@ class ContextOptimizer:
         intent: str = None,
     ) -> None:
         """
-        Enregistre une interaction dans la mémoire épisodique.
-        Appelé par persist() dans l'orchestrateur, APRÈS la réponse.
+        Backwards-compatible wrapper: build an InteractionRecord and delegate
+        to the single-argument API `record_interaction_obj`.
+        """
+        interaction = InteractionRecord(
+            user_id=user_id,
+            query=query,
+            response=response,
+            agent_type=agent_type,
+            crop=crop,
+            zone=zone,
+            severity=severity,
+            intent=intent,
+        )
+        return self.record_interaction_obj(interaction)
+
+    def record_interaction_obj(self, interaction: InteractionRecord) -> None:
+        """Persist an InteractionRecord (single-argument API).
+
+        This reduces the surface area of the method and groups related
+        parameters into a cohesive object.
         """
         try:
             self._episodic.record(
-                user_id=user_id,
-                query=query,
-                response=response,
-                agent_type=agent_type,
-                crop=crop,
-                zone=zone,
-                severity=severity,
-                intent=intent,
+                user_id=interaction.user_id,
+                query=interaction.query,
+                response=interaction.response,
+                agent_type=interaction.agent_type,
+                crop=interaction.crop,
+                zone=interaction.zone,
+                severity=interaction.severity,
+                intent=interaction.intent,
             )
         except Exception as e:
             logger.warning("Enregistrement épisodique échoué: %s", e)
+
+
+
 
     # ── Assemblage interne ───────────────────────────────────────
 

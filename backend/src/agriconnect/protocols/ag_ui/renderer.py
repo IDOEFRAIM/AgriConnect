@@ -1,5 +1,18 @@
+"""
+AG-UI Renderer 2.0 — Capability-Negotiated Multi-Channel Rendering.
+=====================================================================
+
+Upgrades from v1:
+  - Renderers accept ``ClientCapabilities`` manifest
+  - Components are pruned BEFORE rendering based on channel constraints
+  - Trace recording for rendering decisions (what was pruned + why)
+"""
+
+from __future__ import annotations
+
 import json
 import logging
+import time
 from typing import Any, Dict, List, Optional
 from abc import ABC, abstractmethod
 
@@ -9,8 +22,69 @@ from .components import (
     TextBlock, Card, ActionButton, ListPicker, FormField, ChartData, AlertBanner,
     Severity, ActionType,
 )
+from backend.src.agriconnect.protocols.core import (
+    ClientCapabilities,
+    TraceCategory,
+    TraceEnvelope,
+)
 
 logger = logging.getLogger("AG-UI.Renderer")
+
+
+# ═══════════════════════════════════════════════════════════════
+# COMPONENT PRUNER
+# ═══════════════════════════════════════════════════════════════
+
+def prune_components(
+    components: List[AGUIComponent],
+    caps: ClientCapabilities,
+) -> tuple[List[AGUIComponent], List[Dict[str, str]]]:
+    """
+    Remove or trim components that exceed channel capabilities.
+    Returns (kept_components, pruning_log).
+    """
+    kept: List[AGUIComponent] = []
+    pruned_log: List[Dict[str, str]] = []
+
+    for comp in components:
+        # Charts not supported
+        if comp.type == ComponentType.CHART and not caps.supports_charts:
+            pruned_log.append({"type": "chart", "reason": f"{caps.channel} does not support charts"})
+            continue
+
+        # Cards with images on non-image channels
+        if isinstance(comp, Card) and comp.image_url and not caps.supports_images:
+            comp = comp.clone(image_url="")
+            pruned_log.append({"type": "card_image", "reason": f"{caps.channel} does not support images"})
+
+        # Too many buttons
+        if isinstance(comp, Card) and comp.actions and caps.max_buttons > 0:
+            if len(comp.actions) > caps.max_buttons:
+                pruned_log.append({
+                    "type": "card_buttons",
+                    "reason": f"Trimmed {len(comp.actions)} → {caps.max_buttons} buttons",
+                })
+                comp = comp.clone(actions=comp.actions[:caps.max_buttons])
+
+        # List picker items
+        if isinstance(comp, ListPicker) and caps.max_list_items > 0:
+            if len(comp.items) > caps.max_list_items:
+                pruned_log.append({
+                    "type": "list_items",
+                    "reason": f"Trimmed {len(comp.items)} → {caps.max_list_items} items",
+                })
+                comp = comp.clone(items=comp.items[:caps.max_list_items])
+
+        # Interactive components on non-interactive channels
+        if comp.type in (ComponentType.ACTION, ComponentType.LIST_PICKER, ComponentType.USER_APPROVAL):
+            if not caps.supports_interactive:
+                pruned_log.append({"type": str(comp.type.value), "reason": f"{caps.channel} non-interactive"})
+                continue
+
+        kept.append(comp)
+
+    return kept, pruned_log
+
 
 # ═══════════════════════════════════════════════════════════════
 # BASE RENDERER
@@ -20,14 +94,49 @@ class AGUIRenderer(ABC):
     """Interface de base pour la transformation multi-canal."""
 
     @abstractmethod
-    def render(self, response: AgriResponse) -> Any:
-        """Transforme une AgriResponse complète."""
+    def render(self, response: AgriResponse, caps: Optional[ClientCapabilities] = None,
+               trace_envelope: Optional[TraceEnvelope] = None) -> Any:
         ...
 
     @abstractmethod
     def render_component(self, component: AGUIComponent) -> Any:
-        """Transforme un composant unitaire."""
         ...
+
+    def _apply_capabilities(
+        self,
+        response: AgriResponse,
+        caps: Optional[ClientCapabilities],
+        trace_envelope: Optional[TraceEnvelope] = None,
+    ) -> List[AGUIComponent]:
+        """Prune components based on capabilities, record trace."""
+        if not caps:
+            return response.components
+
+        t0 = time.monotonic()
+        kept, pruned_log = prune_components(response.components, caps)
+
+        if trace_envelope:
+            trace_envelope.record(
+                TraceCategory.RENDERING,
+                type(self).__name__,
+                "capability_negotiation",
+                input_summary={
+                    "channel": caps.channel,
+                    "total_components": len(response.components),
+                },
+                output_summary={
+                    "kept": len(kept),
+                    "pruned": len(pruned_log),
+                    "pruning_details": pruned_log,
+                },
+                reasoning=(
+                    f"Pruned {len(pruned_log)} components for {caps.channel} "
+                    f"(kept {len(kept)}/{len(response.components)})"
+                ),
+                duration_ms=(time.monotonic() - t0) * 1000,
+            )
+
+        return kept
 
 # ═══════════════════════════════════════════════════════════════
 # WHATSAPP RENDERER (Optimisé pour Twilio/Meta API)
@@ -47,9 +156,12 @@ class WhatsAppRenderer(AGUIRenderer):
         Severity.CRITICAL: "🚨",
     }
 
-    def render(self, response: AgriResponse) -> Dict[str, Any]:
+    def render(self, response: AgriResponse, caps: Optional[ClientCapabilities] = None,
+               trace_envelope: Optional[TraceEnvelope] = None) -> Dict[str, Any]:
+        caps = caps or ClientCapabilities.whatsapp()
+        components = self._apply_capabilities(response, caps, trace_envelope)
         messages = []
-        for component in response.components:
+        for component in components:
             try:
                 rendered = self.render_component(component)
                 if rendered:
@@ -157,8 +269,11 @@ class WhatsAppRenderer(AGUIRenderer):
 
 class WebRenderer(AGUIRenderer):
     """Passe le dictionnaire structuré au Frontend."""
-    def render(self, response: AgriResponse) -> Dict[str, Any]:
-        return response.to_dict() # Déjà implémenté récursivement dans AgriResponse
+    def render(self, response: AgriResponse, caps: Optional[ClientCapabilities] = None,
+               trace_envelope: Optional[TraceEnvelope] = None) -> Dict[str, Any]:
+        caps = caps or ClientCapabilities.web()
+        self._apply_capabilities(response, caps, trace_envelope)
+        return response.to_dict()
 
     def render_component(self, component: AGUIComponent) -> Dict[str, Any]:
         return component.to_dict()
@@ -169,12 +284,15 @@ class WebRenderer(AGUIRenderer):
 
 class SMSRenderer(AGUIRenderer):
     """Optimisé pour les réseaux à faible bande passante (SMS/USSD)."""
-    
+
     MAX_LEN = 160
 
-    def render(self, response: AgriResponse) -> Dict[str, Any]:
+    def render(self, response: AgriResponse, caps: Optional[ClientCapabilities] = None,
+               trace_envelope: Optional[TraceEnvelope] = None) -> Dict[str, Any]:
+        caps = caps or ClientCapabilities.sms()
+        components = self._apply_capabilities(response, caps, trace_envelope)
         lines = []
-        for c in response.components:
+        for c in components:
             text = self.render_component(c)
             if text: lines.append(text)
         

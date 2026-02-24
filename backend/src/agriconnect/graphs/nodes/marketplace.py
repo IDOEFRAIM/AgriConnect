@@ -170,100 +170,9 @@ class MarketplaceAgent:
             return state
 
         intent = state.get("intent", "HELP")
-        parsed = state.get("parsed", {})
-        producer_id = state.get("producer_id")
-        farm_id = state.get("farm_id")
-        zone_id = state.get("zone_id")
-        phone = state.get("user_phone", "")
-        result = {}
-
+        handler = self._get_intent_handler(intent)
         try:
-            if intent == "REGISTER_STOCK" and farm_id:
-                product = parsed.get("product", "produit")
-                quantity = parsed.get("quantity", 0)
-                unit = parsed.get("unit", "kg")
-                result = self.tool.add_stock(
-                    farm_id=farm_id,
-                    item_name=product,
-                    quantity=quantity,
-                    unit=unit,
-                    reason=f"Déclaré via WhatsApp : {state.get('user_query', '')}",
-                )
-
-            elif intent == "SELL_PRODUCT" and producer_id:
-                product = parsed.get("product", "produit")
-                price = parsed.get("price", 0)
-                quantity = parsed.get("quantity", 0)
-                unit = parsed.get("unit", "kg")
-                category = parsed.get("category", "Céréales")
-                desc = parsed.get("description")
-
-                result = self.tool.create_product(
-                    producer_id=producer_id,
-                    name=product,
-                    price=price,
-                    quantity_for_sale=quantity,
-                    unit=unit,
-                    category_label=category,
-                    description=desc,
-                )
-
-            elif intent == "CHECK_STOCK" and farm_id:
-                stocks = self.tool.get_stocks(farm_id)
-                result = {"stocks": stocks, "count": len(stocks)}
-
-            elif intent == "CHECK_ORDERS":
-                products = self.tool.list_products(producer_id) if producer_id else []
-                result = {"products": products}
-
-            elif intent == "UPDATE_STOCK" and farm_id:
-                product = parsed.get("product", "produit")
-                quantity = parsed.get("quantity", 0)
-                unit = parsed.get("unit", "kg")
-                result = self.tool.add_stock(
-                    farm_id=farm_id,
-                    item_name=product,
-                    quantity=quantity,
-                    unit=unit,
-                    reason="Mise à jour stock via WhatsApp",
-                )
-
-            elif intent == "FIND_BUYERS":
-                product = parsed.get("product", "")
-                result = {
-                    "buyers": self.tool.find_buyers_for_product(product, zone_id),
-                    "avg_price": self.tool.get_average_price(product, zone_id),
-                }
-
-            elif intent == "FIND_PRODUCTS":
-                product = parsed.get("product", "")
-                result = {
-                    "products_available": self.tool.find_products_for_buyer(product, zone_id),
-                }
-
-            elif intent == "CREATE_ORDER":
-                product_name = parsed.get("product", "")
-                quantity = parsed.get("quantity", 1)
-                # Chercher le produit correspondant
-                available = self.tool.find_products_for_buyer(product_name, zone_id)
-                if available:
-                    best = available[0]  # moins cher
-                    result = self.tool.create_order(
-                        product_id=best["id"],
-                        quantity=quantity,
-                        buyer_phone=phone,
-                        buyer_name=state.get("user_profile", {}).get("name"),
-                        zone_id=zone_id,
-                    )
-                else:
-                    result = {"error": f"Aucun {product_name} disponible dans votre zone."}
-                    # Créer une alerte de recherche
-                    alert = self.tool.create_market_alert(product_name, phone, zone_id)
-                    result["alert"] = alert
-
-            else:
-                result = {"help": True}
-
+            result = handler(state)
         except Exception as e:
             logger.error("Execute action error (%s) : %s", intent, e)
             result = {"error": str(e)}
@@ -271,6 +180,122 @@ class MarketplaceAgent:
         state["action_result"] = result
         state["status"] = "EXECUTED"
         return state
+
+    def _get_intent_handler(self, intent: str):
+        return {
+            "REGISTER_STOCK": self._handle_register_stock,
+            "SELL_PRODUCT": self._handle_sell_product,
+            "CHECK_STOCK": self._handle_check_stock,
+            "CHECK_ORDERS": self._handle_check_orders,
+            "UPDATE_STOCK": self._handle_update_stock,
+            "FIND_BUYERS": self._handle_find_buyers,
+            "FIND_PRODUCTS": self._handle_find_products,
+            "CREATE_ORDER": self._handle_create_order,
+            "HELP": self._handle_help,
+        }.get(intent, self._handle_help)
+
+    def _handle_register_stock(self, state: MarketplaceState) -> dict:
+        return self._add_stock_action(state, reason=f"Déclaré via WhatsApp : {state.get('user_query', '')}")
+
+    def _handle_sell_product(self, state: MarketplaceState) -> dict:
+        producer_id = state.get("producer_id")
+        parsed = state.get("parsed", {})
+        if not producer_id:
+            return {"error": "Aucun producteur associé."}
+        product = parsed.get("product", "produit")
+        price = parsed.get("price", 0)
+        quantity = parsed.get("quantity", 0)
+        unit = parsed.get("unit", "kg")
+        category = parsed.get("category", "Céréales")
+        desc = parsed.get("description")
+        return self.tool.create_product(
+            producer_id=producer_id,
+            name=product,
+            price=price,
+            quantity_for_sale=quantity,
+            unit=unit,
+            category_label=category,
+            description=desc,
+        )
+
+    def _handle_check_stock(self, state: MarketplaceState) -> dict:
+        farm_id = state.get("farm_id")
+        if not farm_id:
+            return {"error": "Aucune ferme associée."}
+        stocks = self.tool.get_stocks(farm_id)
+        return {"stocks": stocks, "count": len(stocks)}
+
+    def _handle_check_orders(self, state: MarketplaceState) -> dict:
+        producer_id = state.get("producer_id")
+        products = self.tool.list_products(producer_id) if producer_id else []
+        return {"products": products}
+
+    def _handle_update_stock(self, state: MarketplaceState) -> dict:
+        return self._add_stock_action(state, reason="Mise à jour stock via WhatsApp")
+
+    def _add_stock_action(self, state: MarketplaceState, reason: str) -> dict:
+        """Shared helper to add or update stock from parsed state.
+
+        Returns an error dict when farm is missing.
+        """
+        farm_id = state.get("farm_id")
+        if not farm_id:
+            return {"error": "Aucune ferme associée."}
+        parsed = state.get("parsed", {})
+        product = parsed.get("product", "produit")
+        quantity = parsed.get("quantity", 0)
+        unit = parsed.get("unit", "kg")
+        try:
+            return self.tool.add_stock(
+                farm_id=farm_id,
+                item_name=product,
+                quantity=quantity,
+                unit=unit,
+                reason=reason,
+            )
+        except Exception as e:
+            logger.error("add_stock failed: %s", e)
+            return {"error": str(e)}
+
+    def _handle_find_buyers(self, state: MarketplaceState) -> dict:
+        parsed = state.get("parsed", {})
+        zone_id = state.get("zone_id")
+        product = parsed.get("product", "")
+        return {
+            "buyers": self.tool.find_buyers_for_product(product, zone_id),
+            "avg_price": self.tool.get_average_price(product, zone_id),
+        }
+
+    def _handle_find_products(self, state: MarketplaceState) -> dict:
+        parsed = state.get("parsed", {})
+        zone_id = state.get("zone_id")
+        product = parsed.get("product", "")
+        return {
+            "products_available": self.tool.find_products_for_buyer(product, zone_id),
+        }
+
+    def _handle_create_order(self, state: MarketplaceState) -> dict:
+        parsed = state.get("parsed", {})
+        zone_id = state.get("zone_id")
+        phone = state.get("user_phone", "")
+        product_name = parsed.get("product", "")
+        quantity = parsed.get("quantity", 1)
+        available = self.tool.find_products_for_buyer(product_name, zone_id)
+        if available:
+            best = available[0]
+            return self.tool.create_order(
+                product_id=best["id"],
+                quantity=quantity,
+                buyer_phone=phone,
+                buyer_name=state.get("user_profile", {}).get("name"),
+                zone_id=zone_id,
+            )
+        else:
+            alert = self.tool.create_market_alert(product_name, phone, zone_id)
+            return {"error": f"Aucun {product_name} disponible dans votre zone.", "alert": alert}
+
+    def _handle_help(self, state: MarketplaceState) -> dict:
+        return {"help": True}
 
     def confirm_node(self, state: MarketplaceState) -> MarketplaceState:
         """Génère la réponse conversationnelle (AG-UI) + Texte."""
@@ -355,7 +380,6 @@ class MarketplaceAgent:
         Vérifie les acheteurs (Local DB) ET Broadcast A2A pour la scalabilité.
         """
         state = dict(state)
-        # ...existing code...
         intent = state.get("intent")
 
         if intent != "SELL_PRODUCT":
@@ -368,51 +392,60 @@ class MarketplaceAgent:
         product_id = result.get("product_id")
 
         if product_name and product_id:
-            # 1. Matching Local (Legacy)
-            matches = self.tool.auto_match(product_name, zone_id, phone, product_id)
-            if matches:
-                state["matches"] = matches
-                match_msg = (
-                    f"\n\n🎯 **Bonne nouvelle !** {len(matches)} acheteur(s) "
-                    f"cherchent du {product_name} dans votre zone :\n"
-                )
-                for m in matches:
-                    match_msg += f"  • {m['buyer_phone']} ({m.get('zone_name', '')})\n"
-                match_msg += "\nJe peux les mettre en contact avec vous. Voulez-vous ?"
-
-                state["final_response"] = state.get("final_response", "") + match_msg
-                
-                # Mise à jour AG-UI
-                if "agri_response" in state:
-                    state["agri_response"].add_text(match_msg)
-            
-            # 2. Diffusion A2A (Nouveau Protocole)
-            if self.a2a:
-                try:
-                    # On broadcast l'offre à tous les agents "ACHETEUR" ou "GROSSISTE"
-                    offer_msg = A2AMessage(
-                        message_type=MessageType.BROADCAST,
-                        sender_id=f"agent_market_{state.get('user_phone')}",  # Agent éphémère pour l'utilisateur
-                        intent="SELL_OFFER",
-                        zone=zone_id or "global",
-                        crop=product_name,
-                        payload={
-                            "product": product_name,
-                            "quantity": state.get("parsed", {}).get("quantity"),
-                            "price": state.get("parsed", {}).get("price"),
-                            "product_id": product_id,
-                            "seller_phone": phone # En production, on masque ça
-                        }
-                    )
-                    # Broadcast sur le topic du produit
-                    topic = f"SELL_{product_name.upper()}_{zone_id}"
-                    count = self.a2a.broadcast_message(offer_msg, topic=topic)
-                    logger.info(f"📢 A2A Broadcast: Offre {product_name} diffusée à {count} agents.")
-                except Exception as e:
-                    logger.warning(f"A2A Broadcast failed: {e}")
+            self._handle_local_matching(state)
+            self._handle_a2a_broadcast(state)
 
         state["status"] = "COMPLETED"
         return state
+
+    def _handle_local_matching(self, state):
+        product_name = state.get("parsed", {}).get("product", "")
+        zone_id = state.get("zone_id")
+        phone = state.get("user_phone", "")
+        product_id = state.get("action_result", {}).get("product_id")
+        matches = self.tool.auto_match(product_name, zone_id, phone, product_id)
+        if matches:
+            state["matches"] = matches
+            match_msg = (
+                f"\n\n🎯 **Bonne nouvelle !** {len(matches)} acheteur(s) "
+                f"cherchent du {product_name} dans votre zone :\n"
+            )
+            for m in matches:
+                match_msg += f"  • {m['buyer_phone']} ({m.get('zone_name', '')})\n"
+            match_msg += "\nJe peux les mettre en contact avec vous. Voulez-vous ?"
+
+            state["final_response"] = state.get("final_response", "") + match_msg
+
+            # Mise à jour AG-UI
+            if "agri_response" in state:
+                state["agri_response"].add_text(match_msg)
+
+    def _handle_a2a_broadcast(self, state):
+        product_name = state.get("parsed", {}).get("product", "")
+        zone_id = state.get("zone_id")
+        phone = state.get("user_phone", "")
+        product_id = state.get("action_result", {}).get("product_id")
+        if self.a2a:
+            try:
+                offer_msg = A2AMessage(
+                    message_type=MessageType.BROADCAST,
+                    sender_id=f"agent_market_{phone}",
+                    intent="SELL_OFFER",
+                    zone=zone_id or "global",
+                    crop=product_name,
+                    payload={
+                        "product": product_name,
+                        "quantity": state.get("parsed", {}).get("quantity"),
+                        "price": state.get("parsed", {}).get("price"),
+                        "product_id": product_id,
+                        "seller_phone": phone
+                    }
+                )
+                topic = f"SELL_{product_name.upper()}_{zone_id}"
+                count = self.a2a.broadcast_message(offer_msg, topic=topic)
+                logger.info(f"📢 A2A Broadcast: Offre {product_name} diffusée à {count} agents.")
+            except Exception as e:
+                logger.warning(f"A2A Broadcast failed: {e}")
 
     # ════════════════════════════════════════════════════════════════
     # FALLBACK (sans LLM)
@@ -427,40 +460,55 @@ class MarketplaceAgent:
             return f"{welcome}⚠️ {result['error']}"
 
         if intent == "REGISTER_STOCK":
-            return (
-                f"{welcome}✅ Stock enregistré !\n"
-                f"📦 {result.get('item_name')} : +{result.get('added_kg', 0):.0f} kg\n"
-                f"Total en stock : {result.get('new_total_kg', 0):.0f} kg"
-            )
+            return self._fallback_register_stock(result, welcome)
         if intent == "SELL_PRODUCT":
-            return (
-                f"{welcome}🛒 Produit mis en vente !\n"
-                f"📦 {result.get('name')} — {result.get('price_fcfa', 0):.0f} FCFA/kg\n"
-                f"Code : {result.get('short_code')}"
-            )
+            return self._fallback_sell_product(result, welcome)
         if intent == "CHECK_STOCK":
-            stocks = result.get("stocks", [])
-            if not stocks:
-                return f"{welcome}📦 Votre stock est vide. Dites-moi ce que vous avez récolté !"
-            lines = [f"  • {s.get('item_name')} : {s.get('quantity', 0):.0f} kg" for s in stocks]
-            return f"{welcome}📦 **Votre stock :**\n" + "\n".join(lines)
+            return self._fallback_check_stock(result, welcome)
         if intent == "FIND_BUYERS":
-            buyers = result.get("buyers", [])
-            if not buyers:
-                return f"{welcome}🔍 Aucun acheteur trouvé pour le moment. Je crée une alerte."
-            lines = [f"  • {b.get('buyer_phone')} ({b.get('zone_name', '')})" for b in buyers]
-            return f"{welcome}🎯 Acheteurs intéressés :\n" + "\n".join(lines)
+            return self._fallback_find_buyers(result, welcome)
         if intent == "HELP":
-            return (
-                f"{welcome}🌾 Je peux vous aider à :\n"
-                "  📦 Enregistrer votre stock (ex: 'J'ai 10 sacs de maïs')\n"
-                "  🛒 Mettre en vente (ex: 'Je vends du sorgho à 250 FCFA/kg')\n"
-                "  🔍 Trouver des acheteurs (ex: 'Qui cherche du mil ?')\n"
-                "  📊 Voir votre stock (ex: 'Mon stock')\n"
-                "  🛍️ Commander (ex: 'Je cherche du riz')\n"
-            )
+            return self._fallback_help(welcome)
 
         return f"{welcome}Action effectuée. Que souhaitez-vous faire ensuite ?"
+
+    def _fallback_register_stock(self, result: Dict, welcome: str) -> str:
+        return (
+            f"{welcome}✅ Stock enregistré !\n"
+            f"📦 {result.get('item_name')} : +{result.get('added_kg', 0):.0f} kg\n"
+            f"Total en stock : {result.get('new_total_kg', 0):.0f} kg"
+        )
+
+    def _fallback_sell_product(self, result: Dict, welcome: str) -> str:
+        return (
+            f"{welcome}🛒 Produit mis en vente !\n"
+            f"📦 {result.get('name')} — {result.get('price_fcfa', 0):.0f} FCFA/kg\n"
+            f"Code : {result.get('short_code')}"
+        )
+
+    def _fallback_check_stock(self, result: Dict, welcome: str) -> str:
+        stocks = result.get("stocks", [])
+        if not stocks:
+            return f"{welcome}📦 Votre stock est vide. Dites-moi ce que vous avez récolté !"
+        lines = [f"  • {s.get('item_name')} : {s.get('quantity', 0):.0f} kg" for s in stocks]
+        return f"{welcome}📦 **Votre stock :**\n" + "\n".join(lines)
+
+    def _fallback_find_buyers(self, result: Dict, welcome: str) -> str:
+        buyers = result.get("buyers", [])
+        if not buyers:
+            return f"{welcome}🔍 Aucun acheteur trouvé pour le moment. Je crée une alerte."
+        lines = [f"  • {b.get('buyer_phone')} ({b.get('zone_name', '')})" for b in buyers]
+        return f"{welcome}🎯 Acheteurs intéressés :\n" + "\n".join(lines)
+
+    def _fallback_help(self, welcome: str) -> str:
+        return (
+            f"{welcome}🌾 Je peux vous aider à :\n"
+            "  📦 Enregistrer votre stock (ex: 'J'ai 10 sacs de maïs')\n"
+            "  🛒 Mettre en vente (ex: 'Je vends du sorgho à 250 FCFA/kg')\n"
+            "  🔍 Trouver des acheteurs (ex: 'Qui cherche du mil ?')\n"
+            "  📊 Voir votre stock (ex: 'Mon stock')\n"
+            "  🛍️ Commander (ex: 'Je cherche du riz')\n"
+        )
 
     # ════════════════════════════════════════════════════════════════
     # BUILD — Compilation du graphe LangGraph

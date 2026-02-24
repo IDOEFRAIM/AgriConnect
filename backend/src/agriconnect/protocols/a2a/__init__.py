@@ -13,7 +13,10 @@ Cas d'usage :
 """
 
 from .registry import A2ARegistry, AgentCard, AgentDomain, AgentStatus
-from .messaging import A2AMessage, A2AChannel, MessageType, HandshakeStatus
+from .messaging import (
+    A2AMessage, A2AChannel, MessageType, HandshakeStatus,
+    MessageBroker, InMemoryBroker, IdempotencyStore, HandshakeStore,
+)
 from .discovery import A2ADiscovery
 
 __all__ = [
@@ -26,4 +29,9 @@ __all__ = [
     "MessageType",
     "HandshakeStatus",
     "A2ADiscovery",
+    # v2 additions
+    "MessageBroker",
+    "InMemoryBroker",
+    "IdempotencyStore",
+    "HandshakeStore",
 ]

@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import Any, Dict, List, Optional, TypedDict,Annotated
+from dataclasses import dataclass
 import operator
 from langgraph.graph import END, StateGraph
 
@@ -45,23 +46,47 @@ class FormationAgentState(TypedDict, total=False):
     rewrited_retry_count: int
     agri_response: Optional[AgriResponse]
 
+
+@dataclass
+class GenerationContext:
+    state: FormationAgentState
+    context: str
+    query: str
+    profile_text: str
+    warnings: List[str]
+
+
+@dataclass
+class FormationConfig:
+    llm_client: Any = None
+    mcp_rag: Optional[MCPRagServer] = None
+    mcp_context: Optional[MCPContextServer] = None
+    retriever: Any = None
+    evaluator: Any = None
+
 class FormationCoach:
-    def __init__(
-        self,
-        llm_client=None,
-        mcp_rag: Optional[MCPRagServer] = None,
-        mcp_context: Optional[MCPContextServer] = None,
-        # Keep old params for backward compatibility if needed, but they are deprecated
-        retriever=None,
-        evaluator=None,
-    ):
+    def __init__(self, config: Optional[FormationConfig] = None, **overrides):
+        """Initialize the FormationCoach.
+
+        Prefers a single `FormationConfig` parameter. Backwards-compatible kwargs
+        (`llm_client`, `mcp_rag`, `mcp_context`, `retriever`, `evaluator`) are
+        accepted via `overrides` to avoid breaking existing callers.
+        """
+        # Merge config and overrides
+        cfg = config or FormationConfig()
+        # allow overrides from legacy kwargs
+        for k, v in overrides.items():
+            if hasattr(cfg, k):
+                setattr(cfg, k, v)
+
+        llm_client = cfg.llm_client
         self.tool = FormationTool(llm=llm_client)
         self.refine = RefineTool(llm=llm_client)
-        
+
         # Protocol Servers
-        self.mcp_rag = mcp_rag
-        self.mcp_context = mcp_context
-        
+        self.mcp_rag = cfg.mcp_rag
+        self.mcp_context = cfg.mcp_context
+
         self.model_planner = "llama-3.1-8b-instant"
         self.model_answer = "llama-3.3-70b-versatile"
 
@@ -71,11 +96,11 @@ class FormationCoach:
         except Exception as exc:
             logger.error("Impossible d'initialiser le LLM : %s", exc)
             self.llm = None
-        
+
         # Retro-compatibility wrapper if old retriever passed
-        if retriever and not mcp_rag:
-             logger.warning("Using legacy retriever. Please migrate to MCPRagServer.")
-             # No simple wrapper possible without proper MCP init, assuming mcp_rag is passed by orchestrator
+        if cfg.retriever and not cfg.mcp_rag:
+            logger.warning("Using legacy retriever. Please migrate to MCPRagServer.")
+            # No simple wrapper possible without proper MCP init, assuming mcp_rag is passed by orchestrator
 
     # ------------------------------------------------------------------ #
     # Nœuds du graphe                                                    #
@@ -86,28 +111,39 @@ class FormationCoach:
         Analyse la question + Récupère le contexte via MCP Context.
         """
         query = state.get("user_query", "").strip()
-        
-        # MCP : Récupération du profil via le protocole
+        if not query:
+            warnings = list(state.get("warnings", []))
+            warnings.append("La question de formation est vide.")
+            return {"status": "ERROR", "warnings": warnings}
+
+        profile = self._get_profile_for_analyze(state)
+        warnings = list(state.get("warnings", []))
+
+        analysis = self.tool._analyze_request(query, profile)
+        return self._assemble_analyze_result(analysis, warnings)
+
+    def _get_profile_for_analyze(self, state: FormationAgentState) -> Dict[str, Any]:
+        """Retrieve learner profile preferring MCP context when available.
+
+        Kept as a helper to reduce branching in `analyze_node`.
+        """
         profile = {}
         if self.mcp_context:
             user_id = state.get("user_profile", {}).get("id", "anonymous")
             try:
                 profile = self.mcp_context.read_user_context(user_id)
             except Exception as e:
-                 logger.warning(f"MCP Context read failed: {e}")
-                 profile = state.get("learner_profile", {})
+                logger.warning(f"MCP Context read failed: {e}")
+                profile = state.get("learner_profile", {})
         else:
             profile = state.get("learner_profile", {})
+        return profile
 
-        warnings = list(state.get("warnings", []))
+    def _assemble_analyze_result(self, analysis: Dict[str, Any], warnings: List[str]) -> FormationAgentState:
+        """Compose the analyze_node result dict from analysis output.
 
-        if not query:
-            warnings.append("La question de formation est vide.")
-            return {"status": "ERROR", "warnings": warnings}
-        
-        # On analyse la question
-        analysis = self.tool._analyze_request(query, profile)
-
+        Centralizing this makes tests easier and reduces method-level complexity.
+        """
         intent = analysis.get("intent", "FORMATION")
         focus_topics = analysis.get("focus_topics", [])
         field_actions = analysis.get("field_actions", [])
@@ -115,7 +151,7 @@ class FormationCoach:
         urgency = analysis.get("urgency", "NORMAL")
         warnings.extend(analysis.get("warnings", []))
         is_relevant = analysis.get("is_relevant", True)
-        rejection_reason = analysis.get("rejection_reason", "") 
+        rejection_reason = analysis.get("rejection_reason", "")
 
         return {
             "intent": intent,
@@ -136,81 +172,57 @@ class FormationCoach:
         warnings = list(state.get("warnings", []))
         query = state.get("user_query", "").strip()
 
-        # Profil pour le niveau (via MCP Context si dispo, sinon state)
+        if not query:
+            return {"status": "ERROR", "warnings": warnings}
+
+        profile = self._get_profile_for_retrieval(state)
+        optimized_query = self._get_optimized_query(state, query, profile)
+
+        return self._call_mcp_rag_and_parse(optimized_query, profile, warnings)
+
+    def _get_profile_for_retrieval(self, state: FormationAgentState) -> Dict[str, Any]:
         profile = state.get("learner_profile", {})
         if self.mcp_context:
             try:
                 profile = self.mcp_context.read_user_context(state.get("user_profile", {}).get("id"))
-            except: 
+            except Exception:
                 pass
+        return profile
 
-        if not query:
-            return {"status": "ERROR", "warnings": warnings}
-
-        # GESTION DU RETRY
+    def _get_optimized_query(self, state: FormationAgentState, query: str, profile: Dict[str, Any]) -> str:
+        # Handle retries: reuse optimized query if already present
         if state.get("status") == "RETRY_SEARCH" and state.get("optimized_query"):
-             # Déjà optimisé
-             optimized_query = state.get("optimized_query")
-        else:
-             # Utilise l'outil interne juste pour la reformulation (planning)
-             plan = self.tool._plan_retrieval(query, profile)
-             optimized_query = plan.get("optimized_query") or query
-        
-        # ── APPEL MCP RAG ──
+            return state.get("optimized_query")
+
+        plan = self.tool._plan_retrieval(query, profile)
+        return plan.get("optimized_query") or query
+
+    def _normalize_sources(self, sources_raw: Any) -> List[Dict[str, Any]]:
+        norm_sources: List[Dict[str, Any]] = []
+        for s in sources_raw or []:
+            if isinstance(s, dict):
+                norm_sources.append({"title": s.get("source", s.get("title", "Doc")), "uri": s.get("uri")})
+            else:
+                norm_sources.append({"title": str(s), "uri": None})
+        return norm_sources
+
+    def _call_mcp_rag_and_parse(self, optimized_query: str, profile: Dict[str, Any], warnings: List[str]) -> FormationAgentState:
         if not self.mcp_rag:
             warnings.append("MCP RAG Server manquant.")
             return {"status": "NO_CONTEXT", "warnings": warnings}
-            
+
         try:
-            # MCP Search via call_tool abstraction
             search_level = profile.get("niveau", "debutant")
             args = {"query": optimized_query, "level": search_level, "top_k": 4}
             resp = self.mcp_rag.call_tool("search_agronomy_docs", args)
 
-            if not resp or resp.get("status") != "ok":
-                warnings.append("Aucun résultat MCP trouvé ou erreur MCP.")
-                return {
-                    "optimized_query": optimized_query,
-                    "retrieved_context": "",
-                    "sources": [],
-                    "status": "NO_CONTEXT",
-                    "warnings": warnings,
-                }
-
-            # Parse the returned content which is a JSON dump inside content[0]["text"]
-            content_list = resp.get("content") or []
-            if not content_list:
-                return {
-                    "optimized_query": optimized_query,
-                    "retrieved_context": "",
-                    "sources": [],
-                    "status": "NO_CONTEXT",
-                    "warnings": warnings + ["MCP response empty content"]
-                }
-
-            # Try to load JSON from the first content entry
-            raw_text = content_list[0].get("text", "")
-            try:
-                parsed = json.loads(raw_text)
-            except Exception:
-                # If already a dict or unexpected formatting, try to handle gracefully
-                parsed = raw_text if isinstance(raw_text, dict) else {}
-
-            # Extract context and sources in a robust way
-            context_text = parsed.get("context") if isinstance(parsed, dict) else str(parsed)
-            sources = parsed.get("sources", []) if isinstance(parsed, dict) else []
-
-            # Normalize sources to expected format
-            norm_sources = []
-            for s in sources:
-                if isinstance(s, dict):
-                    norm_sources.append({"title": s.get("source", s.get("title", "Doc")), "uri": s.get("uri")})
-                else:
-                    norm_sources.append({"title": str(s), "uri": None})
+            # Delegate parsing/validation to helper to reduce branching here
+            parsed_context, parsed_sources = self._parse_mcp_response(resp)
+            norm_sources = self._normalize_sources(parsed_sources)
 
             return {
                 "optimized_query": optimized_query,
-                "retrieved_context": context_text or "",
+                "retrieved_context": parsed_context or "",
                 "sources": norm_sources,
                 "status": "CONTEXT_FOUND",
                 "warnings": warnings,
@@ -221,47 +233,83 @@ class FormationCoach:
             warnings.append(f"Erreur MCP RAG: {e}")
             return {"status": "NO_CONTEXT", "warnings": warnings}
 
+    def _parse_mcp_response(self, resp: Dict[str, Any]) -> tuple[str, List[Dict[str, Any]]]:
+        """Parse MCP RAG response and return (context_text, sources).
+
+        Raises ValueError on invalid or empty responses.
+        """
+        if not resp or resp.get("status") != "ok":
+            raise ValueError("MCP response invalid or error status")
+
+        content_list = resp.get("content") or []
+        if not content_list:
+            raise ValueError("MCP response empty content")
+
+        raw_text = content_list[0].get("text", "")
+        try:
+            parsed = json.loads(raw_text)
+        except Exception:
+            parsed = raw_text if isinstance(raw_text, dict) else {}
+
+        context_text = parsed.get("context") if isinstance(parsed, dict) else str(parsed)
+        sources = parsed.get("sources", []) if isinstance(parsed, dict) else []
+        return context_text, sources
+
 
     def compose_node(self, state: FormationAgentState) -> FormationAgentState:
         warnings = list(state.get("warnings", []))
-        
-        # AG-UI Response Builder
-        agri_response = AgriResponse()
-        
-        # Gestion du hors-sujet
+
+        # Off-topic handling remains straightforward
         if state.get("is_relevant") is False:
             rejection = state.get("rejection_reason") or "Désolé, je ne peux répondre qu'aux questions agricoles."
             final_rejection = f"😊 **Bonjour !**\n\n{rejection}\n\nEn tant qu'expert AgriConnect, je suis à votre disposition pour toute question sur vos cultures."
-            
-            # AG-UI : Réponse simple pour le hors-sujet
+            agri_response = AgriResponse()
             agri_response.add_text(final_rejection)
-            
             return {
                 "answer_draft": final_rejection,
                 "final_response": final_rejection,
                 "agri_response": agri_response,
                 "status": "OFF_TOPIC",
-                "warnings": warnings
+                "warnings": warnings,
             }
 
-        # Contexte et Prompt Preparation
+        # Prepare inputs
         context = state.get("retrieved_context", "").strip()
         query = state.get("user_query", "").strip()
         profile_text = self.tool._format_profile(state.get("learner_profile", {}))
-        
+
         if not query:
             return {"warnings": warnings, "status": "ERROR"}
 
-        # Génération de réponse via LLM
+        gen_ctx = GenerationContext(state=state, context=context, query=query, profile_text=profile_text, warnings=warnings)
+        final_answer, warnings = self._generate_final_answer(gen_ctx)
+
+        agri_response = self._build_agri_response(final_answer, query)
+
+        return {
+            "answer_draft": final_answer,
+            "final_response": final_answer,
+            "agri_response": agri_response,
+            "warnings": warnings,
+            "status": "ANSWER_GENERATED",
+        }
+
+    def _generate_final_answer(self, gen_ctx: GenerationContext):
+        """Wrap the LLM prompt construction and call, returning (answer, warnings).
+
+        Keeps `compose_node` focused on high-level flow.
+        """
         final_answer = "Réponse technique indisponible."
-        
-        # ... Logique LLM existante ... (simplifiée pour AG-UI)
+        state = gen_ctx.state
+        context = gen_ctx.context
+        query = gen_ctx.query
+        profile_text = gen_ctx.profile_text
+        warnings = gen_ctx.warnings
         try:
-            # Construction du prompt (inchangée, utilise les templates)
             profile = state.get("learner_profile", {})
             level = str(profile.get("niveau", "standard")).lower()
             style_guidance = STYLE_GUIDANCE.get(level, STYLE_GUIDANCE["default"])
-            
+
             system_content = FORMATION_SYSTEM_TEMPLATE.format(
                 style_guidance=style_guidance,
                 culture_context=f"Culture: {profile.get('culture_actuelle', 'N/A')}"
@@ -272,56 +320,40 @@ class FormationCoach:
                 intent=state.get("intent", "FORMATION"),
                 urgency=state.get("urgency", "NORMAL"),
                 profile_text=profile_text,
-                context=context
+                context=context,
             )
-            
+
             completion = self.llm.chat.completions.create(
                 model=self.model_answer,
-                messages=[
-                    {"role": "system", "content": system_content},
-                    {"role": "user", "content": user_content},
-                ],
+                messages=[{"role": "system", "content": system_content}, {"role": "user", "content": user_content}],
                 temperature=0.35,
                 max_tokens=900,
             )
             final_answer = completion.choices[0].message.content
-            
         except Exception as e:
             logger.error(f"LLM Error: {e}")
             final_answer = "Désolé, je rencontre une difficulté technique pour formuler le conseil."
             warnings.append(str(e))
+        return final_answer, warnings
 
-        # ── CONSTRUCTION AG-UI ──
-        
-        # 1. Texte principal (Markdown supporté par WhatsApp et Web)
+    def _build_agri_response(self, final_answer: str, query: str) -> AgriResponse:
+        """Construct an `AgriResponse` with the main text and quick-reply picker."""
+        agri_response = AgriResponse()
         agri_response.add_text(final_answer)
-        
-        # 2. Boutons d'action (Quick Replies)
-        # Suggérer des actions selon le contexte
-        if "maladie" in query.lower() or "ravageur" in query.lower():
+
+        # Quick replies based on simple keywords in the question
+        ql = query.lower()
+        if "maladie" in ql or "ravageur" in ql:
             agri_response.add(ListPicker(
                 title="Que voulez-vous faire ?",
-                items=[
-                    {"id": "photo_upload", "label": "📷 Envoyer une photo"},
-                    {"id": "call_expert", "label": "📞 Parler à un agent"}
-                ]
+                items=[{"id": "photo_upload", "label": "📷 Envoyer une photo"}, {"id": "call_expert", "label": "📞 Parler à un agent"}],
             ))
         else:
             agri_response.add(ListPicker(
                 title="Aller plus loin :",
-                items=[
-                    {"id": "more_details", "label": "🔍 Plus de détails"},
-                    {"id": "related_topic", "label": "🌾 Sujet associé"}
-                ]
+                items=[{"id": "more_details", "label": "🔍 Plus de détails"}, {"id": "related_topic", "label": "🌾 Sujet associé"}],
             ))
-
-        return {
-            "answer_draft": final_answer,
-            "final_response": final_answer,
-            "agri_response": agri_response,
-            "warnings": warnings,
-            "status": "ANSWER_GENERATED",
-        }
+        return agri_response
 
     def evaluate_node(self, state: FormationAgentState) -> FormationAgentState:
         warnings = list(state.get("warnings", []))

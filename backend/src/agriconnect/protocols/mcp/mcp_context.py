@@ -1,20 +1,26 @@
 """
-MCP Context Server — ContextOptimizer exposé comme MCP Host.
-==============================================================
+MCP Context Server 2.0 — Semantic Cache Invalidation + Trace Recording.
+========================================================================
 
-C'est le POINT D'ENTRÉE UNIVERSEL pour tout protocole (A2A, AG-UI)
-qui a besoin du contexte utilisateur standardisé.
-
-AVANT (couplage) :
-
-
-Tout agent (interne ou externe via A2A) peut consommer
-les mêmes données de contexte de manière standardisée.
+Upgrades from v1:
+  - Cache entries use ``CachePolicy`` for TTL + keyword-based bypass
+  - Emergency/urgent/disease queries bypass cache automatically
+  - Every build_context call records a TraceStep
+  - Cache hits/misses/bypasses are traced for monitoring
 """
+
+from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Dict, List
+import time
+from typing import Any, Dict, List, Optional
+
+from backend.src.agriconnect.protocols.core import (
+    CachePolicy,
+    TraceCategory,
+    TraceEnvelope,
+)
 
 logger = logging.getLogger("MCP.Context")
 
@@ -32,21 +38,17 @@ class MCPContextServer:
     """
 
     def __init__(self, context_optimizer=None, session_factory=None, llm_client=None):
-        """
-        Args:
-            context_optimizer: Instance ContextOptimizer existante
-            session_factory: Factory SQLAlchemy (si optimizer non fourni)
-            llm_client: Client LLM (si optimizer non fourni)
-        """
         self._optimizer = context_optimizer
         self._session_factory = session_factory
         self._llm = llm_client
-        self._context_cache = {}  # Cache léger par user_id
+        self._context_cache: Dict[str, Dict[str, Any]] = {}    # data by user_id
+        self._cache_policies: Dict[str, CachePolicy] = {}       # policy by user_id
+        self._default_ttl: int = 300                             # 5 min
         self._tools = {}
         self._resources = {}
         self._register_tools()
         self._register_resources()
-        logger.info("🔌 MCP Context Server (Host) initialisé")
+        logger.info("🔌 MCP Context Server v2 initialisé (semantic cache)")
 
     def _lazy_optimizer(self):
         """Initialisation paresseuse du ContextOptimizer."""
@@ -264,22 +266,31 @@ class MCPContextServer:
     # CONVENIENCE (interface directe pour agents internes)
     # ═══════════════════════════════════════════════════════════
 
-    def read_user_context(self, user_id: str, query: str = "", zone: str = "", crop: str = "") -> Dict[str, Any]:
+    def read_user_context(
+        self,
+        user_id: str,
+        query: str = "",
+        zone: str = "",
+        crop: str = "",
+        trace_envelope: Optional[TraceEnvelope] = None,
+    ) -> Dict[str, Any]:
         """
         Raccourci pour les agents internes.
-        Retourne le profil/contexte utilisateur ou INSUFFICIENT_CONTEXT si incomplet.
+        Uses semantic cache invalidation (emergency keywords bypass cache).
         """
-        # Vérifier d'abord le cache
-        if user_id and user_id in self._context_cache:
+        policy = self._cache_policies.get(user_id)
+        bypass = False
+        if query:
+            temp_policy = CachePolicy(key="_check")
+            bypass = temp_policy.should_bypass(query)
+
+        if user_id in self._context_cache and policy and not policy.is_expired and not bypass:
             return self._context_cache[user_id]
 
-        # Construire le contexte
-        result = self._build_context({
-            "user_id": user_id or "anonymous",
-            "query": query,
-            "zone": zone,
-            "crop": crop,
-        })
+        result = self._build_context(
+            {"user_id": user_id or "anonymous", "query": query, "zone": zone, "crop": crop},
+            trace_envelope=trace_envelope,
+        )
         if result.get("error"):
             return {"user_id": user_id, "cached": False}
         return result

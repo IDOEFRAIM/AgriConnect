@@ -149,77 +149,56 @@ class MarketCoach:
             return {}
 
         intent = state.get("intent")
-        
         if intent not in ["REGISTER_SURPLUS", "SELL", "BUY_OFFER"]:
             return {}
 
-        errors = []
-        missing = []
-        updates = {}
+        errors: List[str] = []
+        missing: List[str] = []
+        updates: Dict[str, Any] = {}
 
-        # 1. Product Validation
-        if not state.get("product"):
-            missing.append("produit (maïs, sorgho...)")
+        # 1. Product
+        missing.extend(self._validate_product(state))
 
-        # 2. Quantity & Unit Validation
-        qty = state.get("quantity_mentioned")
-        unit = state.get("unit_mentioned", "sac")
-        
-        if not qty:
-            missing.append("quantité")
-        else:
-            unit_clean = str(unit).lower().replace("s", "")
-            factor = 100 
-            
-            for key, val in self.UNIT_REGISTRY.items():
-                if key in unit_clean:
-                    factor = val
-                    break
-            
-            try:
-                updates["normalized_quantity_kg"] = float(qty) * factor
-            except ValueError:
-                errors.append("Quantité invalide (doit être un nombre).")
+        # 2. Quantity & Unit
+        qty_updates, qty_errors, qty_missing = self._validate_quantity(state)
+        updates.update(qty_updates)
+        errors.extend(qty_errors)
+        missing.extend(qty_missing)
 
-        # 3. Location Validation
-        loc = state.get("location", "").lower()
-        if not loc:
-            missing.append("lieu")
-        elif not any(valid in loc for valid in self.VALID_CITIES):
-            # Non-blocking warning
-            updates["warnings"] = [f"Lieu '{loc}' non trouvé dans le registre officiel."]
+        # 3. Location
+        loc_missing, loc_warnings = self._validate_location(state)
+        missing.extend(loc_missing)
+        if loc_warnings:
+            updates.setdefault("warnings", []).extend(loc_warnings)
 
-        # 4. Price Validation
-        price = state.get("price_mentioned")
-        if price is not None and (not isinstance(price, (int, float)) or price < 0):
-             errors.append("Prix invalide.")
+        # 4. Price
+        errors.extend(self._validate_price(state))
 
         # Final Decision
         updates["missing_fields"] = missing
         updates["validation_errors"] = errors
 
         if not missing and not errors:
-            # Prepare for Idempotency
             user_id = state.get("user_profile", {}).get("phone", "anon_user")
             payload = {
-                 "product": state.get("product"),
-                 "quantity": updates.get("normalized_quantity_kg", 0),
-                 "price": price,
-                 "location": state.get("location"),
-                 "user_id": user_id
+                "product": state.get("product"),
+                "quantity": updates.get("normalized_quantity_kg", 0),
+                "price": state.get("price_mentioned"),
+                "location": state.get("location"),
+                "user_id": user_id,
             }
             payload_str = json.dumps(payload, sort_keys=True)
             tx_hash = hashlib.md5(payload_str.encode()).hexdigest()
-            
+
             updates.update({
                 "transaction_payload": payload,
                 "transaction_hash": tx_hash,
                 "waiting_for_confirmation": True,
-                "status": "WAITING_CONFIRMATION"
+                "status": "WAITING_CONFIRMATION",
             })
         else:
             updates["status"] = "MISSING_INFO"
-            
+
         return updates
 
     def fetch_data_node(self, state: MarketAgentState) -> Dict[str, Any]:
@@ -262,6 +241,123 @@ class MarketCoach:
             
         updates["market_data"] = data
         return updates
+
+    # ------------------------------------------------------------------ #
+    # EXTRA HELPERS (extracted to reduce cyclomatic complexity)
+    # ------------------------------------------------------------------ #
+    def _unit_factor(self, unit: Optional[str]) -> int:
+        """Return multiplication factor for given unit string."""
+        try:
+            unit_clean = str(unit).lower().replace("s", "")
+        except Exception:
+            return 100
+        for key, val in self.UNIT_REGISTRY.items():
+            if key in unit_clean:
+                return val
+        return 100
+
+    def _location_warnings(self, loc: str) -> List[str]:
+        """Return warnings list if location not recognized."""
+        if not loc:
+            return []
+        loc_l = loc.lower()
+        if any(valid in loc_l for valid in self.VALID_CITIES):
+            return []
+        return [f"Lieu '{loc}' non trouvé dans le registre officiel."]
+
+    def _execute_transaction(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Perform registration and return market_data fragment."""
+        result: Dict[str, Any] = {}
+        success = False
+        try:
+            success = self.tool.register_surplus_offer(
+                payload.get("product"),
+                payload.get("quantity"),
+                payload.get("location"),
+            )
+        except Exception:
+            success = False
+
+        result["registration_status"] = "SUCCESS" if success else "OFFLINE_SAVED"
+        if payload.get("location"):
+            try:
+                result["logistics"] = self.tool.get_logistics_info(payload.get("location"))
+            except Exception:
+                result["logistics"] = {}
+        return result
+
+    def _retrieve_product_market(self, product: Optional[str]) -> Dict[str, Any]:
+        """Fetch market data for a product using the tool shim."""
+        data: Dict[str, Any] = {}
+        if not product:
+            return data
+        try:
+            prices = self.tool.get_commodity_price(product)
+            if prices:
+                data["prices"] = prices
+        except Exception:
+            data["prices"] = []
+        try:
+            data["trends"] = self.tool.analyze_market_trends(product)
+        except Exception:
+            data["trends"] = {}
+        return data
+
+    # ------------------------------------------------------------------ #
+    # VALIDATION HELPERS
+    # ------------------------------------------------------------------ #
+    def _validate_product(self, state: MarketAgentState) -> List[str]:
+        """Return list of missing product-related fields."""
+        missing: List[str] = []
+        if not state.get("product"):
+            missing.append("produit (maïs, sorgho...)")
+        return missing
+
+    def _validate_quantity(self, state: MarketAgentState) -> tuple[Dict[str, Any], List[str], List[str]]:
+        """Validate and normalize quantity; returns (updates, errors, missing)."""
+        updates: Dict[str, Any] = {}
+        errors: List[str] = []
+        missing: List[str] = []
+
+        qty = state.get("quantity_mentioned")
+        unit = state.get("unit_mentioned", "sac")
+
+        if qty in (None, ""):
+            missing.append("quantité")
+            return updates, errors, missing
+
+        factor = self._unit_factor(unit)
+        try:
+            updates["normalized_quantity_kg"] = float(qty) * factor
+        except (ValueError, TypeError):
+            errors.append("Quantité invalide (doit être un nombre).")
+
+        return updates, errors, missing
+
+    def _validate_location(self, state: MarketAgentState) -> tuple[List[str], List[str]]:
+        """Return (missing_fields, warnings) for location."""
+        missing: List[str] = []
+        warnings: List[str] = []
+        loc = state.get("location", "")
+        if not loc:
+            missing.append("lieu")
+            return missing, warnings
+
+        warnings = self._location_warnings(loc)
+        return missing, warnings
+
+    def _validate_price(self, state: MarketAgentState) -> List[str]:
+        """Validate price field and return list of errors."""
+        errors: List[str] = []
+        price = state.get("price_mentioned")
+        if price is None:
+            return errors
+        if not isinstance(price, (int, float)):
+            errors.append("Prix invalide.")
+            return errors
+        if price < 0:
+            errors.append("Prix invalide.")
+        return errors
 
     def compose_node(self, state: MarketAgentState) -> Dict[str, Any]:
         """Generates the final response based on status."""

@@ -1,7 +1,8 @@
 import json
 import logging
 import re
-from typing import Any, Dict, List, Optional, TypedDict
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, TypedDict, Tuple
 
 from langgraph.graph import END, StateGraph
 from backend.src.agriconnect.graphs.prompts import (
@@ -42,6 +43,20 @@ class SentinelState(TypedDict, total=False):
     rewrited_retry_count:int
 
 
+@dataclass
+class ComposeContext:
+    query: str
+    location: str
+    risk_summary: str
+    metrics: Dict[str, Any]
+    flood: Dict[str, Any]
+    hazards: List[Dict[str, Any]]
+    context: str
+    surface_calc_info: str = ""
+    user_level: str = "debutant"
+    warnings: List[str] = field(default_factory=list)
+
+
 class ClimateSentinel:
     """Agent de veille climatique AgriConnect avec contrôle anti-fraude et diagnostics agro-météo."""
 
@@ -79,7 +94,6 @@ class ClimateSentinel:
 
     # ------------------------------------------------------------------ #
     # Helpers                                                            #
-    # ------------------------------------------------------------------ #
 
     def _build_context(self, nodes: List[Any]) -> str:
         """Construit le contexte RAG à partir des nœuds récupérés."""
@@ -136,7 +150,7 @@ class ClimateSentinel:
         if profile.get("zone"): parts.append(profile["zone"])
         return ", ".join(parts) if parts else "Burkina Faso"
         
-    def _fallback_response(self, query, location, hazards, risk_summary, metrics, flood, sources) -> str:
+    def _fallback_response(self, query, location, risk_summary, metrics) -> str:
         """Génère une réponse de secours en cas d'échec du LLM."""
         return (
             "Désolé, je rencontre des difficultés techniques pour analyser votre demande en détail. "
@@ -147,10 +161,136 @@ class ClimateSentinel:
             "Veuillez réessayer dans quelques instants."
         )
 
-    # ------------------------------------------------------------------ #
-    # Nœuds du graphe                                                    #
-    # ------------------------------------------------------------------ #
+    def _assess_security(self, query: str, warnings: List[str]) -> Dict[str, str]:
+        """Run moderation and return security status and reason; may append warnings."""
+        moderation = self.tools._moderate_request(query)
+        security_status = "SCAM_DETECTED" if moderation.get("is_scam") else "SAFE"
+        security_reason = moderation.get("reason", "")
+        if security_reason:
+            warnings.append(security_reason)
+        return {"security_status": security_status, "security_reason": security_reason}
 
+    def _compute_signals(self, weather: Dict[str, Any], satellite: Dict[str, Any], location: Dict[str, Any]) -> Dict[str, Any]:
+        """Compute metrics, flood risk and hazards from tools; return packed results."""
+        metrics = self.tools._compute_metrics(weather, satellite)
+        flood = self.tools._assess_flood_risk(weather, satellite, location)
+        hazards = self.tools._derive_hazards(metrics, flood)
+        return {"metrics": metrics, "flood": flood, "hazards": hazards}
+
+    def _build_signals_state(self, metrics: Dict[str, Any], flood: Dict[str, Any], hazards: List[Dict[str, Any]], warnings: List[str]) -> Dict[str, Any]:
+        """Prepare the state fields derived from signals."""
+        if not hazards:
+            warnings.append("Aucun risque majeur détecté (veille standard).")
+
+        summary_lines = [
+            f"- {hazard['label']} (niveau {hazard['severity']}): {hazard['explanation']}"
+            for hazard in hazards
+        ]
+        risk_summary = "\n".join(summary_lines) or "Pas d'anomalie critique détectée."
+
+        return {
+            "raw_metrics": metrics,
+            "flood_risk": flood,
+            "hazards": hazards,
+            "risk_summary": risk_summary,
+            "warnings": warnings,
+            "status": "SIGNALS_READY",
+        }
+
+    def _compute_surface_info(self, query_text: str, et0: float) -> str:
+        """Extract surface (ha or m2) from text and compute water loss message."""
+        if not query_text or et0 <= 0:
+            return ""
+
+        ha_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:ha|hectare|hectares)", query_text)
+        m2_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:m2|m²|mc|metres?\s*carres?|mètres?\s*carrés?)", query_text)
+
+        if not (ha_match or m2_match):
+            return ""
+
+        try:
+            if ha_match:
+                val = float(ha_match.group(1).replace(",", "."))
+                area_m2 = val * 10000
+                unit_str = f"{val} hectares"
+            else:
+                val = float(m2_match.group(1).replace(",", "."))
+                area_m2 = val
+                unit_str = f"{val} m²"
+
+            loss_liters = area_m2 * et0
+            return (
+                f"CALCUL AUTOMATIQUE EFFECTUÉ : Pour {unit_str} avec une ET0 de {et0}mm, "
+                f"la perte en eau est de {loss_liters:,.0f} litres AUJOURD'HUI. "
+                "Intègre ce chiffre IMPÉRATIVEMENT dans ta réponse."
+            )
+        except Exception:
+            return ""
+
+    def _call_llm_for_compose(self, system_content: str, user_content: str) -> str:
+        """Call the LLM for compose_node and return answer or raise Exception."""
+        if not self.llm:
+            raise RuntimeError("LLM indisponible")
+
+        completion = self.llm.chat.completions.create(
+            model=self.model_answer,
+            messages=[
+                {"role": "system", "content": system_content},
+                {"role": "user", "content": user_content},
+            ],
+            temperature=0.35,
+            max_tokens=650,
+        )
+        answer = completion.choices[0].message.content
+        if not answer:
+            raise ValueError("Réponse vide du LLM.")
+        return answer
+
+    def _gather_compose_inputs(self, state: SentinelState) -> Dict[str, Any]:
+        """Collect and return the small set of inputs compose_node needs."""
+        # Use ComposeContext to group related parameters
+        ctx = ComposeContext(
+            query=state.get("user_query", ""),
+            location=self._format_location(state.get("location_profile", {})),
+            risk_summary=state.get("risk_summary", ""),
+            metrics=state.get("raw_metrics", {}),
+            flood=state.get("flood_risk", {}),
+            hazards=state.get("hazards", []),
+            context=state.get("retrieved_context", ""),
+            surface_calc_info="",
+            user_level=state.get("user_level", "debutant"),
+            warnings=list(state.get("warnings", [])),
+        )
+        return ctx
+
+    def _build_compose_prompt(
+        self,
+        ctx: "ComposeContext",
+    ) -> "Tuple[str, str]":
+        """Return (system_content, user_content) for compose_node using a ComposeContext."""
+        niveau = str(ctx.user_level or "debutant").lower()
+        style_guidance = self._STYLE_GUIDANCE.get(niveau, self._STYLE_GUIDANCE["default"]) 
+
+        system_content = SENTINELLE_SYSTEM_TEMPLATE + f"\n\nCONSIGNE STYLE: {style_guidance}"
+
+        hazard_json = json.dumps(ctx.hazards, ensure_ascii=False)
+        metrics_json = json.dumps(ctx.metrics, ensure_ascii=False)
+        user_content = SENTINELLE_USER_TEMPLATE.format(
+            current_date_str="13 Février 2026 (Saison Sèche)",
+            query=ctx.query,
+            location=ctx.location,
+            risk_summary=ctx.risk_summary,
+            metrics_json=json.dumps(metrics_json, ensure_ascii=False),
+            flood_data=json.dumps(ctx.flood, ensure_ascii=False),
+            hazard_json=json.dumps(hazard_json, ensure_ascii=False),
+            context=ctx.context,
+            surface_calc_info=ctx.surface_calc_info,
+        )
+
+        return system_content, user_content
+
+
+    
     def analyze_node(self, state: SentinelState) -> SentinelState:
         query = state.get("user_query", "").strip()
         warnings = list(state.get("warnings", []))
@@ -164,47 +304,27 @@ class ClimateSentinel:
             state.update({"warnings": warnings, "status": "ERROR"})
             return state
 
-        moderation = self.tools._moderate_request(query)
-        security_status = "SCAM_DETECTED" if moderation.get("is_scam") else "SAFE"
-        security_reason = moderation.get("reason", "")
-        if security_reason:
-            warnings.append(security_reason)
-
-        if security_status == "SCAM_DETECTED":
+        # Security / moderation
+        sec = self._assess_security(query, warnings)
+        if sec["security_status"] == "SCAM_DETECTED":
             state = dict(state)
             state.update({
                 "warnings": warnings,
-                "security_status": security_status,
-                "security_reason": security_reason,
+                "security_status": sec["security_status"],
+                "security_reason": sec["security_reason"],
                 "status": "SCAM_DETECTED",
             })
             return state
 
-        metrics = self.tools._compute_metrics(weather, satellite)
-        flood = self.tools._assess_flood_risk(weather, satellite, location)
-        hazards = self.tools._derive_hazards(metrics, flood)
-
-        if not hazards:
-            warnings.append("Aucun risque majeur détecté (veille standard).")
-
-        summary_lines = [
-            f"- {hazard['label']} (niveau {hazard['severity']}): {hazard['explanation']}"
-            for hazard in hazards
-        ]
-        risk_summary = "\n".join(summary_lines) or "Pas d'anomalie critique détectée."
-
-        
+        # Signals (metrics, flood, hazards)
+        signals = self._compute_signals(weather, satellite, location)
+        built = self._build_signals_state(signals["metrics"], signals["flood"], signals["hazards"], warnings)
 
         state = dict(state)
+        state.update(built)
         state.update({
-            "raw_metrics": metrics,
-            "flood_risk": flood,
-            "hazards": hazards,
-            "risk_summary": risk_summary,
-            "warnings": warnings,
-            "security_status": security_status,
-            "security_reason": security_reason,
-            "status": "SIGNALS_READY",
+            "security_status": sec["security_status"],
+            "security_reason": sec["security_reason"],
         })
         return state
 
@@ -290,110 +410,41 @@ class ClimateSentinel:
             })
             return state
 
-        context = state.get("retrieved_context", "")
-        query = state.get("user_query", "")
-        hazards = state.get("hazards", [])
-        risk_summary = state.get("risk_summary", "")
-        metrics = state.get("raw_metrics", {})
-        flood = state.get("flood_risk", {})
-        location = self._format_location(state.get("location_profile", {}))
-        sources = state.get("sources", [])
+        ctx = self._gather_compose_inputs(state)
 
-        # Détection automatique de surface pour le calcul d'eau
-        query_text = query.lower()
-        surface_calc_info = ""
-        et0 = metrics.get("et0_mm", 0.0)
-        
-        # Patterns robustes pour capturer hectares (ha) et mètres carrés (m², m2, mc)
-        # Supporte : "1.5 ha", "1,5 hectares", "500 m2", "500 mètres carrés"
-        ha_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:ha|hectare|hectares)", query_text)
-        m2_match = re.search(r"(\d+(?:[.,]\d+)?)\s*(?:m2|m²|mc|metres?\s*carres?|mètres?\s*carrés?)", query_text)
-        
-        if (ha_match or m2_match) and et0 > 0:
-            try:
-                if ha_match:
-                    val = float(ha_match.group(1).replace(",", "."))
-                    area_m2 = val * 10000
-                    unit_str = f"{val} hectares"
-                else:
-                    val = float(m2_match.group(1).replace(",", "."))
-                    area_m2 = val
-                    unit_str = f"{val} m²"
-                
-                loss_liters = area_m2 * et0
-                surface_calc_info = (
-                    f"CALCUL AUTOMATIQUE EFFECTUÉ : Pour {unit_str} avec une ET0 de {et0}mm, "
-                    f"la perte en eau est de {loss_liters:,.0f} litres AUJOURD'HUI. "
-                    "Intègre ce chiffre IMPÉRATIVEMENT dans ta réponse."
-                )
-            except Exception:
-                pass
+        ctx.surface_calc_info = self._compute_surface_info(ctx.query.lower(), ctx.metrics.get("et0_mm", 0.0))
+        fallback = self._fallback_response(ctx.query, ctx.location, ctx.risk_summary, ctx.metrics)
 
-        fallback = self._fallback_response(query, location, hazards, risk_summary, metrics, flood, sources)
-
-        if not context:
-            warnings.append("Réponse générée sans contexte vérifié.")
+        if not ctx.context:
+            ctx.warnings.append("Réponse générée sans contexte vérifié.")
 
         if not self.llm:
-            warnings.append("LLM indisponible (mode secours).")
+            ctx.warnings.append("LLM indisponible (mode secours).")
             state = dict(state)
             state.update({
                 "final_response": fallback,
-                "warnings": warnings,
+                "warnings": ctx.warnings,
                 "status": "LLM_DOWN",
             })
             return state
 
-        hazard_json = json.dumps(hazards, ensure_ascii=False)
-        metrics_json = json.dumps(metrics, ensure_ascii=False)
-        current_date_str = "13 Février 2026 (Saison Sèche)"
-
-        # 1. Détection du niveau utilisateur
-        niveau = str(state.get("user_level", "debutant")).lower()
-        style_guidance = self._STYLE_GUIDANCE.get(niveau, self._STYLE_GUIDANCE["default"])
-
         try:
-            # 2. Prompt système adapté au niveau
-            system_content = SENTINELLE_SYSTEM_TEMPLATE + f"\n\nCONSIGNE STYLE: {style_guidance}"
-            # 3. Prompt utilisateur inchangé
-            user_content = SENTINELLE_USER_TEMPLATE.format(
-                current_date_str=current_date_str,
-                query=query,
-                location=location,
-                risk_summary=risk_summary,
-                metrics_json=json.dumps(metrics_json, ensure_ascii=False),
-                flood_data=json.dumps(flood, ensure_ascii=False),
-                hazard_json=json.dumps(hazard_json, ensure_ascii=False),
-                context=context,
-                surface_calc_info=surface_calc_info
-            )
+            system_content, user_content = self._build_compose_prompt(ctx)
 
-            # 4. Appel au LLM
-            completion = self.llm.chat.completions.create(
-                model=self.model_answer,
-                messages=[
-                    {"role": "system", "content": system_content},
-                    {"role": "user", "content": user_content},
-                ],
-                temperature=0.35,
-                max_tokens=650,
-            )
-            answer = completion.choices[0].message.content
-            if not answer:
-                raise ValueError("Réponse vide du LLM.")
+            answer = self._call_llm_for_compose(system_content, user_content)
             state = dict(state)
             state.update({
                 "final_response": answer,
-                "warnings": warnings,
+                "warnings": ctx.warnings,
                 "status": "ANSWER_READY",
             })
             return state
         except Exception as exc:
-            warnings.append(f"Erreur LLM: {exc}")
+            ctx.warnings.append(f"Erreur LLM: {exc}")
             state = dict(state)
             state.update({
                 "final_response": fallback,
-                "warnings": warnings,
+                "warnings": ctx.warnings,
                 "status": "LLM_ERROR",
             })
             return state
@@ -420,7 +471,7 @@ class ClimateSentinel:
         context = state.get("retrieved_context", "")
         answer = state.get("final_response", "")
 
-        if not query or not context or not answer:
+        if self._should_skip_evaluation(query, context, answer):
             state = dict(state)
             state.update({"warnings": warnings})
             return state
@@ -435,6 +486,10 @@ class ClimateSentinel:
             state = dict(state)
             state.update({"warnings": warnings})
             return state
+
+    def _should_skip_evaluation(self, query: str, context: str, answer: str) -> bool:
+        """Decide whether to skip automatic evaluation (missing inputs)."""
+        return not query or not context or not answer
 
     def _build_scam_response(self, state: SentinelState) -> str:
         reason = state.get("security_reason") or "Demande suspecte détectée."
