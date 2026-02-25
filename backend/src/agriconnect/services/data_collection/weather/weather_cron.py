@@ -7,7 +7,7 @@ import sys
 
 # Ajout du chemin racine pour permettre l'import de backend.tools
 sys.path.append(os.getcwd())
-from backend.src.agriconnect.tools.db_handler import DBHandler
+from agriconnect.tools.db_handler import DBHandler
 
 class WeatherCronScraper:
     def __init__(self):

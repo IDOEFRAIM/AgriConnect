@@ -68,8 +68,8 @@ class AgentCard:
         self.crops = [c.strip().lower() for c in self.crops]
 
     def supports_zone(self, zone: str) -> bool:
-        z = zone.strip().lower()
-        return "all" in self.zones or z in self.zones
+        z = zone.strip().upper()
+        return "ALL" in self.zones or z in self.zones
 
     def supports_crop(self, crop: str) -> bool:
         c = crop.strip().lower()
@@ -112,6 +112,54 @@ class A2ARegistry:
                     ids.discard(agent_id)
             logger.info("❌ Agent [%s] retiré", agent_id)
 
+    def _candidate_ids_for(self, intent: Optional[str] = None, zone: Optional[str] = None) -> Optional[Set[str]]:
+        """
+        Return a set of candidate agent IDs matching the given intent and/or zone,
+        or None when no filtering is requested.
+        """
+        intent_key = self._normalize_intent(intent)
+        zone_key = self._normalize_zone(zone)
+
+        # If no filtering requested, signal with None
+        no_intent = intent_key is None
+        no_zone = zone_key is None
+        zone_is_all = zone_key == "ALL"
+        if no_intent:
+            if no_zone:
+                return None
+            if zone_is_all:
+                return None
+
+        intent_ids = self._get_intent_ids(intent_key) if intent_key else None
+        zone_ids = self._get_zone_ids(zone_key) if zone_key and zone_key != "ALL" else None
+
+        if intent_ids is None:
+            return zone_ids
+        if zone_ids is None:
+            return intent_ids
+
+        return intent_ids & zone_ids
+
+    def _normalize_intent(self, intent: Optional[str]) -> Optional[str]:
+        return intent.strip().upper() if intent and intent.strip() else None
+
+    def _normalize_zone(self, zone: Optional[str]) -> Optional[str]:
+        return zone.strip().upper() if zone and zone.strip() else None
+
+    def _get_intent_ids(self, intent_key: str) -> Set[str]:
+        return set(self._intent_index.get(intent_key, set()))
+
+    def _get_zone_ids(self, zone_key: str) -> Set[str]:
+        return set(self._zone_index.get(zone_key, set())) | set(self._zone_index.get("ALL", set()))
+
+    def _apply_filters(self, candidates: List[AgentCard], domain: Optional[AgentDomain], crop: Optional[str]) -> List[AgentCard]:
+        return [
+            a for a in candidates
+            if a.status == AgentStatus.ACTIVE
+            and (not domain or a.domain == domain)
+            and (not crop or a.supports_crop(crop))
+        ]
+
     def discover(
         self,
         intent: Optional[str] = None,
@@ -124,15 +172,7 @@ class A2ARegistry:
         Utilise les index pour filtrer massivement, puis affine les résultats.
         """
         # 1. Intersection des index (Recherche ultra-rapide)
-        candidates_ids = None
-
-        if intent:
-            intent_ids = self._intent_index.get(intent.upper(), set())
-            candidates_ids = intent_ids if candidates_ids is None else candidates_ids & intent_ids
-
-        if zone and zone.lower() != "all":
-            zone_ids = self._zone_index.get(zone.lower(), set()) | self._zone_index.get("all", set())
-            candidates_ids = zone_ids if candidates_ids is None else candidates_ids & zone_ids
+        candidates_ids = self._candidate_ids_for(intent, zone)
 
         # 2. Récupération des objets
         if candidates_ids is not None:
@@ -141,12 +181,7 @@ class A2ARegistry:
             candidates = list(self._agents.values())
 
         # 3. Filtrage fin (Cultures, Domaine, Status)
-        results = [
-            a for a in candidates 
-            if a.status == AgentStatus.ACTIVE
-            and (not domain or a.domain == domain)
-            and (not crop or a.supports_crop(crop))
-        ]
+        results = self._apply_filters(candidates, domain, crop)
 
         # 4. Tri par performance
         results.sort(key=lambda a: a.avg_response_ms)

@@ -12,7 +12,7 @@ import sys
 # Ajout du root au path pour trouver config.py
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import backend.src.agriconnect.config as config
+import agriconnect.config as config
 
 # Importer tes services (adapter si signatures différentes)
 from . import DocumentScraper, WeatherForecastService, SonagessScraper, AnamBulletinScraper

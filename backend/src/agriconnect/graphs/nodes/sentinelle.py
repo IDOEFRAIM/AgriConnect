@@ -5,18 +5,18 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, TypedDict, Tuple
 
 from langgraph.graph import END, StateGraph
-from backend.src.agriconnect.graphs.prompts import (
+from agriconnect.graphs.prompts import (
     SENTINELLE_USER_TEMPLATE,
     SENTINELLE_SYSTEM_TEMPLATE,
     STYLE_GUIDANCE,
 )
 
-from backend.src.agriconnect.rag.components import get_groq_sdk
-from backend.src.agriconnect.rag.metric import RAGEvaluator
-from backend.src.agriconnect.rag.retriever import AgileRetriever
+from agriconnect.rag.components import get_groq_sdk
+from agriconnect.rag.metric import RAGEvaluator
+from agriconnect.rag.retriever import AgileRetriever
 
-from backend.src.agriconnect.tools.sentinelle import SentinelleTool
-from backend.src.agriconnect.tools.refine import RefineTool
+from agriconnect.tools.sentinelle import SentinelleTool
+from agriconnect.tools.refine import RefineTool
 logger = logging.getLogger("Agent.ClimateSentinel")
 
 

@@ -10,7 +10,7 @@ class TestA2ARegistry:
     """Tests du registre d'agents A2A."""
 
     def test_register_agent(self):
-        from backend.src.agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
+        from agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
 
         reg = A2ARegistry()
         card = AgentCard(
@@ -25,7 +25,7 @@ class TestA2ARegistry:
         assert len(agent_id) > 0
 
     def test_discover_by_domain(self):
-        from backend.src.agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
+        from agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
 
         reg = A2ARegistry()
         card = AgentCard(
@@ -41,7 +41,7 @@ class TestA2ARegistry:
         assert any(c.name == "FormationAgent" for c in found)
 
     def test_discover_by_intent(self):
-        from backend.src.agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
+        from agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
 
         reg = A2ARegistry()
         card = AgentCard(
@@ -56,7 +56,7 @@ class TestA2ARegistry:
         assert found[0].name == "PriceAgent"
 
     def test_register_and_unregister(self):
-        from backend.src.agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
+        from agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
 
         reg = A2ARegistry()
         card = AgentCard(name="TempAgent", domain=AgentDomain.SOIL)
@@ -66,7 +66,7 @@ class TestA2ARegistry:
         assert len(reg.discover()) == 0
 
     def test_heartbeat_updates_status(self):
-        from backend.src.agriconnect.protocols.a2a.registry import (
+        from agriconnect.protocols.a2a.registry import (
             A2ARegistry, AgentCard, AgentDomain, AgentStatus,
         )
 
@@ -77,7 +77,7 @@ class TestA2ARegistry:
         assert reg._agents[agent_id].status == AgentStatus.BUSY
 
     def test_stats(self):
-        from backend.src.agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
+        from agriconnect.protocols.a2a.registry import A2ARegistry, AgentCard, AgentDomain
 
         reg = A2ARegistry()
         reg.register(AgentCard(name="A", domain=AgentDomain.FORMATION, intents=["LEARN"]))
@@ -91,7 +91,7 @@ class TestA2AMessaging:
     """Tests du canal de messagerie A2A."""
 
     def test_create_message(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AMessage, MessageType
+        from agriconnect.protocols.a2a.messaging import A2AMessage, MessageType
 
         msg = A2AMessage(
             sender_id="agent_1",
@@ -106,7 +106,7 @@ class TestA2AMessaging:
         assert msg.intent == "CHECK_PRICE"
 
     def test_message_validation_ok(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AMessage, MessageType
+        from agriconnect.protocols.a2a.messaging import A2AMessage, MessageType
 
         msg = A2AMessage(
             sender_id="a1",
@@ -117,14 +117,14 @@ class TestA2AMessaging:
         assert result == {"status": "ok"}
 
     def test_message_validation_missing_sender(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AMessage
+        from agriconnect.protocols.a2a.messaging import A2AMessage
 
         msg = A2AMessage(receiver_id="a2", intent="SELL")
         result = msg.validate()
         assert "error" in result
 
     def test_copy_for_receiver(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AMessage, MessageType
+        from agriconnect.protocols.a2a.messaging import A2AMessage, MessageType
 
         msg = A2AMessage(
             sender_id="broadcaster",
@@ -141,8 +141,8 @@ class TestA2AMessaging:
         assert copy.message_id != msg.message_id
 
     def test_channel_send_receive(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage, MessageType
-        from backend.src.agriconnect.protocols.core import AckStatus
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage, MessageType
+        from agriconnect.protocols.core import AckStatus
 
         channel = A2AChannel()
 
@@ -161,7 +161,7 @@ class TestA2AMessaging:
         assert inbox[0].payload["type"] == "FLOOD"
 
     def test_send_requires_receiver_id(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
 
         channel = A2AChannel()
         msg = A2AMessage(sender_id="a1", intent="SELL")  # no receiver_id
@@ -169,7 +169,7 @@ class TestA2AMessaging:
             channel.send(msg)
 
     def test_broadcast_creates_copies(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage, MessageType
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage, MessageType
 
         channel = A2AChannel()
         channel.subscribe("a1", "ALERTS")
@@ -194,7 +194,7 @@ class TestA2AMessaging:
         assert inbox_a1[0].message_type == MessageType.BROADCAST
 
     def test_broadcast_excludes_sender(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
 
         channel = A2AChannel()
         channel.subscribe("broadcaster", "NEWS")
@@ -206,7 +206,7 @@ class TestA2AMessaging:
         assert "listener" in delivered
 
     def test_handshake_requires_receiver_id(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
 
         channel = A2AChannel()
         msg = A2AMessage(sender_id="a1", intent="NEGOTIATE")
@@ -214,7 +214,7 @@ class TestA2AMessaging:
             channel.initiate_handshake(msg)
 
     def test_handshake_full_cycle(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import (
+        from agriconnect.protocols.a2a.messaging import (
             A2AChannel, A2AMessage, HandshakeStatus, MessageType,
         )
 
@@ -234,8 +234,8 @@ class TestA2AMessaging:
         assert resp.sender_id == "seller"
 
     def test_idempotency_dedup(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
-        from backend.src.agriconnect.protocols.core import AckStatus
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
+        from agriconnect.protocols.core import AckStatus
 
         channel = A2AChannel()
         msg = A2AMessage(sender_id="a1", receiver_id="a2", intent="SELL")
@@ -247,7 +247,7 @@ class TestA2AMessaging:
         assert len(inbox) == 1
 
     def test_channel_stats(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
 
         channel = A2AChannel()
         channel.send(A2AMessage(sender_id="a", receiver_id="b", intent="X"))
@@ -260,14 +260,14 @@ class TestA2ADiscovery:
     """Tests du service de découverte A2A."""
 
     def test_discovery_init(self):
-        from backend.src.agriconnect.protocols.a2a import A2ADiscovery
+        from agriconnect.protocols.a2a import A2ADiscovery
 
         discovery = A2ADiscovery()
         assert discovery.registry is not None
         assert discovery.channel is not None
 
     def test_register_internal_agents(self):
-        from backend.src.agriconnect.protocols.a2a import A2ADiscovery
+        from agriconnect.protocols.a2a import A2ADiscovery
 
         discovery = A2ADiscovery()
         discovery.register_internal_agents()
@@ -277,7 +277,7 @@ class TestA2ADiscovery:
         assert stats["active"] >= 5
 
     def test_discover_agent_by_intent(self):
-        from backend.src.agriconnect.protocols.a2a import A2ADiscovery
+        from agriconnect.protocols.a2a import A2ADiscovery
 
         discovery = A2ADiscovery()
         discovery.register_internal_agents()
@@ -286,16 +286,16 @@ class TestA2ADiscovery:
         assert any(c.name == "MarketCoach" for c in found)
 
 
-# ═══════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════=
 # v2 TESTS — Protocol Hardening & Observability
-# ═══════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════=
 
 
 class TestTraceEnvelope:
     """Tests for structured decision tracing."""
 
     def test_create_envelope(self):
-        from backend.src.agriconnect.protocols.core import TraceEnvelope, CorrelationCtx
+        from agriconnect.protocols.core import TraceEnvelope, CorrelationCtx
 
         corr = CorrelationCtx(user_id="farmer_42", session_id="sess_1")
         env = TraceEnvelope(correlation=corr)
@@ -304,7 +304,7 @@ class TestTraceEnvelope:
         assert env.correlation.user_id == "farmer_42"
 
     def test_record_steps(self):
-        from backend.src.agriconnect.protocols.core import TraceEnvelope, TraceCategory
+        from agriconnect.protocols.core import TraceEnvelope, TraceCategory
 
         env = TraceEnvelope()
         env.record(
@@ -322,7 +322,7 @@ class TestTraceEnvelope:
         assert env.steps[0].duration_ms == 12.5
 
     def test_complete_envelope(self):
-        from backend.src.agriconnect.protocols.core import TraceEnvelope
+        from agriconnect.protocols.core import TraceEnvelope
 
         env = TraceEnvelope()
         env.complete()
@@ -330,7 +330,7 @@ class TestTraceEnvelope:
         assert env.completed_at
 
     def test_serialize_deserialize(self):
-        from backend.src.agriconnect.protocols.core import TraceEnvelope, TraceCategory
+        from agriconnect.protocols.core import TraceEnvelope, TraceCategory
 
         env = TraceEnvelope()
         env.record(TraceCategory.ROUTING, "Channel", "send", reasoning="test")
@@ -344,7 +344,7 @@ class TestTraceEnvelope:
         assert restored.status == "completed"
 
     def test_correlation_child(self):
-        from backend.src.agriconnect.protocols.core import CorrelationCtx
+        from agriconnect.protocols.core import CorrelationCtx
 
         parent = CorrelationCtx(user_id="u1", session_id="s1")
         child = parent.child(parent_id="msg_42")
@@ -357,7 +357,7 @@ class TestHandshakeFSM:
     """Tests for finite-state-machine handshake transitions."""
 
     def test_valid_proposed_to_accepted(self):
-        from backend.src.agriconnect.protocols.core import HandshakeRecord, HSState
+        from agriconnect.protocols.core import HandshakeRecord, HSState
 
         rec = HandshakeRecord(
             handshake_id="hs1", initiator_id="buyer", responder_id="seller", intent="TRADE"
@@ -369,7 +369,7 @@ class TestHandshakeFSM:
         assert len(rec.history) == 1
 
     def test_valid_proposed_to_counter(self):
-        from backend.src.agriconnect.protocols.core import HandshakeRecord, HSState
+        from agriconnect.protocols.core import HandshakeRecord, HSState
 
         rec = HandshakeRecord(
             handshake_id="hs2", initiator_id="a", responder_id="b", intent="NEGOTIATE"
@@ -378,7 +378,7 @@ class TestHandshakeFSM:
         assert rec.current_state == HSState.COUNTER
 
     def test_counter_chain(self):
-        from backend.src.agriconnect.protocols.core import HandshakeRecord, HSState
+        from agriconnect.protocols.core import HandshakeRecord, HSState
 
         rec = HandshakeRecord(
             handshake_id="hs3", initiator_id="a", responder_id="b",
@@ -391,7 +391,7 @@ class TestHandshakeFSM:
         assert rec.turns == 3
 
     def test_invalid_transition_raises(self):
-        from backend.src.agriconnect.protocols.core import HandshakeRecord, HSState, HandshakeFSMError
+        from agriconnect.protocols.core import HandshakeRecord, HSState, HandshakeFSMError
 
         rec = HandshakeRecord(
             handshake_id="hs4", initiator_id="a", responder_id="b", intent="X"
@@ -404,7 +404,7 @@ class TestHandshakeFSM:
             rec.transition(HSState.ACCEPTED, "a")
 
     def test_max_turns_enforced(self):
-        from backend.src.agriconnect.protocols.core import HandshakeRecord, HSState, HandshakeFSMError
+        from agriconnect.protocols.core import HandshakeRecord, HSState, HandshakeFSMError
 
         rec = HandshakeRecord(
             handshake_id="hs5", initiator_id="a", responder_id="b",
@@ -416,7 +416,7 @@ class TestHandshakeFSM:
             rec.transition(HSState.COUNTER, "b")
 
     def test_accepted_to_completed(self):
-        from backend.src.agriconnect.protocols.core import HandshakeRecord, HSState
+        from agriconnect.protocols.core import HandshakeRecord, HSState
 
         rec = HandshakeRecord(
             handshake_id="hs6", initiator_id="a", responder_id="b", intent="TRADE"
@@ -431,8 +431,8 @@ class TestAsyncACK:
     """Tests for async ACK pattern on A2AChannel."""
 
     def test_send_returns_async_result(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
-        from backend.src.agriconnect.protocols.core import AckStatus
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
+        from agriconnect.protocols.core import AckStatus
 
         channel = A2AChannel()
         msg = A2AMessage(sender_id="a1", receiver_id="a2", intent="CHECK")
@@ -442,8 +442,8 @@ class TestAsyncACK:
         assert ack.queue_position >= 1
 
     def test_send_rejected_invalid_message(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
-        from backend.src.agriconnect.protocols.core import AckStatus
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
+        from agriconnect.protocols.core import AckStatus
 
         channel = A2AChannel()
         msg = A2AMessage(receiver_id="a2", intent="")  # missing sender + intent
@@ -452,8 +452,8 @@ class TestAsyncACK:
         assert ack.error
 
     def test_send_duplicate_returns_duplicate(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
-        from backend.src.agriconnect.protocols.core import AckStatus
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
+        from agriconnect.protocols.core import AckStatus
 
         channel = A2AChannel()
         msg = A2AMessage(sender_id="a1", receiver_id="a2", intent="SELL")
@@ -467,14 +467,14 @@ class TestMessageTraceEnvelope:
     """Tests that A2AMessage carries trace_envelope and records steps."""
 
     def test_message_auto_creates_trace(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AMessage
+        from agriconnect.protocols.a2a.messaging import A2AMessage
 
         msg = A2AMessage(sender_id="a1", receiver_id="a2", intent="SELL")
         assert msg.trace_envelope is not None
         assert msg.trace_envelope.trace_id
 
     def test_send_records_trace_step(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
+        from agriconnect.protocols.a2a.messaging import A2AChannel, A2AMessage
 
         channel = A2AChannel()
         msg = A2AMessage(sender_id="a1", receiver_id="a2", intent="SELL")
@@ -484,13 +484,13 @@ class TestMessageTraceEnvelope:
         assert msg.trace_envelope.steps[0].action == "send"
 
     def test_message_schema_v2(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AMessage
+        from agriconnect.protocols.a2a.messaging import A2AMessage
 
         msg = A2AMessage(sender_id="a1", intent="X")
         assert msg.schema_version == "2.0"
 
     def test_message_to_dict_includes_trace(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import A2AMessage
+        from agriconnect.protocols.a2a.messaging import A2AMessage
 
         msg = A2AMessage(sender_id="a1", receiver_id="a2", intent="SELL")
         d = msg.to_dict()
@@ -503,7 +503,7 @@ class TestCachePolicy:
     """Tests for semantic cache invalidation."""
 
     def test_bypass_on_emergency_keyword(self):
-        from backend.src.agriconnect.protocols.core import CachePolicy
+        from agriconnect.protocols.core import CachePolicy
 
         policy = CachePolicy(key="test")
         assert policy.should_bypass("Mon maïs a une maladie grave")
@@ -511,20 +511,20 @@ class TestCachePolicy:
         assert not policy.should_bypass("Quel est le prix du mil ?")
 
     def test_bypass_on_payload_keyword(self):
-        from backend.src.agriconnect.protocols.core import CachePolicy
+        from agriconnect.protocols.core import CachePolicy
 
         policy = CachePolicy(key="test")
         assert policy.should_bypass_payload({"question": "invasion de criquets"})
         assert not policy.should_bypass_payload({"question": "prix du sorgho"})
 
     def test_bypass_on_image_attachment(self):
-        from backend.src.agriconnect.protocols.core import CachePolicy
+        from agriconnect.protocols.core import CachePolicy
 
         policy = CachePolicy(key="test")
         assert policy.should_bypass_payload({"image": "photo_leaf.jpg", "question": "normal"})
 
     def test_ttl_expiration(self):
-        from backend.src.agriconnect.protocols.core import CachePolicy
+        from agriconnect.protocols.core import CachePolicy
         from datetime import datetime, timezone, timedelta
 
         # Create policy that expired 10 seconds ago
@@ -533,7 +533,7 @@ class TestCachePolicy:
         assert policy.is_expired
 
     def test_ttl_not_expired(self):
-        from backend.src.agriconnect.protocols.core import CachePolicy
+        from agriconnect.protocols.core import CachePolicy
 
         policy = CachePolicy(key="test", ttl_seconds=300)
         assert not policy.is_expired
@@ -543,7 +543,7 @@ class TestClientCapabilities:
     """Tests for multi-channel capability negotiation."""
 
     def test_whatsapp_limits(self):
-        from backend.src.agriconnect.protocols.core import ClientCapabilities
+        from agriconnect.protocols.core import ClientCapabilities
 
         caps = ClientCapabilities.whatsapp()
         assert caps.max_buttons == 3
@@ -552,7 +552,7 @@ class TestClientCapabilities:
         assert caps.max_chars == 4096
 
     def test_sms_limits(self):
-        from backend.src.agriconnect.protocols.core import ClientCapabilities
+        from agriconnect.protocols.core import ClientCapabilities
 
         caps = ClientCapabilities.sms()
         assert caps.max_chars == 160
@@ -561,7 +561,7 @@ class TestClientCapabilities:
         assert not caps.supports_interactive
 
     def test_web_defaults(self):
-        from backend.src.agriconnect.protocols.core import ClientCapabilities
+        from agriconnect.protocols.core import ClientCapabilities
 
         caps = ClientCapabilities.web()
         assert caps.supports_charts
@@ -569,11 +569,11 @@ class TestClientCapabilities:
         assert caps.supports_interactive
 
     def test_component_pruning(self):
-        from backend.src.agriconnect.protocols.ag_ui.renderer import prune_components
-        from backend.src.agriconnect.protocols.ag_ui.components import (
+        from agriconnect.protocols.ag_ui.renderer import prune_components
+        from agriconnect.protocols.ag_ui.components import (
             TextBlock, ChartData, Card, ActionButton, ActionType,
         )
-        from backend.src.agriconnect.protocols.core import ClientCapabilities
+        from agriconnect.protocols.core import ClientCapabilities
 
         components = [
             TextBlock(content="Hello"),
@@ -592,11 +592,11 @@ class TestClientCapabilities:
         assert len(card.actions) <= 3
 
     def test_sms_pruning_removes_interactive(self):
-        from backend.src.agriconnect.protocols.ag_ui.renderer import prune_components
-        from backend.src.agriconnect.protocols.ag_ui.components import (
+        from agriconnect.protocols.ag_ui.renderer import prune_components
+        from agriconnect.protocols.ag_ui.components import (
             TextBlock, ActionButton, ListPicker, ActionType,
         )
-        from backend.src.agriconnect.protocols.core import ClientCapabilities
+        from agriconnect.protocols.core import ClientCapabilities
 
         components = [
             TextBlock(content="Hello"),
@@ -614,8 +614,8 @@ class TestProtocolTracer:
     """Tests for observability layer (in-memory mode)."""
 
     def test_start_and_complete_trace(self):
-        from backend.src.agriconnect.protocols.observability import ProtocolTracer
-        from backend.src.agriconnect.protocols.core import CorrelationCtx, TraceCategory
+        from agriconnect.protocols.observability import ProtocolTracer
+        from agriconnect.protocols.core import CorrelationCtx, TraceCategory
 
         tracer = ProtocolTracer()  # no DB
         corr = CorrelationCtx(user_id="test_user")
@@ -630,7 +630,7 @@ class TestProtocolTracer:
         assert buffered[0]["trace_id"] == env.trace_id
 
     def test_get_trace_from_buffer(self):
-        from backend.src.agriconnect.protocols.observability import ProtocolTracer
+        from agriconnect.protocols.observability import ProtocolTracer
 
         tracer = ProtocolTracer()
         env = tracer.start_trace()
@@ -641,8 +641,8 @@ class TestProtocolTracer:
         assert found["trace_id"] == env.trace_id
 
     def test_list_traces_with_filter(self):
-        from backend.src.agriconnect.protocols.observability import ProtocolTracer
-        from backend.src.agriconnect.protocols.core import CorrelationCtx
+        from agriconnect.protocols.observability import ProtocolTracer
+        from agriconnect.protocols.core import CorrelationCtx
 
         tracer = ProtocolTracer()
         corr1 = CorrelationCtx(user_id="user_a")
@@ -661,7 +661,7 @@ class TestProtocolTracer:
         assert len(user_a_traces) == 1
 
     def test_fail_trace(self):
-        from backend.src.agriconnect.protocols.observability import ProtocolTracer
+        from agriconnect.protocols.observability import ProtocolTracer
 
         tracer = ProtocolTracer()
         env = tracer.start_trace()
@@ -676,7 +676,7 @@ class TestBrokerAbstraction:
     """Tests for the message broker layer."""
 
     def test_in_memory_broker_enqueue_dequeue(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import InMemoryBroker, A2AMessage
+        from agriconnect.protocols.a2a.messaging import InMemoryBroker, A2AMessage
 
         broker = InMemoryBroker()
         msg = A2AMessage(sender_id="a1", receiver_id="a2", intent="X")
@@ -691,10 +691,10 @@ class TestBrokerAbstraction:
         assert broker.queue_length("a2") == 0
 
     def test_channel_with_custom_broker(self):
-        from backend.src.agriconnect.protocols.a2a.messaging import (
+        from agriconnect.protocols.a2a.messaging import (
             A2AChannel, A2AMessage, InMemoryBroker,
         )
-        from backend.src.agriconnect.protocols.core import AckStatus
+        from agriconnect.protocols.core import AckStatus
 
         broker = InMemoryBroker()
         channel = A2AChannel(broker=broker)
@@ -710,7 +710,7 @@ class TestScoredDiscovery:
     """Tests for scored agent discovery with trace recording."""
 
     def test_discover_scored_returns_scores(self):
-        from backend.src.agriconnect.protocols.a2a.registry import (
+        from agriconnect.protocols.a2a.registry import (
             A2ARegistry, AgentCard, AgentDomain,
         )
 

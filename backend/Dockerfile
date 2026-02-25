@@ -12,8 +12,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Dépendances système
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential curl git \
+    build-essential curl git gcc python3-dev libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Poetry
@@ -25,8 +26,11 @@ RUN poetry config virtualenvs.create false
 COPY pyproject.toml poetry.lock /app/
 RUN poetry install --no-interaction --no-ansi --no-root
 
-# Code source
-COPY . /app
+# Code source - copy only source and packaging files to leverage Docker layer caching
+# Copy source into /app/src so the package layout under `src/` is preserved
+COPY src/ /app/src/
+COPY pyproject.toml poetry.lock README.md /app/
+ENV PYTHONPATH=/app/src
 RUN poetry install --no-interaction --no-ansi
 
 # Dossiers runtime
@@ -43,4 +47,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the FastAPI app via the installed package entrypoint (src/agriconnect)
+CMD ["uvicorn", "agriconnect.main:app", "--host", "0.0.0.0", "--port", "8000"]

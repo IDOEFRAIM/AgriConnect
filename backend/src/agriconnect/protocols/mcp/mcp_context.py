@@ -16,7 +16,7 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
-from backend.src.agriconnect.protocols.core import (
+from agriconnect.protocols.core import (
     CachePolicy,
     TraceCategory,
     TraceEnvelope,
@@ -54,7 +54,7 @@ class MCPContextServer:
         """Initialisation paresseuse du ContextOptimizer."""
         if self._optimizer is None and self._session_factory:
             try:
-                from backend.src.agriconnect.services.memory import (
+                from agriconnect.services.memory import (
                     UserFarmProfile, EpisodicMemory, ProfileExtractor, ContextOptimizer,
                 )
                 _profile = UserFarmProfile(self._session_factory)
@@ -206,7 +206,7 @@ class MCPContextServer:
 
     def _get_token_budget(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Retourne le budget tokens."""
-        from backend.src.agriconnect.services.memory.context_optimizer import TOKEN_BUDGETS
+        from agriconnect.services.memory.context_optimizer import TOKEN_BUDGETS
         return TOKEN_BUDGETS
 
     def _enrich_state(self, arguments: Dict[str, Any]) -> Dict[str, Any]:

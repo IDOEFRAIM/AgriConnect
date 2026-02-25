@@ -11,7 +11,7 @@ class TestVoiceEngine:
     """Teste le service VoiceEngine (Azure TTS/STT)."""
 
     def test_init_creates_storage_dir(self, tmp_path):
-        from backend.src.agriconnect.services.voice_engine import VoiceEngine
+        from agriconnect.services.voice_engine import VoiceEngine
 
         storage = tmp_path / "audio_test"
         engine = VoiceEngine(api_key="fake-key", region="westeurope", storage_dir=str(storage))
@@ -20,7 +20,7 @@ class TestVoiceEngine:
         assert engine.region == "westeurope"
 
     def test_init_with_fallback_key(self, tmp_path):
-        from backend.src.agriconnect.services.voice_engine import VoiceEngine
+        from agriconnect.services.voice_engine import VoiceEngine
 
         engine = VoiceEngine(
             api_key="primary",
@@ -29,9 +29,9 @@ class TestVoiceEngine:
         )
         assert engine.fallback_key == "secondary"
 
-    @patch("backend.src.agriconnect.services.voice_engine.speechsdk")
+    @patch("agriconnect.services.voice_engine.speechsdk")
     def test_generate_audio_returns_path(self, mock_sdk, tmp_path):
-        from backend.src.agriconnect.services.voice_engine import VoiceEngine
+        from agriconnect.services.voice_engine import VoiceEngine
 
         # Mock the speech SDK
         mock_result = MagicMock()
@@ -45,7 +45,7 @@ class TestVoiceEngine:
         assert path.endswith(".wav")
 
     def test_transcribe_audio_file_not_found(self, tmp_path):
-        from backend.src.agriconnect.services.voice_engine import VoiceEngine
+        from agriconnect.services.voice_engine import VoiceEngine
 
         engine = VoiceEngine(api_key="fake", storage_dir=str(tmp_path))
         with pytest.raises(FileNotFoundError):
@@ -58,19 +58,19 @@ class TestVoiceAgent:
     def test_init_without_azure_key(self):
         """Sans clé Azure, le VoiceAgent doit quand même s'initialiser."""
         with patch.dict("os.environ", {"USE_AZURE_SPEECH": "false"}, clear=False):
-            with patch("backend.src.agriconnect.graphs.nodes.voice.settings") as mock_settings:
+            with patch("agriconnect.graphs.nodes.voice.settings") as mock_settings:
                 mock_settings.AZURE_SPEECH_KEY = None
                 mock_settings.AUDIO_OUTPUT_DIR = "./test_audio"
-                from backend.src.agriconnect.graphs.nodes.voice import VoiceAgent
+                from agriconnect.graphs.nodes.voice import VoiceAgent
                 agent = VoiceAgent()
                 assert agent.voice_engine is None
                 assert agent.use_azure is False
 
     def test_lang_map(self):
-        with patch("backend.src.agriconnect.graphs.nodes.voice.settings") as mock_settings:
+        with patch("agriconnect.graphs.nodes.voice.settings") as mock_settings:
             mock_settings.AZURE_SPEECH_KEY = None
             mock_settings.AUDIO_OUTPUT_DIR = "./test_audio"
-            from backend.src.agriconnect.graphs.nodes.voice import VoiceAgent
+            from agriconnect.graphs.nodes.voice import VoiceAgent
             agent = VoiceAgent()
             assert agent._LANG_MAP["fr"] == "fr"
             assert agent._LANG_MAP["moore"] == "fr"
@@ -78,13 +78,13 @@ class TestVoiceAgent:
             assert agent._LANG_MAP["en"] == "en"
 
     def test_local_audio_url(self, tmp_path):
-        from backend.src.agriconnect.graphs.nodes.voice import VoiceAgent
+        from agriconnect.graphs.nodes.voice import VoiceAgent
 
         # Create a temp file
         src = tmp_path / "test.wav"
         src.write_bytes(b"fake audio")
 
-        with patch("backend.src.agriconnect.graphs.nodes.voice.settings") as mock_settings:
+        with patch("agriconnect.graphs.nodes.voice.settings") as mock_settings:
             mock_settings.AUDIO_OUTPUT_DIR = str(tmp_path / "output")
             url = VoiceAgent._local_audio_url(str(src))
             assert url.startswith("file://")

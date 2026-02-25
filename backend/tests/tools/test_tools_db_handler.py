@@ -8,7 +8,7 @@ if ROOT not in sys.path:
 import importlib
 import types
 
-from backend.src.agriconnect.tools import db_handler as dbmod
+from agriconnect.tools import db_handler as dbmod
 
 
 def test_get_db_returns_none_when_unconfigured(monkeypatch):
@@ -16,7 +16,7 @@ def test_get_db_returns_none_when_unconfigured(monkeypatch):
     monkeypatch.setattr(dbmod, "_db_instance", None)
 
     # Force core_db attributes to None
-    import backend.src.agriconnect.core.database as _core_db
+    import agriconnect.core.database as _core_db
     monkeypatch.setattr(_core_db, "_engine", None)
     monkeypatch.setattr(_core_db, "_SessionLocal", None)
 

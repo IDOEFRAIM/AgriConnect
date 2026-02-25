@@ -10,14 +10,14 @@ class TestMCPDatabaseServer:
     """Teste le serveur MCP Database."""
 
     def test_init(self):
-        from backend.src.agriconnect.protocols.mcp import MCPDatabaseServer
+        from agriconnect.protocols.mcp import MCPDatabaseServer
 
         mock_factory = MagicMock()
         server = MCPDatabaseServer(mock_factory)
         assert server is not None
 
     def test_call_tool_get_user(self):
-        from backend.src.agriconnect.protocols.mcp.mcp_db import MCPDatabaseServer
+        from agriconnect.protocols.mcp.mcp_db import MCPDatabaseServer
 
         mock_factory = MagicMock()
         mock_session = MagicMock()
@@ -33,13 +33,13 @@ class TestMCPRagServer:
     """Teste le serveur MCP RAG."""
 
     def test_init(self):
-        from backend.src.agriconnect.protocols.mcp import MCPRagServer
+        from agriconnect.protocols.mcp import MCPRagServer
 
         server = MCPRagServer()
         assert server is not None
 
     def test_list_tools(self):
-        from backend.src.agriconnect.protocols.mcp.mcp_rag import MCPRagServer
+        from agriconnect.protocols.mcp.mcp_rag import MCPRagServer
 
         server = MCPRagServer()
         tools = server.list_tools()
@@ -54,13 +54,13 @@ class TestMCPWeatherServer:
     """Teste le serveur MCP Weather."""
 
     def test_init(self):
-        from backend.src.agriconnect.protocols.mcp import MCPWeatherServer
+        from agriconnect.protocols.mcp import MCPWeatherServer
 
         server = MCPWeatherServer()
         assert server is not None
 
     def test_list_tools(self):
-        from backend.src.agriconnect.protocols.mcp.mcp_weather import MCPWeatherServer
+        from agriconnect.protocols.mcp.mcp_weather import MCPWeatherServer
 
         server = MCPWeatherServer()
         tools = server.list_tools()
@@ -73,14 +73,14 @@ class TestMCPContextServer:
     """Teste le serveur MCP Context."""
 
     def test_init_with_optimizer(self):
-        from backend.src.agriconnect.protocols.mcp import MCPContextServer
+        from agriconnect.protocols.mcp import MCPContextServer
 
         mock_optimizer = MagicMock()
         server = MCPContextServer(context_optimizer=mock_optimizer)
         assert server is not None
 
     def test_list_tools(self):
-        from backend.src.agriconnect.protocols.mcp.mcp_context import MCPContextServer
+        from agriconnect.protocols.mcp.mcp_context import MCPContextServer
 
         mock_optimizer = MagicMock()
         server = MCPContextServer(context_optimizer=mock_optimizer)
@@ -93,14 +93,14 @@ class TestAGUIComponents:
     """Teste les composants AG-UI."""
 
     def test_agri_response_creation(self):
-        from backend.src.agriconnect.protocols.ag_ui.components import AgriResponse
+        from agriconnect.protocols.ag_ui.components import AgriResponse
 
         resp = AgriResponse(agent_name="FormationCoach")
         assert resp.agent == "FormationCoach"
         assert resp.components == []
 
     def test_agri_response_add_text(self):
-        from backend.src.agriconnect.protocols.ag_ui.components import AgriResponse
+        from agriconnect.protocols.ag_ui.components import AgriResponse
 
         resp = AgriResponse(agent_name="sentinelle")
         resp.add_text("Il pleut demain", voice="Il pleut demain à Ouaga")
@@ -108,7 +108,7 @@ class TestAGUIComponents:
         assert resp.components[0].content == "Il pleut demain"
 
     def test_agri_response_to_dict(self):
-        from backend.src.agriconnect.protocols.ag_ui.components import AgriResponse
+        from agriconnect.protocols.ag_ui.components import AgriResponse
 
         resp = AgriResponse(agent_name="market")
         resp.add_text("Prix du maïs: 250 FCFA")
@@ -117,7 +117,7 @@ class TestAGUIComponents:
         assert len(d["components"]) == 1
 
     def test_agri_response_add_card(self):
-        from backend.src.agriconnect.protocols.ag_ui.components import AgriResponse
+        from agriconnect.protocols.ag_ui.components import AgriResponse
 
         resp = AgriResponse(agent_name="formation")
         resp.add_card(title="Compostage", body="Étapes pour faire du compost")
@@ -128,7 +128,7 @@ class TestAGUIRenderers:
     """Teste les renderers AG-UI."""
 
     def test_whatsapp_renderer(self):
-        from backend.src.agriconnect.protocols.ag_ui import WhatsAppRenderer, AgriResponse
+        from agriconnect.protocols.ag_ui import WhatsAppRenderer, AgriResponse
 
         renderer = WhatsAppRenderer()
         resp = AgriResponse(agent_name="market")
@@ -139,7 +139,7 @@ class TestAGUIRenderers:
         assert len(rendered["messages"]) >= 1
 
     def test_web_renderer(self):
-        from backend.src.agriconnect.protocols.ag_ui import WebRenderer, AgriResponse
+        from agriconnect.protocols.ag_ui import WebRenderer, AgriResponse
 
         renderer = WebRenderer()
         resp = AgriResponse(agent_name="sentinelle")
@@ -148,7 +148,7 @@ class TestAGUIRenderers:
         assert rendered is not None
 
     def test_sms_renderer(self):
-        from backend.src.agriconnect.protocols.ag_ui import SMSRenderer, AgriResponse
+        from agriconnect.protocols.ag_ui import SMSRenderer, AgriResponse
 
         renderer = SMSRenderer()
         resp = AgriResponse(agent_name="formation")
@@ -157,7 +157,7 @@ class TestAGUIRenderers:
         assert isinstance(rendered, (str, dict))
 
     def test_whatsapp_empty_response(self):
-        from backend.src.agriconnect.protocols.ag_ui import WhatsAppRenderer, AgriResponse
+        from agriconnect.protocols.ag_ui import WhatsAppRenderer, AgriResponse
 
         renderer = WhatsAppRenderer()
         resp = AgriResponse(agent_name="test")

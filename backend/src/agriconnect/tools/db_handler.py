@@ -8,9 +8,9 @@ All heavy lifting delegates to the centralized AgriDatabase.
 import logging
 from typing import Any, Dict, List, Optional
 
-from backend.src.agriconnect.services.db_handler import AgriDatabase
-from backend.src.agriconnect.core.settings import settings
-import backend.src.agriconnect.core.database as _core_db
+from agriconnect.services.db_handler import AgriDatabase
+from agriconnect.core.settings import settings
+import agriconnect.core.database as _core_db
 
 logger = logging.getLogger(__name__)
 

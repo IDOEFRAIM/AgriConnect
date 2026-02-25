@@ -16,8 +16,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from contextlib import contextmanager
 
-from backend.src.agriconnect.core.settings import settings
-from backend.src.agriconnect.core.database import _engine, _SessionLocal
+from agriconnect.core.settings import settings
+from agriconnect.core.database import _engine, _SessionLocal
 
 logger = logging.getLogger("Tool.Marketplace")
 

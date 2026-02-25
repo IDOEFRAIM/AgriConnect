@@ -1,5 +1,5 @@
 """Validate SQLAlchemy <-> Prisma schema alignment."""
-from backend.src.agriconnect.services.models import (
+from agriconnect.services.models import (
     Base, Zone, User, Alert, MarketItem, WeatherData,
     Conversation, ConversationMessage,
     UserCrop, SurplusOffer, SoilDiagnosis, PlantDiagnosis, Reminder,

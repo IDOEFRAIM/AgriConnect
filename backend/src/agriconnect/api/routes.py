@@ -21,11 +21,11 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import FileResponse
 
-from backend.src.agriconnect.core.database import check_connection
-from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
-from backend.src.agriconnect.workers.tasks.ai import generate_response
-from backend.src.agriconnect.core.settings import settings
-from backend.src.agriconnect.graphs.state import GlobalAgriState
+from agriconnect.core.database import check_connection
+from agriconnect.graphs.message_flow import MessageResponseFlow
+from agriconnect.workers.tasks.ai import generate_response
+from agriconnect.core.settings import settings
+from agriconnect.graphs.state import GlobalAgriState
 from .schemas import UserRequest, SuccessResponse, AsyncQueuedResponse, TaskStatusResponse
 
 logger = logging.getLogger("AgriConnect.API")
@@ -215,7 +215,7 @@ async def get_task_status(task_id: str):
     task_id = _validate_task_id(task_id)
 
     try:
-        from backend.src.agriconnect.workers.celery_app import celery_app
+        from agriconnect.workers.celery_app import celery_app
 
         task_result = celery_app.AsyncResult(task_id)
 
@@ -272,7 +272,7 @@ async def cancel_task(task_id: str):
     task_id = _validate_task_id(task_id)
 
     try:
-        from backend.src.agriconnect.workers.celery_app import celery_app
+        from agriconnect.workers.celery_app import celery_app
         celery_app.control.revoke(task_id, terminate=True, signal="SIGTERM")
         logger.info("Task %s revoked by user", task_id)
         return {"status": "revoked", "task_id": task_id}
@@ -318,7 +318,7 @@ def health_check():
     # Quick broker check (ne bloque pas longtemps)
     broker_ok = False
     try:
-        from backend.src.agriconnect.workers.celery_app import celery_app
+        from agriconnect.workers.celery_app import celery_app
         conn = celery_app.connection()
         conn.ensure_connection(max_retries=1, interval_start=0.2)
         conn.close()

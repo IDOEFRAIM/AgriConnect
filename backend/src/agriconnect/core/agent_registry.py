@@ -1,6 +1,6 @@
 """Registre statique des agents internes AgriConnect."""
 
-from backend.src.agriconnect.protocols.a2a.registry import AgentCard, AgentDomain
+from agriconnect.protocols.a2a.registry import AgentCard, AgentDomain
 
 internal_agents = [
             AgentCard(

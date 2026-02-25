@@ -17,11 +17,11 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.src.agriconnect.api.routes import router
+from .api.routes import router
 
-from backend.src.agriconnect.core.settings import settings
-from backend.src.agriconnect.core.logger import setup_logging
-from backend.src.agriconnect.core.database import init_db, close_db
+from .core.settings import settings
+from .core.logger import setup_logging
+from .core.database import init_db, close_db
 
 
 # ── Lifecycle ────────────────────────────────────────────────
@@ -82,7 +82,7 @@ app.include_router(router)
 # ── Standalone runner ────────────────────────────────────────
 if __name__ == "__main__":
     uvicorn.run(
-        "backend.main:app",
+        "agriconnect.main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,

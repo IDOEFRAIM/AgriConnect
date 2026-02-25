@@ -22,7 +22,7 @@ from .components import (
     TextBlock, Card, ActionButton, ListPicker, FormField, ChartData, AlertBanner,
     Severity, ActionType,
 )
-from backend.src.agriconnect.protocols.core import (
+from agriconnect.protocols.core import (
     ClientCapabilities,
     TraceCategory,
     TraceEnvelope,

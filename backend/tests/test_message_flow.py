@@ -9,10 +9,10 @@ from unittest.mock import MagicMock, patch
 class TestMessageResponseFlowInit:
     """Teste l'initialisation de l'orchestrateur."""
 
-    @patch("backend.src.agriconnect.graphs.message_flow._core_db")
-    @patch("backend.src.agriconnect.graphs.message_flow.settings")
-    @patch("backend.src.agriconnect.graphs.message_flow.init_tracing", return_value=False)
-    @patch("backend.src.agriconnect.graphs.message_flow.get_groq_sdk")
+    @patch("agriconnect.graphs.message_flow._core_db")
+    @patch("agriconnect.graphs.message_flow.settings")
+    @patch("agriconnect.graphs.message_flow.init_tracing", return_value=False)
+    @patch("agriconnect.graphs.message_flow.get_groq_sdk")
     def test_init_without_db(self, mock_groq, mock_tracing, mock_settings, mock_core_db):
         """L'orchestrateur doit fonctionner même sans DB."""
         mock_core_db._engine = None
@@ -24,7 +24,7 @@ class TestMessageResponseFlowInit:
         mock_settings.AUDIO_OUTPUT_DIR = "./test_audio"
         mock_groq.return_value = MagicMock()
 
-        from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
+        from agriconnect.graphs.message_flow import MessageResponseFlow
         flow = MessageResponseFlow(llm_client=MagicMock())
         assert flow.db is None
         assert flow.memory is None
@@ -36,10 +36,10 @@ class TestAnalyzeNeeds:
 
     @pytest.fixture
     def mock_flow(self):
-        with patch("backend.src.agriconnect.graphs.message_flow._core_db") as mock_core_db, \
-             patch("backend.src.agriconnect.graphs.message_flow.settings") as mock_settings, \
-             patch("backend.src.agriconnect.graphs.message_flow.init_tracing", return_value=False), \
-             patch("backend.src.agriconnect.graphs.message_flow.get_groq_sdk"):
+           with patch("agriconnect.graphs.message_flow._core_db") as mock_core_db, \
+               patch("agriconnect.graphs.message_flow.settings") as mock_settings, \
+               patch("agriconnect.graphs.message_flow.init_tracing", return_value=False), \
+               patch("agriconnect.graphs.message_flow.get_groq_sdk"):
             mock_core_db._engine = None
             mock_core_db._SessionLocal = None
             mock_settings.DATABASE_URL = None
@@ -49,7 +49,7 @@ class TestAnalyzeNeeds:
             mock_settings.AUDIO_OUTPUT_DIR = "./test_audio"
 
             mock_llm = MagicMock()
-            from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
+            from agriconnect.graphs.message_flow import MessageResponseFlow
             flow = MessageResponseFlow(llm_client=mock_llm)
             yield flow
 
@@ -74,10 +74,10 @@ class TestRouteFlow:
 
     @pytest.fixture
     def mock_flow(self):
-        with patch("backend.src.agriconnect.graphs.message_flow._core_db") as mock_core_db, \
-             patch("backend.src.agriconnect.graphs.message_flow.settings") as mock_settings, \
-             patch("backend.src.agriconnect.graphs.message_flow.init_tracing", return_value=False), \
-             patch("backend.src.agriconnect.graphs.message_flow.get_groq_sdk"):
+           with patch("agriconnect.graphs.message_flow._core_db") as mock_core_db, \
+               patch("agriconnect.graphs.message_flow.settings") as mock_settings, \
+               patch("agriconnect.graphs.message_flow.init_tracing", return_value=False), \
+               patch("agriconnect.graphs.message_flow.get_groq_sdk"):
             mock_core_db._engine = None
             mock_core_db._SessionLocal = None
             mock_settings.DATABASE_URL = None
@@ -86,7 +86,7 @@ class TestRouteFlow:
             mock_settings.AZURE_REGION = "westeurope"
             mock_settings.AUDIO_OUTPUT_DIR = "./test_audio"
 
-            from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
+            from agriconnect.graphs.message_flow import MessageResponseFlow
             flow = MessageResponseFlow(llm_client=MagicMock())
             yield flow
 
@@ -114,10 +114,10 @@ class TestSynthesizeResults:
 
     @pytest.fixture
     def mock_flow(self):
-        with patch("backend.src.agriconnect.graphs.message_flow._core_db") as mock_core_db, \
-             patch("backend.src.agriconnect.graphs.message_flow.settings") as mock_settings, \
-             patch("backend.src.agriconnect.graphs.message_flow.init_tracing", return_value=False), \
-             patch("backend.src.agriconnect.graphs.message_flow.get_groq_sdk"):
+           with patch("agriconnect.graphs.message_flow._core_db") as mock_core_db, \
+               patch("agriconnect.graphs.message_flow.settings") as mock_settings, \
+               patch("agriconnect.graphs.message_flow.init_tracing", return_value=False), \
+               patch("agriconnect.graphs.message_flow.get_groq_sdk"):
             mock_core_db._engine = None
             mock_core_db._SessionLocal = None
             mock_settings.DATABASE_URL = None
@@ -126,7 +126,7 @@ class TestSynthesizeResults:
             mock_settings.AZURE_REGION = "westeurope"
             mock_settings.AUDIO_OUTPUT_DIR = "./test_audio"
 
-            from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
+            from agriconnect.graphs.message_flow import MessageResponseFlow
             flow = MessageResponseFlow(llm_client=MagicMock())
             yield flow
 
@@ -161,10 +161,10 @@ class TestCleanForTTS:
 
     @pytest.fixture
     def mock_flow(self):
-        with patch("backend.src.agriconnect.graphs.message_flow._core_db") as mock_core_db, \
-             patch("backend.src.agriconnect.graphs.message_flow.settings") as mock_settings, \
-             patch("backend.src.agriconnect.graphs.message_flow.init_tracing", return_value=False), \
-             patch("backend.src.agriconnect.graphs.message_flow.get_groq_sdk"):
+           with patch("agriconnect.graphs.message_flow._core_db") as mock_core_db, \
+               patch("agriconnect.graphs.message_flow.settings") as mock_settings, \
+               patch("agriconnect.graphs.message_flow.init_tracing", return_value=False), \
+               patch("agriconnect.graphs.message_flow.get_groq_sdk"):
             mock_core_db._engine = None
             mock_core_db._SessionLocal = None
             mock_settings.DATABASE_URL = None
@@ -173,7 +173,7 @@ class TestCleanForTTS:
             mock_settings.AZURE_REGION = "westeurope"
             mock_settings.AUDIO_OUTPUT_DIR = "./test_audio"
 
-            from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
+            from agriconnect.graphs.message_flow import MessageResponseFlow
             flow = MessageResponseFlow(llm_client=MagicMock())
             yield flow
 

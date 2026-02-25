@@ -18,9 +18,9 @@ from pathlib import Path
 
 from celery.exceptions import SoftTimeLimitExceeded
 
-from backend.src.agriconnect.workers.celery_app import celery_app
-from backend.src.agriconnect.workers.celery_config import TIME_LIMITS
-from backend.src.agriconnect.workers.task_base import (
+from agriconnect.workers.celery_app import celery_app
+from agriconnect.workers.celery_config import TIME_LIMITS
+from agriconnect.workers.task_base import (
     AgriTask,
     ExternalServiceDown,
     FatalTaskError,
@@ -28,7 +28,7 @@ from backend.src.agriconnect.workers.task_base import (
     error_result,
     success_result,
 )
-from backend.src.agriconnect.core.settings import settings
+from agriconnect.core.settings import settings
 
 logger = logging.getLogger("AgriConnect.tasks.voice")
 
@@ -162,7 +162,7 @@ def _package_tts_success(audio_id: str, audio_path: Path, file_size: int, text_l
             "text_length": text_length,
             "user_id": user_id,
         },
-        task_name="backend.workers.tasks.voice.generate_tts",
+        task_name="agriconnect.workers.tasks.voice.generate_tts",
     )
 
 

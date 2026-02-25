@@ -12,7 +12,7 @@ from typing import Generator
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 
-from backend.src.agriconnect.core.settings import settings
+from agriconnect.core.settings import settings
 
 logger = logging.getLogger(__name__)
 

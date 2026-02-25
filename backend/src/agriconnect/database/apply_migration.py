@@ -6,7 +6,7 @@ import sys
 import psycopg2
 
 def main():
-    from backend.src.agriconnect.core.settings import settings
+    from agriconnect.core.settings import settings
     db_url = settings.DATABASE_URL
     if not db_url:
         print("ERROR: DATABASE_URL not configured")

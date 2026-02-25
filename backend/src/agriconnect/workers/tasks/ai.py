@@ -18,9 +18,9 @@ from typing import Any, Dict
 
 from celery.exceptions import SoftTimeLimitExceeded
 
-from backend.src.agriconnect.workers.celery_app import celery_app
-from backend.src.agriconnect.workers.celery_config import TIME_LIMITS
-from backend.src.agriconnect.workers.task_base import (
+from agriconnect.workers.celery_app import celery_app
+from agriconnect.workers.celery_config import TIME_LIMITS
+from agriconnect.workers.task_base import (
     AgriTask,
     FatalTaskError,
     RetryableError,
@@ -51,7 +51,7 @@ def _get_orchestrator():
         if _orchestrator_instance is not None:
             return _orchestrator_instance
         try:
-            from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
+            from agriconnect.graphs.message_flow import MessageResponseFlow
             _orchestrator_instance = MessageResponseFlow()
             logger.info(
                 "✅ Orchestrator loaded in worker PID=%s", os.getpid()
@@ -84,7 +84,7 @@ def _validate_inputs(user_query: str, user_level: str, user_id: str) -> str:
 
 @celery_app.task(
     base=AgriTask,
-    name="backend.workers.tasks.ai.generate_response",
+    name="agriconnect.workers.tasks.ai.generate_response",
     bind=True,
     max_retries=2,
     soft_time_limit=_AI_LIMITS["soft"],
@@ -196,7 +196,7 @@ def generate_response(
 def _safe_tts(text: str, user_id: str) -> str | None:
     """Tente le TTS sans faire planter la tâche IA principale."""
     try:
-        from backend.src.agriconnect.workers.tasks.voice import generate_tts
+        from agriconnect.workers.tasks.voice import generate_tts
         tts_result = generate_tts.apply(args=[text, user_id]).result
         if isinstance(tts_result, dict) and tts_result.get("status") == "success":
             return tts_result.get("audio_path")

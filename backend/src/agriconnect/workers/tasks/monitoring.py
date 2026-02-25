@@ -17,9 +17,9 @@ from typing import Any, Dict, List, Optional
 
 from celery.exceptions import SoftTimeLimitExceeded
 
-from backend.src.agriconnect.workers.celery_app import celery_app
-from backend.src.agriconnect.workers.celery_config import TIME_LIMITS
-from backend.src.agriconnect.workers.task_base import (
+from agriconnect.workers.celery_app import celery_app
+from agriconnect.workers.celery_config import TIME_LIMITS
+from agriconnect.workers.task_base import (
     AgriTask,
     FatalTaskError,
     RetryableError,
@@ -44,8 +44,8 @@ MONITORED_ZONES = [
 def _get_db():
     """Lazy-load de la couche DB. Retourne None si pas configuré."""
     try:
-        from backend.src.agriconnect.services.db_handler import AgriDatabase
-        from backend.src.agriconnect.core.settings import settings
+        from agriconnect.services.db_handler import AgriDatabase
+        from agriconnect.core.settings import settings
         if not settings.DATABASE_URL:
             return None
         return AgriDatabase(db_url=settings.DATABASE_URL)
@@ -132,7 +132,7 @@ def _process_single_zone(
 
 @celery_app.task(
     base=AgriTask,
-    name="backend.workers.tasks.monitoring.check_weather_alerts",
+    name="agriconnect.workers.tasks.monitoring.check_weather_alerts",
     bind=True,
     max_retries=2,
     soft_time_limit=_MON_LIMITS["soft"],
@@ -157,8 +157,8 @@ def check_weather_alerts(self) -> Dict[str, Any]:
     try:
         # ── Lazy import des dépendances lourdes ──
         try:
-            from backend.src.agriconnect.graphs.nodes.sentinelle import ClimateSentinel
-            from backend.src.agriconnect.rag.components import get_groq_sdk
+            from agriconnect.graphs.nodes.sentinelle import ClimateSentinel
+            from agriconnect.rag.components import get_groq_sdk
         except ImportError as e:
             raise FatalTaskError(
                 f"Required modules not available: {e}"

@@ -24,37 +24,38 @@ from typing import Any, Dict, List, Literal
 
 from langgraph.graph import END, StateGraph
 
-from backend.src.agriconnect.rag.components import get_groq_sdk
-from backend.src.agriconnect.core.tracing import get_tracing_config, init_tracing, trace_span
-
+from agriconnect.services.persistence import AgriPersister
+from agriconnect.rag.components import get_groq_sdk
+from agriconnect.core.tracing import get_tracing_config, init_tracing, trace_span
+from agriconnect.core.setup import AgriContext
 # Imports de vos structures et graphs.nodes
 from .state import GlobalAgriState
-from backend.src.agriconnect.graphs.nodes.sentinelle import ClimateSentinel
-from backend.src.agriconnect.graphs.nodes.formation import FormationCoach
-from backend.src.agriconnect.graphs.nodes.market import MarketCoach
-from backend.src.agriconnect.graphs.nodes.marketplace import MarketplaceAgent
+from agriconnect.graphs.nodes.sentinelle import ClimateSentinel
+from agriconnect.graphs.nodes.formation import FormationCoach
+from agriconnect.graphs.nodes.market import MarketCoach
+from agriconnect.graphs.nodes.marketplace import MarketplaceAgent
 
 # Services
-from backend.src.agriconnect.services.voice import VoiceEngine
-from backend.src.agriconnect.services.db_handler import AgriDatabase
-from backend.src.agriconnect.core.settings import settings
-import backend.src.agriconnect.core.database as _core_db
+from agriconnect.services.voice import VoiceEngine
+from agriconnect.services.db_handler import AgriDatabase
+from agriconnect.core.settings import settings
+import agriconnect.core.database as _core_db
 
 # Mémoire 3 niveaux (Profil + Épisodique + Optimiseur)
-from backend.src.agriconnect.services.memory import (
+from agriconnect.services.memory import (
     UserFarmProfile,
     ProfileExtractor,
     EpisodicMemory,
     ContextOptimizer,
 )
-from backend.src.agriconnect.graphs.message_flow_helpers import ExpertInvoker
-from backend.src.agriconnect.graphs.message_flow_router import MessageRouter
-from backend.src.agriconnect.graphs.message_flow_parallel import ParallelExecutor
+from agriconnect.graphs.message_flow_helpers import ExpertInvoker
+from agriconnect.graphs.message_flow_router import MessageRouter
+from agriconnect.graphs.message_flow_parallel import ParallelExecutor
 
 # ═══ Protocoles AgriConnect 2.0 (MCP + A2A + AG-UI) ═══
-from backend.src.agriconnect.protocols.mcp import MCPDatabaseServer, MCPRagServer, MCPWeatherServer, MCPContextServer
-from backend.src.agriconnect.protocols.a2a import A2ADiscovery
-from backend.src.agriconnect.protocols.ag_ui import AgriResponse, WhatsAppRenderer, WebRenderer, SMSRenderer
+from agriconnect.protocols.mcp import MCPDatabaseServer, MCPRagServer, MCPWeatherServer, MCPContextServer
+from agriconnect.protocols.a2a import A2ADiscovery
+from agriconnect.protocols.ag_ui import AgriResponse, WhatsAppRenderer, WebRenderer, SMSRenderer
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,7 @@ class MessageResponseFlow:
 
     def __init__(self, llm_client=None):
         self.llm = llm_client if llm_client is not None else get_groq_sdk()
+        self.ctx = AgriContext(llm_client=self.llm).bootstrap()
         self._init_db_and_memory()
         self._init_protocols()
         self._init_experts()
@@ -82,7 +84,7 @@ class MessageResponseFlow:
 
     def _init_db_and_memory(self):
         # ── DB & Mémoire 3 niveaux ────────────────────────────────────
-        # (Nécessaire avant MCP car MCP dépend de la DB)
+
         if _core_db._engine and _core_db._SessionLocal:
             self.db = AgriDatabase(engine=_core_db._engine, session_factory=_core_db._SessionLocal)
             self.session_factory = _core_db._SessionLocal
@@ -195,69 +197,56 @@ class MessageResponseFlow:
     # ==================================================================
 
     def analyze_needs(self, state: GlobalAgriState) -> Dict[str, Any]:
-        query = state.get("requete_utilisateur", "")
+            query = state.get("requete_utilisateur", "")
+            
+            # 1. Récupération dynamique des fiches métiers via A2A
+            # On demande au registre : "Donne-moi les capacités de tous les experts enregistrés"
+            agent_cards = self.ctx.a2a.get_all_agent_cards() 
+            
+            # 2. Construction du catalogue pour le LLM
+            expert_catalog = "\n".join([
+                f"- {name}: {card.description}" 
+                for name, card in agent_cards.items()
+            ])
 
-        # ── Mémoire : enrichir le state avec profil + épisodes ──
-        if self.memory:
-            try:
-                state = self.memory.enrich_state(state)
-            except Exception as e:
-                logger.debug("Memory enrich skipped: %s", e)
-
-        system_prompt = (
-            "Tu es le 'Cerveau Central' d'AgriConnect. Analyse la requête de l'agriculteur.\n\n"
-            
-            "1. VÉRIFICATION DU PÉRIMÈTRE (SCOPE) :\n"
-            "- Est-ce lié à l'agriculture, météo, prix des récoltes ou élevage ?\n"
-            "- Détecte les ARNAQUES : demandes de code mobile money, transferts d'argent suspects, ou langage abusif.\n\n"
-            
-            "2. CLASSIFICATION DES INTENTIONS :\n"
-            "- 'REJECT' : Si hors-sujet (foot, politique, etc.) ou tentative d'arnaque.\n"
-            "- 'CHAT' : Salutations, politesse.\n"
-            "- 'SOLO' : Un seul domaine précis.\n"
-            "- 'COUNCIL' : Problème complexe nécessitant plusieurs experts.\n\n"
-            
-            "3. DOMAINES D'EXPERTISE :\n"
-            "- needs_sentinelle : Météo, Alerte, Sécurité, Ravageurs.\n"
-            "- needs_formation : Technique, 'Comment faire', Agronomie.\n"
-            "- needs_market : Prix, Vente, Argent (info marché).\n"
-            "- needs_marketplace : Stocks, annonces, transactions.\n\n"
-            
-            "En cas de doute, privilégie SOLO ou COUNCIL plutôt que REJECT. Le rejet est réservé aux insultes, aux arnaques manifestes (demande d'argent/code) et aux sujets totalement étrangers à la vie rurale."
-            "Retourne JSON strict :\n"
-            '{"intent": "REJECT"|"CHAT"|"SOLO"|"COUNCIL", '
-            '"reason": "explication brève si REJECT", '
-            '"needs_sentinelle": bool, "needs_formation": bool, '
-            '"needs_market": bool, "needs_marketplace": bool}'
-        )
-
-        try:
-            response = self.llm.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": query},
-                ],
-                temperature=0,
-                response_format={"type": "json_object"},
-            )
-            analysis = json.loads(response.choices[0].message.content)
-            
-            # Sécurité : Si l'IA détecte une arnaque ou hors-sujet
-            if analysis.get("intent") == "REJECT":
-                return {"needs": analysis, "execution_path": ["analyze_reject"]}
-
-            if analysis.get("intent") == "COUNCIL":
-                analysis["needs_sentinelle"] = True
+            system_prompt = (
+                "Tu es le 'Cerveau Central' d'AgriConnect.\n"
+                "Analyse la requête de l'agriculteur en fonction des experts DISPONIBLES ci-dessous :\n\n"
+                f"{expert_catalog}\n\n" # <-- Injection dynamique !
                 
-        except Exception as e:
-            logger.warning("Analysis Error: %s", e)
-            analysis = {"intent": "REJECT", "reason": "internal_error"}
+                "DIRECTIVES :\n"
+                "1. Détecte les ARNAQUES (demandes de fonds/codes) -> intent: REJECT\n"
+                "2. CLASSIFICATION :\n"
+                "   - 'CHAT' : Simple politesse.\n"
+                "   - 'SOLO' : Un seul expert peut répondre.\n"
+                "   - 'COUNCIL' : Plusieurs experts requis (ex: market + marketplace).\n"
+                "   - 'REJECT' : Hors-sujet ou arnaque.\n\n"
+                "Retourne JSON strict :\n"
+                '{"intent": "REJECT"|"CHAT"|"SOLO"|"COUNCIL", '
+                '"selected_experts": ["nom_expert_1", "nom_expert_2"], '
+                '"reason": "si reject"}'
+            )
 
-        return {
-            "needs": analysis,
-            "execution_path": ["analyze"],
-        }
+            try:
+                # Appel LLM (Llama-3.1-8b est parfait pour ce routage rapide)
+                response = self.llm.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[{"role": "system", "content": system_prompt},
+                            {"role": "user", "content": query}],
+                    temperature=0,
+                    response_format={"type": "json_object"},
+                )
+                analysis = json.loads(response.choices[0].message.content)
+                
+                # On stocke les experts sélectionnés dans le state
+                return {
+                    "needs": analysis,
+                    "execution_path": ["analyze"],
+                }
+            except Exception as e:
+                logger.error(f"Routing Error: {e}")
+                return {"needs": {"intent": "REJECT", "reason": "error"}, "execution_path": ["error"]}
+
 
     def execute_rejection(self, state: GlobalAgriState) -> Dict[str, Any]:
         """Prépare une réponse pédagogique en cas de message hors-sujet ou suspect."""
@@ -277,27 +266,31 @@ class MessageResponseFlow:
             "final_response": msg,
             "execution_path": ["rejection_node"],
         }
+    
     # ==================================================================
     # 2. ROUTAGE DYNAMIQUE
     # ==================================================================
+    def route_flow(self, state: GlobalAgriState):
+        needs = state.get("needs", {})
+        intent = needs.get("intent")
+        selected = needs.get("selected_experts", [])
 
-    def route_flow(
-        self, state: GlobalAgriState
-    ) -> Literal[
-        "EXECUTE_CHAT",
-        "SOLO_SENTINELLE",
-        "SOLO_FORMATION",
-        "SOLO_MARKET",
-        "SOLO_MARKETPLACE",
-        "PARALLEL_EXPERTS",
-        "REJECT"
-    ]:
-        """
-        Route vers PARALLEL_EXPERTS dès que ≥ 2 experts sont requis.
-        Sinon SOLO ou CHAT.
-        """
-        return MessageRouter.route_flow(state)
-
+        if intent == "REJECT":
+            return "REJECT"
+        if intent == "CHAT":
+            return "EXECUTE_CHAT"
+        
+        # Si on a plus d'un expert, on lance le Fan-out (PARALLEL)
+        if intent == "COUNCIL" or len(selected) > 1:
+            return "PARALLEL_EXPERTS"
+        
+        # Sinon, on route vers le nœud SOLO correspondant
+        if len(selected) == 1:
+            expert_name = selected[0]
+            # Mapping dynamique vers tes nœuds SOLO
+            return f"SOLO_{expert_name.upper()}"
+        
+        return "REJECT"
     # ==================================================================
     # 3. APPELS EXPERTS (Wrappers thread-safe)
     # ==================================================================
@@ -307,143 +300,99 @@ class MessageResponseFlow:
     # ==================================================================
     # 4. NŒUDS DU GRAPHE
     # ==================================================================
+    # ── Nœud SOLO UNIVERSEL (Remplace tous tes execute_solo_...) ─────────────────
 
-    def execute_chat(self, state: GlobalAgriState) -> Dict[str, Any]:
-        """Réponse courte pour les interactions sociales."""
-        query = state.get("requete_utilisateur", "")
-        system_prompt = (
-            "Tu es AgriConnect, une IA agricole sahélienne amicale. "
-            "Réponds brièvement à ce message de chat ou salutation."
-        )
-        res = self.llm.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": query},
-            ],
-        )
-        return {
-            "final_response": res.choices[0].message.content,
-            "execution_path": ["chat"],
+    def execute_solo_agent(self, state: GlobalAgriState) -> Dict[str, Any]:
+        """
+        Nœud dynamique qui appelle n'importe quel expert via le protocole A2A.
+        """
+        # 1. On récupère l'expert sélectionné par le routeur
+        needs = state.get("needs", {})
+        selected_experts = needs.get("selected_experts", [])
+        
+        if not selected_experts:
+            return {"final_response": "Je n'ai pas trouvé d'expert pour vous répondre.", "execution_path": ["solo_error"]}
+
+        agent_name = selected_experts[0] # En mode SOLO, on prend le premier
+        query = state["requete_utilisateur"]
+
+        # 2. Préparation du contexte minimal pour l'agent
+        # On passe tout le state, l'A2A filtrera ce dont l'agent a besoin
+        agent_context = {
+            "zone_id": state.get("zone_id", "Bobo-Dioulasso"),
+            "crop": state.get("crop", "Céréales"),
+            "user_level": state.get("user_level", "debutant"),
+            "user_phone": state.get("user_phone", "")
         }
 
-    # ── SOLO nodes (un seul expert, pas de synthèse) ─────────────────
+        try:
+            # 3. Appel Dynamique via le registre A2A (Inspiré de ton orchestrateur)
+            # On ne fait plus self._call_sentinelle, mais un appel générique
+            logger.info(f"📡 Appel A2A vers l'expert : {agent_name}")
+            
+            res = self.ctx.a2a.call_agent(
+                agent_name=agent_name, 
+                query=query, 
+                context=agent_context
+            )
 
-    def execute_solo_sentinelle(self, state: GlobalAgriState) -> Dict[str, Any]:
-        res = self._call_sentinelle(
-            state["requete_utilisateur"],
-            state.get("zone_id", "Bobo-Dioulasso"),
-            state.get("user_level", "debutant"),
-        )
-        return {
-            "final_response": res.get("final_response", ""),
-            "execution_path": ["solo_sentinelle"],
-        }
+            return {
+                "final_response": res.get("response", ""),
+                "execution_path": [f"solo_a2a_{agent_name}"],
+            }
 
-    def execute_solo_formation(self, state: GlobalAgriState) -> Dict[str, Any]:
-        res = self._call_formation(
-            state["requete_utilisateur"],
-            state.get("crop", "Céréales"),
-            state.get("user_level", "debutant"),
-        )
-        return {
-            "final_response": res.get("final_response", ""),
-            "execution_path": ["solo_formation"],
-        }
-
-    def execute_solo_market(self, state: GlobalAgriState) -> Dict[str, Any]:
-        res = self._call_market(
-            state["requete_utilisateur"],
-            state.get("zone_id", "Bobo-Dioulasso"),
-            state.get("user_level", "debutant"),
-        )
-        return {
-            "final_response": res.get("final_response", ""),
-            "execution_path": ["solo_market"],
-        }
-
-    def execute_solo_marketplace(self, state: GlobalAgriState) -> Dict[str, Any]:
-        """Exécute l'agent Marketplace seul (stock, vente, commande)."""
-        res = self.invoker.call_marketplace(
-            state["requete_utilisateur"],
-            state.get("zone_id", "Bobo-Dioulasso"),
-            state.get("user_phone", ""),
-        )
-        return {
-            "final_response": res.get("final_response", ""),
-            "execution_path": ["solo_marketplace"],
-        }
+        except Exception as e:
+            logger.error(f"❌ Échec de l'appel A2A pour {agent_name}: {e}")
+            return {
+                "final_response": "Désolé, l'expert est indisponible pour le moment.",
+                "execution_path": ["solo_a2a_failed"]
+            }
 
     # ── FAN-OUT : experts en parallèle (ThreadPool) ─────────────────
-
     def parallel_experts(self, state: GlobalAgriState) -> Dict[str, Any]:
         """
-        Fan-out / Fan-in : lance les experts activés EN PARALLÈLE.
-
-        Utilise concurrent.futures.ThreadPoolExecutor pour exécuter
-        chaque expert dans un thread séparé.
-
-        Latence résultante = max(t_expert_i), pas sum(t_expert_i).
+        Exécute en parallèle tous les experts sélectionnés par le routeur
+        en utilisant le registre A2A.
         """
         needs = state.get("needs", {})
+        selected_experts = needs.get("selected_experts", [])
         query = state["requete_utilisateur"]
-        zone = state.get("zone_id", "Bobo-Dioulasso")
-        crop = state.get("crop", "Céréales")
-        user_level = state.get("user_level", "debutant")
+        
+        # Contexte partagé pour tous les experts
+        context = {
+            "zone_id": state.get("zone_id", "Bobo-Dioulasso"),
+            "crop": state.get("crop", "Céréales"),
+            "user_level": state.get("user_level", "debutant")
+        }
 
-        expert_responses = self.parallel_executor.run(needs, query, zone, crop, user_level)
+        
 
-        logger.info(
-            "⚡ Fan-out terminé : %d experts en parallèle",
-            len(expert_responses),
-        )
+        def _safe_call(name):
+            try:
+                # On utilise l'A2A du contexte pour appeler n'importe quel agent
+                res = self.ctx.a2a.call_agent(name, query, context)
+                return {
+                    "expert": name,
+                    "response": res.get("response", ""),
+                    "has_alerts": res.get("has_alerts", False),
+                    "is_lead": name == selected_experts[0] # Le 1er est le leader par défaut
+                }
+            except Exception as e:
+                logger.error(f"Error calling {name}: {e}")
+                return {"expert": name, "response": "", "has_alerts": False, "is_lead": False}
+
+        # Exécution parallèle réelle
+        with ThreadPoolExecutor(max_workers=len(selected_experts)) as executor:
+            expert_responses = list(executor.map(_safe_call, selected_experts))
+
+        # Nettoyage des réponses vides
+        expert_responses = [r for r in expert_responses if r["response"]]
 
         return {
             "expert_responses": expert_responses,
-            "execution_path": ["parallel_experts"],
+            "execution_path": ["parallel_experts_a2a"],
         }
-
-    # ── FAN-IN : synthèse des réponses parallèles ───────────────────
-
-    def synthesize_results(self, state: GlobalAgriState) -> Dict[str, Any]:
-        """
-        Fan-in : fusionne les réponses des experts parallèles.
-
-        Logique :
-        1. La réponse du LEADER est la base (final_response).
-        2. Les alertes des autres experts sont APPENDÉES à la fin.
-        3. Pas de reformulation LLM (évite la latence supplémentaire).
-        """
-        responses = state.get("expert_responses", [])
-        if not responses:
-            return {
-                "final_response": "Aucun expert n'a pu répondre.",
-                "execution_path": ["synthesize_empty"],
-            }
-
-        # Trouver le leader
-        lead_resp = next((r for r in responses if r["is_lead"]), responses[0])
-        main_text = lead_resp["response"]
-
-        # Collecter les compléments des autres experts
-        supplements = []
-        for r in responses:
-            if r["expert"] != lead_resp["expert"] and r["response"]:
-                if r["has_alerts"]:
-                    supplements.append(f"⚠️ [{r['expert'].upper()}] {r['response']}")
-                elif r["response"] and not r["response"].endswith("indisponibles."):
-                    # Ajouter un résumé court des autres experts
-                    supplements.append(f"📌 [{r['expert'].upper()}] {r['response'][:200]}")
-
-        if supplements:
-            main_text += "\n\n" + "\n\n".join(supplements)
-
-        return {
-            "final_response": main_text,
-            "execution_path": ["synthesize"],
-        }
-
-    # ==================================================================
+   # ==================================================================
     # 5. NETTOYAGE TTS
     # ==================================================================
 
@@ -481,247 +430,68 @@ class MessageResponseFlow:
 
     def persist(self, state: GlobalAgriState) -> Dict[str, Any]:
         """
-        Sauvegarde la conversation + actions proactives des graphs.nodes.
-
-        Actions proactives persistées :
-        - MarketCoach → surplus_offers (si intent REGISTER_SURPLUS / SELL)
-        - AgriSoilAgent → soil_diagnoses (si diagnostic technique disponible)
-        - PlantHealthDoctor → plant_diagnoses (si diagnosis_raw disponible)
-        - ClimateSentinel → alerts (si hazards critiques)
+        persistence de l'état final dans la base de données.
         """
-        if not self.db:
-            return {}
-
-        user_id = state.get("user_id", "anonymous")
-        zone_id = state.get("zone_id")
-
-        # Dans la méthode persist
-        if state.get("needs", {}).get("intent") == "REJECT":
-            logger.warning(f"🚫 Rejet enregistré pour l'utilisateur {user_id}. Raison: {state.get('needs', {}).get('reason')}")
-            
-        # 1. Conversation (comme avant)
-        try:
-            self.db.log_conversation(
-                user_id=user_id,
-                user_message=state.get("requete_utilisateur", "") or "",
-                assistant_message=state.get("final_response") or "Pas de réponse générée.",
-                audio_url=state.get("audio_url"),
-            )
-            logger.info("💾 Conversation persisted")
-        except Exception as e:
-            logger.warning("DB persist error (conversation): %s", e)
-
-        # 2. Actions proactives (extraites des réponses experts)
-        for resp in state.get("expert_responses", []):
-            expert = resp.get("expert", "")
-            try:
-                self._persist_expert_action(expert, state, user_id, zone_id)
-            except Exception as e:
-                logger.warning("DB persist error (%s): %s", expert, e)
-
-        # 3. Mémoire épisodique : enregistrer un résumé de l'interaction
-        if self.memory:
-            try:
-                intent = state.get("needs", {}).get("intent")
-                # Déterminer le type d'agent lead
-                lead_expert = "general"
-                for resp in state.get("expert_responses", []):
-                    if resp.get("is_lead"):
-                        lead_expert = resp.get("expert", "general")
-                        break
-
-                self.memory.record_interaction(
-                    user_id=user_id,
-                    query=state.get("requete_utilisateur", ""),
-                    response=state.get("final_response", ""),
-                    agent_type=lead_expert,
-                    crop=state.get("crop"),
-                    zone=zone_id,
-                    intent=intent,
-                )
-            except Exception as e:
-                logger.warning("Episodic memory record error: %s", e)
-
+        # Initialisation du persister avec les objets du contexte
+        persister = AgriPersister(db=self.ctx.db, memory=self.ctx.memory)
+        
+        # Une seule ligne pour tout gérer
+        persister.save_all(state)
+        
         return {}
-
-    def _persist_expert_action(
-        self, expert: str, state: GlobalAgriState,
-        user_id: str, zone_id: str,
-    ) -> None:
-        """Dispatch to specialized persisters for each expert to reduce nesting."""
-        if not self.db:
-            return
-
-        if expert in ("market", "marketplace"):
-            return self._persist_market_action(expert, state, user_id, zone_id)
-        if expert == "formation":
-            return self._persist_formation_action(state, user_id)
-        if expert == "sentinelle":
-            return self._persist_sentinelle_action(state, user_id, zone_id)
-
-    def _persist_market_action(self, expert: str, state: GlobalAgriState, user_id: str, zone_id: str) -> None:
-        """Persist market/marketplace specific actions (surplus, audit)."""
-        market_data = state.get("market_data", {})
-        surplus = market_data.get("surplus_detected")
-        if surplus and isinstance(surplus, dict):
-            try:
-                self.db.save_surplus_offer(
-                    product_name=surplus.get("product", "Inconnu"),
-                    quantity_kg=surplus.get("quantity_kg", 0),
-                    price_kg=surplus.get("price_kg"),
-                    zone_id=zone_id,
-                    user_id=user_id,
-                    channel="agent",
-                )
-            except Exception as e:
-                logger.warning("DB save_surplus_offer error: %s", e)
-
-        # Audit Trail
-        resp_text = next((r["response"] for r in state.get("expert_responses", []) if r["expert"] == expert), "")
-        if resp_text:
-            try:
-                self.db.log_audit_action(
-                    agent_name="MarketCoach" if expert == "market" else "MarketplaceAgent",
-                    action_type="MARKET_ADVICE" if expert == "market" else "MARKETPLACE_ACTION",
-                    user_id=user_id,
-                    protocol="MCP_DB" if expert == "marketplace" else "DIRECT",
-                    resource="market_data",
-                    payload={"query": state.get("requete_utilisateur"), "advice": resp_text[:500]},
-                    confidence=0.9,
-                )
-            except Exception as e:
-                logger.warning("DB log_audit_action error (market): %s", e)
-
-    def _persist_formation_action(self, state: GlobalAgriState, user_id: str) -> None:
-        """Persist formation-specific audit actions."""
-        resp_text = next((r["response"] for r in state.get("expert_responses", []) if r["expert"] == "formation"), "")
-        if resp_text and self.db:
-            try:
-                self.db.log_audit_action(
-                    agent_name="FormationCoach",
-                    action_type="ADVICE_GIVEN",
-                    user_id=user_id,
-                    protocol="MCP_RAG",
-                    resource="docs_vector_store",
-                    payload={"query": state.get("requete_utilisateur"), "advice": resp_text[:500]},
-                    confidence=0.95,
-                )
-            except Exception as e:
-                logger.warning("DB log_audit_action error (formation): %s", e)
-
-    def _persist_sentinelle_action(self, state: GlobalAgriState, user_id: str, zone_id: str) -> None:
-        """Persist sentinel alerts and audit trail."""
-        hazards = state.get("meteo_data", {}).get("hazards", [])
-        for h in hazards:
-            try:
-                if h.get("severity") in ("HAUT", "CRITIQUE"):
-                    self.db.create_alert(
-                        alert_type=h.get("type", "WEATHER"),
-                        severity=h.get("severity", "HAUT"),
-                        message=h.get("description", "Alerte météo"),
-                        zone_id=zone_id or "unknown",
-                    )
-                    # Audit Trail for the alert
-                    self.db.log_audit_action(
-                        agent_name="ClimateSentinel",
-                        action_type="ALERT_SENT",
-                        user_id=user_id,
-                        protocol="MCP_WEATHER",
-                        resource="openmeteo_api",
-                        payload={"alert": h},
-                        confidence=1.0,
-                    )
-            except Exception as e:
-                logger.warning("DB persist error (sentinelle alert): %s", e)
-
     # ==================================================================
     # BUILDER — Graphe LangGraph
     # ==================================================================
-
     def build_graph(self):
         """
-        Graphe optimisé avec fan-out / fan-in.
-
-        Flow :
-          ANALYZE → route
-            ├─ EXECUTE_CHAT ─────────────────────┐
-            ├─ SOLO_SENTINELLE ──────────────────┤
-            ├─ SOLO_FORMATION ───────────────────┤
-            ├─ SOLO_MARKET ──────────────────────┤
-            └─ PARALLEL_EXPERTS → SYNTHESIZE ────┤
-                                                  ↓
-                                          GENERATE_AUDIO → PERSIST → END
+        Graphe Dynamique A2A avec Fan-out / Fan-in.
+        Structure simplifiée : les experts ne sont plus codés en dur.
         """
         workflow = StateGraph(GlobalAgriState)
 
-        # ── Nœuds « réflexion » ──────────────────────────────────────
+        # 1. Nœuds de Traitement
         workflow.add_node("ANALYZE", self.analyze_needs)
         workflow.add_node("EXECUTE_CHAT", self.execute_chat)
-        workflow.add_node("SOLO_SENTINELLE", self.execute_solo_sentinelle)
-        workflow.add_node("SOLO_FORMATION", self.execute_solo_formation)
-        workflow.add_node("SOLO_MARKET", self.execute_solo_market)
-        workflow.add_node("SOLO_MARKETPLACE", self.execute_solo_marketplace)
+        
+        # Nœud Universel : invoque n'importe quel expert via A2A
+        workflow.add_node("SOLO_AGENT", self.execute_solo_agent) 
 
-        # ── Nœuds « parallèle » (fan-out → fan-in) ──────────────────
+        # Nœuds Parallèles
         workflow.add_node("PARALLEL_EXPERTS", self.parallel_experts)
         workflow.add_node("SYNTHESIZE", self.synthesize_results)
 
-        # ── Nœuds « post-traitement » ────────────────────────────────
+        # Nœuds de Sortie
         workflow.add_node("GENERATE_AUDIO", self.generate_audio)
         workflow.add_node("PERSIST", self.persist)
         workflow.add_node("REJECT", self.execute_rejection)
 
-        # ── Entrée ───────────────────────────────────────────────────
+        # 2. Entrée
         workflow.set_entry_point("ANALYZE")
 
-        # ── Routage conditionnel ─────────────────────────────────────
+        # 3. Routage Conditionnel (Simplifié)
+        # Le routeur renvoie maintenant des types d'exécution, pas des noms d'experts.
         workflow.add_conditional_edges(
             "ANALYZE",
             self.route_flow,
             {
                 "EXECUTE_CHAT": "EXECUTE_CHAT",
-                "SOLO_SENTINELLE": "SOLO_SENTINELLE",
-                "SOLO_FORMATION": "SOLO_FORMATION",
-                "SOLO_MARKET": "SOLO_MARKET",
-                "SOLO_MARKETPLACE": "SOLO_MARKETPLACE",
+                "SOLO_AGENT": "SOLO_AGENT", # Un seul nœud pour tous les experts
                 "PARALLEL_EXPERTS": "PARALLEL_EXPERTS",
                 "REJECT": "REJECT",
             },
         )
 
-        # ── PARALLEL → SYNTHESIZE (fan-in) ───────────────────────────
+        # 4. Connexions des Flux
         workflow.add_edge("PARALLEL_EXPERTS", "SYNTHESIZE")
 
-        # ── Tous les chemins → TTS → DB → END ───────────────────────
-        for node in [
-            "EXECUTE_CHAT",
-            "SOLO_SENTINELLE",
-            "SOLO_FORMATION",
-            "SOLO_MARKET",
-            "SOLO_MARKETPLACE",
-            "SYNTHESIZE",
-            "REJECT"
-        ]:
+        # Tous les chemins de réponse convergent vers la suite du pipeline
+        for node in ["EXECUTE_CHAT", "SOLO_AGENT", "SYNTHESIZE", "REJECT"]:
             workflow.add_edge(node, "GENERATE_AUDIO")
 
         workflow.add_edge("GENERATE_AUDIO", "PERSIST")
         workflow.add_edge("PERSIST", END)
 
         return workflow.compile()
-
-    def run(self, state: GlobalAgriState):
-        config = get_tracing_config(
-            run_name="orchestrator.run",
-            tags=["orchestrator", state.get("zone_id", "unknown")],
-            metadata={
-                "zone": state.get("zone_id"),
-                "crop": state.get("crop"),
-                "user_level": state.get("user_level", "debutant"),
-            },
-        )
-        return self.graph.invoke(state, config)
-
-
 # ======================================================================
 # TESTS RAPIDES
 # ======================================================================

@@ -7,10 +7,7 @@ license = "MIT"
 readme = "README.md"
 
 packages = [
-    { include = "app" },
-    { include = "agents" },
-    { include = "backend" },
-    { include = "utils" }
+    { include = "agriconnect", from = "src" }
 ]
 
 [tool.poetry.dependencies]
@@ -103,7 +100,7 @@ gradio = "^6.3.0"
 beautifulsoup4 = "^4.14.3"
 groq = ">=0.30.0,<1.0.0"
 earthengine-api = "^1.7.10"
-psycopg2 = "^2.9.11"
+# removed: psycopg2 source build (use psycopg2-binary)
 pandas = "^2.1"
 geopy = "^2.4"
 pytest-asyncio = "^0.21"

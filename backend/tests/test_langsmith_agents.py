@@ -92,7 +92,7 @@ def orchestrator(run_live):
     if not run_live:
         pytest.skip("Tests live désactivés (ajouter --run-live)")
     
-    from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
+    from agriconnect.graphs.message_flow import MessageResponseFlow
     return MessageResponseFlow()
 
 
@@ -100,7 +100,7 @@ def orchestrator(run_live):
 def langsmith_client():
     """Client LangSmith pour pousser les résultats."""
     try:
-        from backend.src.agriconnect.core.tracing import get_ls_client
+        from agriconnect.core.tracing import get_ls_client
         client = get_ls_client()
         if client is None:
             logger.warning("LangSmith non configuré — résultats locaux uniquement")
@@ -638,7 +638,7 @@ class TestLangSmithDatasetUpload:
         if langsmith_client is None:
             pytest.skip("LangSmith non configuré")
 
-        from backend.src.agriconnect.core.tracing import get_or_create_dataset
+        from agriconnect.core.tracing import get_or_create_dataset
 
         for dataset_name, examples in ALL_DATASETS.items():
             ds_full_name = f"agriconnect-{dataset_name}"

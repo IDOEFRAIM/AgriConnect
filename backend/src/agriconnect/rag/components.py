@@ -10,9 +10,9 @@ try:
     from llama_index.vector_stores.faiss import FaissVectorStore
 
     # ── LLM : délégué au provider abstrait (Groq/Azure/Bedrock) ──
-    from backend.src.agriconnect.services.llm_clients import get_chat_client, get_sdk_client
+    from agriconnect.services.llm_clients import get_chat_client, get_sdk_client
 
-    from backend.src.agriconnect.core.settings import settings as app_settings
+    from agriconnect.core.settings import settings as app_settings
     from .config import EMBEDDING_MODEL_NAME, CHUNK_SIZE, CHUNK_OVERLAP, DB_DIR
 
     # Dimension for sentence-transformers/all-MiniLM-L6-v2

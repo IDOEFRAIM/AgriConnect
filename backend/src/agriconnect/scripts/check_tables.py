@@ -6,7 +6,7 @@ import os
 from sqlalchemy import create_engine, text
 
 try:
-    from backend.src.agriconnect.core.settings import settings
+    from agriconnect.core.settings import settings
     db_url = settings.DATABASE_URL
 except Exception:
     db_url = os.environ.get("DATABASE_URL")

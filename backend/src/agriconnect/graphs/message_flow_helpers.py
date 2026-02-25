@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Dict, List
 
-from backend.src.agriconnect.core.tracing import get_tracing_config
+from agriconnect.core.tracing import get_tracing_config
 
 logger = logging.getLogger(__name__)
 

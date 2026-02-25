@@ -4,19 +4,19 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, TypedDict
 
 from langgraph.graph import StateGraph, END
-from backend.src.agriconnect.graphs.prompts import (
+from agriconnect.graphs.prompts import (
     PLANT_DOCTOR_SYSTEM_TEMPLATE,
     PLANT_DOCTOR_USER_TEMPLATE,
     DOCTOR_PLANNER_TEMPLATE,
     DOCTOR_AUGMENT_PROMPT
 
 )
-from backend.src.agriconnect.rag.components import get_groq_sdk
-from backend.src.agriconnect.rag.metric import RAGEvaluator
-from backend.src.agriconnect.rag.retriever import AgileRetriever
-from backend.src.agriconnect.tools.health import HealthDoctorTool
+from agriconnect.rag.components import get_groq_sdk
+from agriconnect.rag.metric import RAGEvaluator
+from agriconnect.rag.retriever import AgileRetriever
+from agriconnect.tools.health import HealthDoctorTool
 
-from backend.src.agriconnect.tools.refine import RefineTool
+from agriconnect.tools.refine import RefineTool
 logger = logging.getLogger("Agent.PlantDoctor")
 
 

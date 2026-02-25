@@ -9,6 +9,7 @@ Usage:
 
 import os
 from pathlib import Path
+from typing import ClassVar
 from pydantic_settings import BaseSettings
 
 
@@ -106,8 +107,10 @@ class Settings(BaseSettings):
     RAG_EXPERT_RERANK_K: int = 8
     RAG_EXPERT_USE_HYDE: bool = True
 
+    # Pydantic Settings: utiliser le .env dans le package `agriconnect` (relatif au module)
+    env_path: ClassVar[Path] = Path(__file__).resolve().parent.parent / ".env"
     model_config = {
-        "env_file": ".env",
+        "env_file": str(env_path),
         "env_file_encoding": "utf-8",
         "extra": "ignore",
     }

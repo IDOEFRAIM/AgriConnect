@@ -181,7 +181,7 @@ class MCPDatabaseServer:
 
     def _read_profile(self, params: Dict[str, str]) -> Dict[str, Any]:
         """Lit le profil ferme d'un utilisateur."""
-        from backend.src.agriconnect.services.memory.user_profile import UserFarmProfileModel
+        from agriconnect.services.memory.user_profile import UserFarmProfileModel
 
         user_id = params.get("user_id")
         if not user_id:
@@ -204,7 +204,7 @@ class MCPDatabaseServer:
 
     def _read_episodes(self, params: Dict[str, str]) -> List[Dict[str, Any]]:
         """Lit les épisodes mémoire d'un utilisateur."""
-        from backend.src.agriconnect.services.memory.episodic_memory import EpisodicMemoryModel
+        from agriconnect.services.memory.episodic_memory import EpisodicMemoryModel
 
         user_id = params.get("user_id")
         if not user_id:
@@ -253,7 +253,7 @@ class MCPDatabaseServer:
 
     def _update_profile(self, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Mise à jour incrémentale du profil (MERGE, pas REPLACE)."""
-        from backend.src.agriconnect.services.memory.user_profile import UserFarmProfileModel
+        from agriconnect.services.memory.user_profile import UserFarmProfileModel
 
         user_id = arguments["user_id"]
         patch = arguments["patch"]
@@ -287,7 +287,7 @@ class MCPDatabaseServer:
 
     def _search_episodes(self, arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Recherche épisodique filtrée."""
-        from backend.src.agriconnect.services.memory.episodic_memory import EpisodicMemoryModel
+        from agriconnect.services.memory.episodic_memory import EpisodicMemoryModel
 
         user_id = arguments["user_id"]
         crop = arguments.get("crop")

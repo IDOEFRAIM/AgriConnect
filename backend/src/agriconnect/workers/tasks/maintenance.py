@@ -19,15 +19,15 @@ from typing import Any, Dict
 
 from celery.exceptions import SoftTimeLimitExceeded
 
-from backend.src.agriconnect.workers.celery_app import celery_app
-from backend.src.agriconnect.workers.celery_config import TIME_LIMITS
-from backend.src.agriconnect.workers.task_base import (
+from agriconnect.workers.celery_app import celery_app
+from agriconnect.workers.celery_config import TIME_LIMITS
+from agriconnect.workers.task_base import (
     AgriTask,
     FatalTaskError,
     error_result,
     success_result,
 )
-from backend.src.agriconnect.core.settings import settings
+from agriconnect.core.settings import settings
 
 logger = logging.getLogger("AgriConnect.tasks.maintenance")
 
@@ -53,7 +53,7 @@ def _get_disk_usage(path: Path) -> Dict[str, Any]:
 
 @celery_app.task(
     base=AgriTask,
-    name="backend.workers.tasks.maintenance.cleanup_old_audio",
+    name="agriconnect.workers.tasks.maintenance.cleanup_old_audio",
     bind=True,
     max_retries=1,
     soft_time_limit=_MAINT_LIMITS["soft"],
@@ -145,7 +145,7 @@ def cleanup_old_audio(self) -> Dict[str, Any]:
 
 @celery_app.task(
     base=AgriTask,
-    name="backend.workers.tasks.maintenance.cleanup_expired_results",
+    name="agriconnect.workers.tasks.maintenance.cleanup_expired_results",
     bind=True,
     max_retries=1,
     soft_time_limit=120,
@@ -177,7 +177,7 @@ def cleanup_expired_results(self) -> Dict[str, Any]:
 
 @celery_app.task(
     base=AgriTask,
-    name="backend.workers.tasks.maintenance.broker_health_check",
+    name="agriconnect.workers.tasks.maintenance.broker_health_check",
     bind=True,
     max_retries=0,
     soft_time_limit=30,

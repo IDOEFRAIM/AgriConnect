@@ -75,19 +75,19 @@ def __getattr__(name: str):
 
     # Backwards-compatible mappings for legacy names that live in data_collection
     if name == 'DocumentScraper':
-        from backend.src.agriconnect.services.data_collection.weather.documents_meteo import DocumentScraper
+        from agriconnect.services.data_collection.weather.documents_meteo import DocumentScraper
         return DocumentScraper
 
     if name == 'WeatherForecastService':
-        from backend.src.agriconnect.services.data_collection.weather.weather_forecast import WeatherForecastService
+        from agriconnect.services.data_collection.weather.weather_forecast import WeatherForecastService
         return WeatherForecastService
 
     if name == 'SonagessScraper':
-        from backend.src.agriconnect.services.data_collection.documents.sonagess import SonagessScraper
+        from agriconnect.services.data_collection.documents.sonagess import SonagessScraper
         return SonagessScraper
 
     if name == 'AnamBulletinScraper':
-        from backend.src.agriconnect.services.data_collection.documents.fews_pdf_harvester import AnamBulletinScraper
+        from agriconnect.services.data_collection.documents.fews_pdf_harvester import AnamBulletinScraper
         return AnamBulletinScraper
 
     raise AttributeError(f"module {__name__} has no attribute {name}")

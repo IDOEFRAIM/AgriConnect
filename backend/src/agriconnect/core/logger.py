@@ -10,7 +10,7 @@ import logging
 import sys
 from typing import Optional
 
-from backend.src.agriconnect.core.settings import settings
+from agriconnect.core.settings import settings
 
 _configured = False
 

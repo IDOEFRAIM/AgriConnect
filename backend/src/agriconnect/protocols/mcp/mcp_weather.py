@@ -47,7 +47,7 @@ class MCPWeatherServer:
         """Initialisation paresseuse de SentinelleTool."""
         if self._tool is None:
             try:
-                from backend.src.agriconnect.tools.sentinelle import SentinelleTool
+                from agriconnect.tools.sentinelle import SentinelleTool
                 self._tool = SentinelleTool(llm_client=self._llm)
                 logger.info("🌦️ SentinelleTool chargé (lazy init)")
             except Exception as e:

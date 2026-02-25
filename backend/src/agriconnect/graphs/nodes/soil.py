@@ -6,14 +6,14 @@ from typing import Any, Dict, List, TypedDict
 
 from langgraph.graph import END, StateGraph
 
-from backend.src.agriconnect.graphs.prompts import (
+from agriconnect.graphs.prompts import (
     SOIL_SYSTEM_TEMPLATE,
     SOIL_USER_TEMPLATE
 )
 # Assurez-vous que le fichier contenant votre classe SoilDoctorTool est bien importé
-from backend.src.agriconnect.tools.soil import SoilDoctorTool 
+from agriconnect.tools.soil import SoilDoctorTool 
 #from .tools import SoilDoctorTool # Exemple d'import relatif
-from backend.src.agriconnect.rag.components import get_groq_sdk
+from agriconnect.rag.components import get_groq_sdk
 
 logger = logging.getLogger("Agent.AgriSoil")
 

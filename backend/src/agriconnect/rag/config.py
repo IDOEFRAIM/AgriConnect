@@ -1,11 +1,14 @@
 from pathlib import Path
 from typing import NamedTuple
-from backend.src.agriconnect.core.settings import settings
+from agriconnect.core.settings import settings
 
 # Paths
+# settings.BASE_DIR points to backend/src — adjust to repository layout
 BASE_DIR = settings.BASE_DIR
-RAW_DATA_DIR = BASE_DIR / "backend" / "sources" / "raw_data"
-DB_DIR = BASE_DIR / "backend" / "rag_db"
+# Raw data lives in backend/sources/raw_data (one level up from src)
+RAW_DATA_DIR = BASE_DIR.parent / "sources" / "raw_data"
+# RAG DB folder in backend/rag_db (one level up from src)
+DB_DIR = BASE_DIR.parent / "rag_db"
 
 # Model Config — single source of truth from settings
 EMBEDDING_MODEL_NAME = settings.EMBEDDING_MODEL

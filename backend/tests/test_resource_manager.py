@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, "backend/src")
 
-from backend.src.agriconnect.services.scraper.core.resource_manager import ResourceManager
+from agriconnect.services.scraper.core.resource_manager import ResourceManager
 
 
 class FakeScraperSuccess:

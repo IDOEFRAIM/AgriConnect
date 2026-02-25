@@ -18,13 +18,13 @@ from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 from langgraph.graph import END, StateGraph
 
-from backend.src.agriconnect.graphs.prompts import MARKETPLACE_SYSTEM_PROMPT
-from backend.src.agriconnect.tools.marketplace import MarketplaceTool
+from agriconnect.graphs.prompts import MARKETPLACE_SYSTEM_PROMPT
+from agriconnect.tools.marketplace import MarketplaceTool
 
 # MCP & A2A & AG-UI Protocols
-from backend.src.agriconnect.protocols.mcp import MCPDatabaseServer
-from backend.src.agriconnect.protocols.a2a import A2ADiscovery, A2AMessage, MessageType, HandshakeStatus
-from backend.src.agriconnect.protocols.ag_ui import (
+from agriconnect.protocols.mcp import MCPDatabaseServer
+from agriconnect.protocols.a2a import A2ADiscovery, A2AMessage, MessageType, HandshakeStatus
+from agriconnect.protocols.ag_ui import (
     AgriResponse, AGUIComponent, ComponentType,
     TextBlock, Card, ActionButton, ActionType, ListPicker,
 )
@@ -66,7 +66,7 @@ class MarketplaceAgent:
         self.a2a = a2a
 
         try:
-            from backend.src.agriconnect.rag.components import get_groq_sdk
+            from agriconnect.rag.components import get_groq_sdk
             self.llm = llm_client if llm_client else get_groq_sdk()
         except Exception as exc:
             logger.error("Impossible d'initialiser le LLM Marketplace : %s", exc)

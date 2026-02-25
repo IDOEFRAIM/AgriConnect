@@ -8,9 +8,9 @@ from apscheduler.triggers.cron import CronTrigger
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from backend.src.agriconnect.services.scraper import ScraperOrchestrator
-from backend.src.agriconnect.orchestrator.report_flow import DailyReportFlow
-from backend.src.agriconnect.graphs.state import GlobalAgriState
+from agriconnect.services.scraper import ScraperOrchestrator
+from agriconnect.orchestrator.report_flow import DailyReportFlow
+from agriconnect.graphs.state import GlobalAgriState
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("AgConnect.Scheduler")

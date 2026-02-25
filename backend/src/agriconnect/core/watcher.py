@@ -15,8 +15,8 @@ import os
 # from sqlalchemy import create_engine, select
 # from .models import Alert, Zone, WeatherData
 
-from backend.src.agriconnect.services.google.openmeteo import OpenMeteoService
-from backend.src.agriconnect.tools.sentinelle import SentinelleTool
+from agriconnect.services.google.openmeteo import OpenMeteoService
+from agriconnect.tools.sentinelle import SentinelleTool
 
 logger = logging.getLogger("WatcherAgent")
 

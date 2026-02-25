@@ -17,9 +17,9 @@ from typing import Optional
 
 from celery.exceptions import SoftTimeLimitExceeded
 
-from backend.src.agriconnect.workers.celery_app import celery_app
-from backend.src.agriconnect.workers.celery_config import TIME_LIMITS
-from backend.src.agriconnect.workers.task_base import (
+from agriconnect.workers.celery_app import celery_app
+from agriconnect.workers.celery_config import TIME_LIMITS
+from agriconnect.workers.task_base import (
     AgriTask,
     ExternalServiceDown,
     FatalTaskError,
@@ -27,7 +27,7 @@ from backend.src.agriconnect.workers.task_base import (
     error_result,
     success_result,
 )
-from backend.src.agriconnect.core.settings import settings
+from agriconnect.core.settings import settings
 
 logger = logging.getLogger("AgriConnect.tasks.whatsapp")
 
@@ -70,7 +70,7 @@ def _get_twilio_config():
 
 @celery_app.task(
     base=AgriTask,
-    name="backend.workers.tasks.whatsapp.send_message",
+    name="agriconnect.workers.tasks.whatsapp.send_message",
     bind=True,
     max_retries=3,
     soft_time_limit=_WA_LIMITS["soft"],
@@ -158,7 +158,7 @@ def send_message(
 
 @celery_app.task(
     base=AgriTask,
-    name="backend.workers.tasks.whatsapp.send_bulk_messages",
+    name="agriconnect.workers.tasks.whatsapp.send_bulk_messages",
     bind=True,
     max_retries=1,
     soft_time_limit=600,

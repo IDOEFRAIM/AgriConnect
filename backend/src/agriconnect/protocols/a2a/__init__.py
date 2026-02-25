@@ -2,7 +2,7 @@
 A2A (Agent-to-Agent) — Protocole de communication inter-agents AgriConnect 2.0
 ================================================================================
 
-PHILOSOPHIE : Les agents ne sont plus "soudés" à l'orchestrateur.
+PHILOSOPHIE : Les agents ne sont plus "stick" à l'orchestrateur.
 Ils peuvent communiquer entre eux (et avec des agents externes) via
 un protocole standardisé de discovery, messaging et handshake.
 
@@ -32,6 +32,7 @@ __all__ = [
     # v2 additions
     "MessageBroker",
     "InMemoryBroker",
+    "RedisBroker",
     "IdempotencyStore",
     "HandshakeStore",
 ]

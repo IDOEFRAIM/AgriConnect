@@ -20,8 +20,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Tuple
 
-from backend.src.agriconnect.services.voice_engine import VoiceEngine
-from backend.src.agriconnect.core.settings import settings
+from agriconnect.services.voice_engine import VoiceEngine
+from agriconnect.core.settings import settings
 
 logger = logging.getLogger("VoiceAgent")
 
@@ -111,7 +111,7 @@ class VoiceAgent:
                 return await self._handle_new_user(user_phone, transcript, detected_lang)
 
             # 3. Routage vers l'orchestrateur
-            from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
+            from agriconnect.graphs.message_flow import MessageResponseFlow
 
             orchestrator = MessageResponseFlow()
             result = orchestrator.run(

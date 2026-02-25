@@ -29,8 +29,8 @@ if 'celery' not in sys.modules:
     sys.modules['celery'] = celery_mod
     sys.modules['celery.exceptions'] = celery_excs
 
-# Provide a dummy `backend.src.agriconnect.workers.celery_app` to avoid importing real Celery
-celery_app_mod_name = 'backend.src.agriconnect.workers.celery_app'
+# Provide a dummy `agriconnect.workers.celery_app` to avoid importing real Celery
+celery_app_mod_name = 'agriconnect.workers.celery_app'
 if celery_app_mod_name not in sys.modules:
     ca_mod = types.ModuleType(celery_app_mod_name)
     # dummy celery_app with a `.task` decorator that returns the function unchanged
@@ -52,8 +52,8 @@ if 'kombu' not in sys.modules:
     kombu_mod.Queue = Queue
     sys.modules['kombu'] = kombu_mod
 
-from backend.src.agriconnect.workers.tasks import voice as voice_mod
-from backend.src.agriconnect.workers.task_base import (
+from agriconnect.workers.tasks import voice as voice_mod
+from agriconnect.workers.task_base import (
     RateLimitHit,
     FatalTaskError,
     ExternalServiceDown,

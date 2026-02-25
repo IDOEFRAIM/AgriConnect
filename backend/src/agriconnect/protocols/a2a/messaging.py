@@ -23,7 +23,7 @@ from datetime import datetime, timezone, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set
 
-from backend.src.agriconnect.protocols.core import (
+from agriconnect.protocols.core import (
     AsyncResult,
     AckStatus,
     CorrelationCtx,
@@ -33,6 +33,12 @@ from backend.src.agriconnect.protocols.core import (
     HandshakeFSMError,
     HSState,
 )
+from agriconnect.core.settings import settings
+import pickle
+try:
+    import redis
+except Exception:
+    redis = None
 
 logger = logging.getLogger("A2A.Messaging")
 
@@ -196,6 +202,45 @@ class InMemoryBroker(MessageBroker):
 
     def queue_length(self, queue_name: str) -> int:
         return len(self._queues.get(queue_name, []))
+
+
+class RedisBroker(MessageBroker):
+    """Redis-backed broker using lists for durability.
+
+    Stores pickled A2AMessage objects in Redis lists (RPUSH/LPOP).
+    Requires `redis` Python package and a reachable Redis URL.
+    """
+
+    def __init__(self, url: str):
+        if redis is None:
+            raise RuntimeError("redis package is required for RedisBroker")
+        self._client = redis.from_url(url, decode_responses=False)
+
+    def _key(self, queue_name: str) -> str:
+        return f"a2a:queue:{queue_name}"
+
+    def enqueue(self, queue_name: str, message: A2AMessage) -> int:
+        key = self._key(queue_name)
+        data = pickle.dumps(message)
+        self._client.rpush(key, data)
+        return self._client.llen(key)
+
+    def dequeue(self, queue_name: str, limit: int = 10) -> List[A2AMessage]:
+        key = self._key(queue_name)
+        msgs: List[A2AMessage] = []
+        for _ in range(limit):
+            data = self._client.lpop(key)
+            if not data:
+                break
+            try:
+                msg = pickle.loads(data)
+                msgs.append(msg)
+            except Exception as e:
+                logger.warning("Failed to unpickle A2AMessage from Redis: %s", e)
+        return msgs
+
+    def queue_length(self, queue_name: str) -> int:
+        return int(self._client.llen(self._key(queue_name)))
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -364,7 +409,19 @@ class A2AChannel:
         session_factory=None,
         tracer=None,
     ):
-        self.broker: MessageBroker = broker or InMemoryBroker()
+        # Default broker selection: explicit broker > Redis if configured > in-memory
+        if broker:
+            self.broker = broker
+        else:
+            redis_url = getattr(settings, "REDIS_URL", None) or getattr(settings, "CELERY_BROKER_URL", None)
+            if redis_url:
+                try:
+                    self.broker = RedisBroker(redis_url)
+                except Exception as e:
+                    logger.warning("RedisBroker init failed (%s), falling back to InMemoryBroker", e)
+                    self.broker = InMemoryBroker()
+            else:
+                self.broker = InMemoryBroker()
         self.idempotency = IdempotencyStore(session_factory)
         self.handshake_store = HandshakeStore(session_factory)
         self._session_factory = session_factory

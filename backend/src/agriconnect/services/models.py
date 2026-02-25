@@ -648,5 +648,5 @@ class ExternalContext(Base):
 # Les modèles UserFarmProfileModel et EpisodicMemoryModel sont
 # définis dans services/memory/ et importés ici pour
 # que SQLAlchemy les découvre via Base.metadata.
-from backend.src.agriconnect.services.memory.user_profile import UserFarmProfileModel
-from backend.src.agriconnect.services.memory.episodic_memory import EpisodicMemoryModel
+from agriconnect.services.memory.user_profile import UserFarmProfileModel
+from agriconnect.services.memory.episodic_memory import EpisodicMemoryModel

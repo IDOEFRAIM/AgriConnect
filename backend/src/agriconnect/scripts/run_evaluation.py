@@ -50,7 +50,7 @@ logger = logging.getLogger("run_evaluation")
 
 def upload_datasets_to_langsmith():
     """Pousse tous les datasets vers LangSmith."""
-    from backend.src.agriconnect.core.tracing import get_ls_client, get_or_create_dataset
+    from agriconnect.core.tracing import get_ls_client, get_or_create_dataset
 
     client = get_ls_client()
     if client is None:
@@ -99,7 +99,7 @@ def run_evaluation(
     Returns:
         Dict avec les résultats agrégés par catégorie.
     """
-    from backend.src.agriconnect.graphs.message_flow import MessageResponseFlow
+    from agriconnect.graphs.message_flow import MessageResponseFlow
 
     logger.info("🚀 Initialisation de l'orchestrateur...")
     orchestrator = MessageResponseFlow()

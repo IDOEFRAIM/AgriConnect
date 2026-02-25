@@ -28,7 +28,7 @@ import time
 from contextlib import contextmanager
 from typing import Any, Callable, Dict, List, Optional
 
-from backend.src.agriconnect.core.settings import settings
+from agriconnect.core.settings import settings
 
 logger = logging.getLogger(__name__)
 

@@ -16,7 +16,7 @@ Providers supportés:
 import logging
 from typing import Optional
 
-from backend.src.agriconnect.core.settings import settings
+from agriconnect.core.settings import settings
 
 logger = logging.getLogger(__name__)
 

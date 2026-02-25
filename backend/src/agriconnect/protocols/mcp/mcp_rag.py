@@ -16,7 +16,7 @@ import logging
 import time
 from typing import Any, Dict, List, Optional
 
-from backend.src.agriconnect.protocols.core import (
+from agriconnect.protocols.core import (
     TraceCategory,
     TraceEnvelope,
 )
@@ -55,7 +55,7 @@ class MCPRagServer:
         """Initialisation paresseuse du retriever (coûteux en mémoire)."""
         if self._retriever is None:
             try:
-                from backend.src.agriconnect.rag.retriever import AgileRetriever
+                from agriconnect.rag.retriever import AgileRetriever
                 self._retriever = AgileRetriever()
                 logger.info("📚 RAG retriever chargé (lazy init)")
             except Exception as e:

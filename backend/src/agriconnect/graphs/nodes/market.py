@@ -9,14 +9,14 @@ from langgraph.graph import END, StateGraph
 from langgraph.checkpoint.memory import MemorySaver 
 
 
-from backend.src.agriconnect.graphs.prompts import (
+from agriconnect.graphs.prompts import (
         MARKET_EXTRACT_INTENT_TEMPLATE,
         MARKET_MODERATE_FINANCE_TEMPLATE,
         MARKET_SYSTEM_PROMPT_TEMPLATE,
         MARKET_USER_PROMPT_TEMPLATE,
     )
-from backend.src.agriconnect.rag.components import get_groq_sdk
-from backend.src.agriconnect.tools.market import AgrimarketTool
+from agriconnect.rag.components import get_groq_sdk
+from agriconnect.tools.market import AgrimarketTool
 
 
 logger = logging.getLogger("Agent.MarketCoach")

@@ -6,7 +6,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from backend.src.agriconnect.tools.shared_math import SahelAgroMath
+from agriconnect.tools.shared_math import SahelAgroMath
 
 
 def test_hargreaves_et0_reasonable():

@@ -5,19 +5,19 @@ from dataclasses import dataclass
 import operator
 from langgraph.graph import END, StateGraph
 
-from backend.src.agriconnect.graphs.prompts import FORMATION_SYSTEM_TEMPLATE, FORMATION_USER_TEMPLATE, STYLE_GUIDANCE
+from agriconnect.graphs.prompts import FORMATION_SYSTEM_TEMPLATE, FORMATION_USER_TEMPLATE, STYLE_GUIDANCE
 
 # MCP Protocols
-from backend.src.agriconnect.protocols.mcp import MCPRagServer, MCPContextServer
+from agriconnect.protocols.mcp import MCPRagServer, MCPContextServer
 
 # AG-UI Protocols
-from backend.src.agriconnect.protocols.ag_ui import (
+from agriconnect.protocols.ag_ui import (
     AgriResponse, AGUIComponent, ComponentType,
     TextBlock, ActionButton, ActionType, ListPicker,
 )
 
-from backend.src.agriconnect.tools.formation import FormationTool
-from backend.src.agriconnect.tools.refine import RefineTool
+from agriconnect.tools.formation import FormationTool
+from agriconnect.tools.refine import RefineTool
 logger = logging.getLogger("Agent.FormationCoach")
 
 
@@ -91,7 +91,7 @@ class FormationCoach:
         self.model_answer = "llama-3.3-70b-versatile"
 
         try:
-            from backend.src.agriconnect.rag.components import get_groq_sdk
+            from agriconnect.rag.components import get_groq_sdk
             self.llm = llm_client if llm_client else get_groq_sdk()
         except Exception as exc:
             logger.error("Impossible d'initialiser le LLM : %s", exc)

@@ -29,8 +29,8 @@ from celery.signals import (
     worker_shutting_down,
 )
 
-from backend.src.agriconnect.core.settings import settings
-from backend.src.agriconnect.workers.celery_config import get_celery_config, ENVIRONMENT
+from agriconnect.core.settings import settings
+from agriconnect.workers.celery_config import get_celery_config, ENVIRONMENT
 
 logger = logging.getLogger("AgriConnect.celery")
 
@@ -60,7 +60,7 @@ celery_app.conf.update(get_celery_config())
 celery_app.conf.beat_schedule = {
     # ── Monitoring météo toutes les 6 heures ──
     "weather-monitoring-every-6h": {
-        "task": "backend.workers.tasks.monitoring.check_weather_alerts",
+        "task": "agriconnect.workers.tasks.monitoring.check_weather_alerts",
         "schedule": crontab(hour="*/6", minute=0),
         "options": {
             "queue": "monitoring",
@@ -71,7 +71,7 @@ celery_app.conf.beat_schedule = {
 
     # ── Nettoyage audio quotidien à 3h du matin ──
     "cleanup-audio-daily-3am": {
-        "task": "backend.workers.tasks.maintenance.cleanup_old_audio",
+        "task": "agriconnect.workers.tasks.maintenance.cleanup_old_audio",
         "schedule": crontab(hour=3, minute=0),
         "options": {
             "queue": "maintenance",
@@ -82,7 +82,7 @@ celery_app.conf.beat_schedule = {
 
     # ── Nettoyage des résultats expirés (quotidien, 4h) ──
     "cleanup-expired-results-daily": {
-        "task": "backend.workers.tasks.maintenance.cleanup_expired_results",
+        "task": "agriconnect.workers.tasks.maintenance.cleanup_expired_results",
         "schedule": crontab(hour=4, minute=0),
         "options": {
             "queue": "maintenance",
@@ -93,7 +93,7 @@ celery_app.conf.beat_schedule = {
 
     # ── Health check du broker (5 min en prod, 15 min sinon) ──
     "broker-health-check": {
-        "task": "backend.workers.tasks.maintenance.broker_health_check",
+        "task": "agriconnect.workers.tasks.maintenance.broker_health_check",
         "schedule": crontab(minute="*/5") if ENVIRONMENT == "production" else crontab(minute="*/15"),
         "options": {
             "queue": "maintenance",
@@ -109,7 +109,7 @@ celery_app.conf.beat_schedule = {
 # ===================================================================
 
 celery_app.autodiscover_tasks([
-    "backend.workers.tasks",
+    "agriconnect.workers.tasks",
 ])
 
 
